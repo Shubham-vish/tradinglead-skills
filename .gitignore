@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+*.log
+.env
+.env.*
+.copilot/
+.private.git/
+api.json
