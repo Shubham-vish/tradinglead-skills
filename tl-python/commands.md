@@ -73,8 +73,8 @@ Retry key: **required**. External local-assistant access is still required.
 | Parameter | Contract |
 | --- | --- |
 | `title` | 1-100 characters. |
-| `source` | 1-50000 characters. |
-| `parameters` | Optional flat primitive parameter map. |
+| `source` | Nonempty source; no fixed character cap. Storage and transport limits still apply. |
+| `parameters` | Optional finite JSON parameter object; nested configurations supported. |
 | `id` | Optional saved ID. |
 | `expectedRevision` | Required with id. |
 
@@ -97,7 +97,7 @@ Retry key: **required**. External local-assistant access is still required.
 | `source` | Python source OR saved id. |
 | `id` | Saved Python ID OR source. |
 | `expectedRevision` | Optional revision with id. |
-| `parameters` | Optional primitive parameters. |
+| `parameters` | Optional JSON parameters, including nested objects and arrays. |
 | `instanceId` | Stable applied ID to update. |
 | `entityId` | Native entity alternative to instanceId. |
 
@@ -126,7 +126,7 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `pythonIndicators.showSettings`
 
-Open native Python plot visibility, color and line-style settings without execution. Edit Python parameters in Indicator Studio.
+Open managed Python settings with actual plot names, colors, styles and visibility. Opening or applying styles does not run Python; Inputs explicitly recalculates.
 
 Retry key: **required**. External local-assistant access is still required.
 

@@ -67,14 +67,15 @@ Do not combine `--params` with `--params-file`.
   a fresh key automatically after an uncertain write.
 - `node cli.cjs cancel --tab TAB --request REQUEST_ID` cancels a transport
   request. A scan/backtest job has its own domain cancellation command.
-- Requests/responses are bounded to 64 KiB. Use bounded snapshots, pagination
-  and export chunks. Do not concatenate maximum-sized source and parameter
-  payloads and assume they fit.
+- Current source transport caps JSON at 2 MiB; older packaged bridges can have
+  stricter limits. Domain limits still apply: scanner rows/columns and exports
+  remain separately bounded and paginated. Do not concatenate maximum-sized
+  source and parameter payloads and assume they fit.
 - Identity comes from the active app session, not a `userId` command parameter.
   Stop and rediscover on account changes.
 
 Desktop local access is automatic for the active account unless paused.
-Cloud watchlist writes need a separate user grant and real sign-in. Agents
+Cloud watchlist and saved-screener writes need a separate user grant and real sign-in. Agents
 cannot grant permissions, unpause access, or bypass Python isolation.
 
 ## Route the task
@@ -87,7 +88,7 @@ cannot grant permissions, unpause access, or bypass Python isolation.
 | Run/review backtests, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
 | Sweeps / holdout / walk-forward | [tl-strategy-research](../tl-strategy-research/SKILL.md) |
 | Replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
-| Scan symbols and save cloud watchlists | [tl-screening](../tl-screening/SKILL.md) |
+| Unified Scanner, original strategies/SQL, grid analysis/refinement, Scanned History, saved rules and cloud watchlists | [tl-screening](../tl-screening/SKILL.md) |
 | Write/read/edit saved HTML analysis | [tl-research](../tl-research/SKILL.md) |
 
 `workspace.setPanel` opens supported **bottom** panels; it does not select the

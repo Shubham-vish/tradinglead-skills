@@ -13,7 +13,7 @@ TradingLead Desktop command surface**, not arbitrary UI automation.
 | [tl-backtesting](tl-backtesting/SKILL.md) | Backtests, trades/evidence, saved history, presets and chart overlays |
 | [tl-strategy-research](tl-strategy-research/SKILL.md) | Parameter sweeps, holdout and walk-forward experiments |
 | [tl-paper-trading](tl-paper-trading/SKILL.md) | Historical replay, forward paper sessions and simulated order/protection controls |
-| [tl-screening](tl-screening/SKILL.md) | Backend scans, broker-candle TLScript scans and cloud watchlists |
+| [tl-screening](tl-screening/SKILL.md) | Unified Scanner, original strategies/SQL, grid analysis and refinement, Scanned History, saved rules, provider scans and cloud watchlists |
 | [tl-research](tl-research/SKILL.md) | Saved HTML research pages in the right sidebar |
 
 ## Install and discover
@@ -53,8 +53,11 @@ is a documentation snapshot, **not** a substitute for fresh app capabilities.
 
 The initial audit found **127 registered commands: 94 canonical commands and
 33 `simulation.*` compatibility aliases**, plus four native Desktop controls.
-The catalog is close to its 128-command ceiling; adding commands also requires
-checking the 48 KiB registration and 64 KiB request/response budgets.
+The screening extension raises the supported registration ceiling to 160 commands
+and 56 KiB; current source transport caps JSON at 2 MiB, with smaller domain
+budgets and pagination. Older packaged bridges may retain stricter caps. It requires the
+matching Desktop bridge and frontend. Discover the actual running tab rather
+than assuming a source change has updated an installed app.
 
 Coverage was checked against frontend validation/dispatch and the running app.
 Read-only capability discovery was exercised live. The audit also reproduced
@@ -73,6 +76,7 @@ command against the user's existing chart or rerun all strategies.
 | Presets and larger saved result history | Separate preset and saved-library commands, with their own revisions |
 | Sweep/holdout/walk-forward | `backtesting.research`, distinct from HTML reports |
 | HTML research pages | Full `research.*` create/list/get/update/delete/show workflow |
+| Unified Scanner and results analysis | `screening.*` supports original strategies, presets/custom/SQL, real-grid filters/sort/selection/expansion, exact-stock refinement and independent scan history |
 | Shared authoring Docs, local backup import/export, Studio docking | UI features; no dedicated registered command for every control |
 | Market Intelligence / Futures Analysis | The bottom panel can be opened; no dedicated dataset/analysis command family is advertised |
 | Broker credentials, arbitrary JavaScript, real broker orders | Not exposed by these product commands |

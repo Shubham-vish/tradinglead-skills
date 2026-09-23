@@ -14,14 +14,14 @@ function ownerFor(type) {
 	const owner = {
 		workspace: "tl-desktop", chart: "tl-charts", studies: "tl-charts", feeds: "tl-charts", universe: "tl-charts",
 		indicators: "tl-tlscript", pythonIndicators: "tl-python", screener: "tl-screening", providerScreener: "tl-screening",
-		watchlists: "tl-screening", research: "tl-research",
+		watchlists: "tl-screening", screening: "tl-screening", research: "tl-research",
 	}[family];
 	if (!owner) throw new Error(`No skill owns command ${type}; update the skill routing before refreshing.`);
 	return owner;
 }
 function validateCatalog(catalog) {
-	if (catalog?.version !== 1 || !Array.isArray(catalog.commands) || !catalog.commands.length || catalog.commands.length > 128 ||
-		Buffer.byteLength(JSON.stringify(catalog.commands)) > 48 * 1024 || !Array.isArray(catalog.desktopActions)) {
+	if (catalog?.version !== 1 || !Array.isArray(catalog.commands) || !catalog.commands.length || catalog.commands.length > 160 ||
+		Buffer.byteLength(JSON.stringify(catalog.commands)) > 56 * 1024 || !Array.isArray(catalog.desktopActions)) {
 		throw new Error("Invalid or oversized command catalog.");
 	}
 	const names = new Set();

@@ -194,7 +194,7 @@ Retry key: **required**. External local-assistant access is still required.
 | `source` | Python calculate source OR saved id. |
 | `id` | Saved Python source OR source. |
 | `expectedRevision` | Optional saved source revision. |
-| `parameters` | Flat Python parameters; _simulation reserved. |
+| `parameters` | Validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
 | `strategyMode` | vectorized (default) or sequential. |
 | `config` | Optional capabilities.config fields. |
 | `bars` | 2-5000, default 1000; sequential max/default 250. |
