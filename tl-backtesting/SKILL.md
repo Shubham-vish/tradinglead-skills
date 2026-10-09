@@ -1,6 +1,6 @@
 ---
 name: tl-backtesting
-description: Run and inspect TradingLead Python backtests, saved run history, complete strategy presets and native chart overlays. Use for stop-loss/target strategy evaluation, trades/events/equity, data-quality evidence, comparison, export, saved results, visibility and line/label styling. Paper execution and parameter research have separate companion skills.
+description: Run and inspect TradingLead Python or TLScript-Pine strategy backtests, applied strategy state, saved run history, presets and native chart overlays. Use for trade evidence, comparison, export and revisions. Replay paper execution and parameter research have separate companion skills.
 ---
 
 # Backtesting, saved setups and result evidence
@@ -18,14 +18,18 @@ compatibility aliases, not a second engine.
    capital, quantity, instrument model, commission, slippage, warmup, stops and
    targets explicitly where relevant; do not label user assumptions
    exchange-verified.
-3. Use `backtesting.run` with Python source **OR** saved source `id`.
-   `strategyMode` is `vectorized` or `sequential`; pass a retry key.
+3. Use `backtesting.run` with source **OR** saved source `id`, setting
+   `language:"pine"` for a Pine `strategy()` (Python is the default).
+   Python supports `strategyMode:"vectorized"|"sequential"` and parameters;
+   Pine is vectorized only and does not accept Python parameters. Pine
+   strategies run in Backtesting, not `indicators.apply` or provider scans.
+   Pass a retry key.
 4. The returned run can be `preparing`. Poll `backtesting.get` until a terminal
    result or explicit error. Never report that a merely accepted run completed.
 5. Read metrics, trades, events and equity with bounded pages. `cancel`
    requests cancellation; inspect the resulting state afterward.
 
-Sequential mode sees only completed-prefix candles and post-fill account state.
+Python sequential mode sees only completed-prefix candles and post-fill account state.
 Its maximum/default is 250 candles; vectorized mode supports at most 5,000
 with a default of 1,000. The newest candle is excluded. No real broker execution
 occurs. Source with hard-coded future information is not automatically certified.
@@ -41,7 +45,8 @@ An exit leg is not necessarily a distinct independent position.
 ## Read evidence without changing the run
 
 - `backtesting.get`: page `trades`, `events`, `equity` or `research`; inspect
-  totals, offsets and analytics truncation.
+  totals, offsets and analytics truncation. `risk` permits explicit regular
+  sampling assumptions for annualized statistics; omission does not annualize.
 - `backtesting.export`: stopped runs only. Fix `expectedRevision` across all
   chunks, follow returned offsets, concatenate JSON text and parse only when
   complete. Offsets count UTF-16 code units, not bytes.
@@ -56,13 +61,16 @@ An exit leg is not necessarily a distinct independent position.
 | Store | Workflow |
 | --- | --- |
 | Active runs | `list/get/delete`; up to three active local runs |
-| Larger saved snapshots | `libraryList/librarySave/libraryRestore/libraryDelete/libraryMigrate`; IndexedDB, bounded to 100 runs / 100 MB per account |
+| Larger saved snapshots | `libraryList/librarySave/libraryRestore/libraryDelete/libraryMigrate/libraryUpdate`; IndexedDB, bounded to 100 runs / 100 MB per account |
 | Reusable complete setups | `presetList/presetGet/presetSave/presetDelete`; source, parameters, mode, config, bars, range and session assumptions |
 
 Read current revisions before mutations. `librarySave` needs the active
 `expectedRevision` and `expectedLibraryRevision` (0 only for a new saved copy).
 Restore requires a free active slot and does not start execution. Never delete
 user runs automatically to make space.
+`libraryList` can filter `scope:"all"|"backtest"|"paper"` (paper includes
+replay and forward). `libraryUpdate` requires the saved revision and changes
+only display name, notes and tags; immutable run evidence is untouched.
 
 Preset `snapshot` requires `title`, `source`, `parameters`, `config`,
 `strategyMode`, `bars`, **explicit** `range` and **explicit** `sessionSchedule`
@@ -83,6 +91,13 @@ disclose differing assumptions instead of ranking incompatible runs.
 - `showSettings` opens the real native chart dialog.
 - `removeFromChart` detaches overlays but retains results and does not stop
   a paper clock. `delete` is a separate destructive active-run operation.
+- `applyStrategy` attaches one Python or Pine strategy to the chart; read
+  `appliedStrategy` for its run/status. Another strategy is refused until
+  `removeStrategy`; removal retains the last run/history. With automatic
+  rerun enabled the applied strategy recomputes on chart symbol/interval
+  change. `setStrategyAutoRerun` explicitly toggles that behavior. Confirm
+  chart readiness and the resulting run before treating a rerun as complete;
+  `indicators.openDraft` can open its unsaved source in Studio.
 
 For sweep/holdout/walk-forward use
 [tl-strategy-research](../tl-strategy-research/SKILL.md); for replay and forward

@@ -1,6 +1,6 @@
 # tl-strategy-research command reference
 
-Generated from live discovery. Recheck the addressed tab before use.
+Generated from a command-catalog snapshot. Recheck the addressed tab before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.

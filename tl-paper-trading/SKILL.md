@@ -1,6 +1,6 @@
 ---
 name: tl-paper-trading
-description: Control TradingLead simulation-only historical replay and forward paper sessions, including stepping, pending orders, protection, partial closes and pause/resume. Use for paper execution review; never live broker orders, credential handling or fabricated fills.
+description: Control TradingLead simulation-only replay-to-trade practice, backtest-derived replay and forward paper sessions, including immediate manual market fills at the revealed close, stepping, protection, partial closes and pause/resume. Never live broker orders.
 ---
 
 # Replay and forward paper execution
@@ -9,24 +9,39 @@ Start with [tl-desktop](../tl-desktop/SKILL.md) and
 [tl-backtesting](../tl-backtesting/SKILL.md). Read `backtesting.capabilities`
 and [commands.md](commands.md). These commands are **simulation-only**.
 
-## Historical replay
+## Historical replay and direct practice
 
-1. Read a completed backtest.
-2. Call `backtesting.replay` with that `runId`. It creates a fresh branch using
-   the same frozen candles/settings; it starts flat by default.
-3. Manual decisions are the default. Set `autoStrategy:true` only when the
+Two entry points exist; do not create a strategy backtest just to trade a
+paused replay cursor:
+
+- `backtesting.practice` starts manual paper trading **directly from a paused
+  chart replay cursor**, capturing bounded candles from the original source
+  with virtual capital/costs and no Python or strategy execution. Confirm
+  replay cursor, chart feed, symbol and interval first. Its `config` is
+  optional; read the returned run/revision before placing orders.
+- `backtesting.replay` branches from a **completed backtest** and uses its
+  frozen candles/settings. Use this when the user explicitly wants to review
+  the strategy's sample or opt into `autoStrategy`.
+
+1. For a backtest-derived replay, read the completed run first. Call
+   `backtesting.replay` with its `runId`; the branch starts flat by default.
+2. Manual decisions are the default. Set `autoStrategy:true` only when the
    user wants the saved strategy to run automatically.
-4. Read the new branch's revision. Use `step` to advance 1-100 candles for
+3. Read the new branch's revision. Use `step` to advance 1-100 candles for
    manual replay; automatic sequential replay requires exactly one at a time.
-5. Inspect `get` after every mutation. Do not infer a fill merely from an
-   accepted order. No next candle means no next-candle fill.
+4. Inspect `get` after every mutation. Manual replay market entries and
+   reduce-only closes execute at the **current revealed candle close**, including
+   the final candle, with configured costs. Inspect `orderExecution` for actual
+   filled/rejected outcomes. Other order types/protection require subsequent
+   candles; an accepted order alone is not a fill.
 
 ## Forward paper
 
 `backtesting.forward` starts from a completed backtest on its **fresh live
 1-240 minute chart**. It is not supported on daily/calendar intervals. It
 seeds flat and is manual by default; automatic sequential strategy use must
-be explicit.
+be explicit and currently supports Python only. Pine-source backtests can
+seed manual paper, not automatic forward Pine execution.
 
 A supplied session schedule needs an IANA timezone, ISO weekdays, open/close,
 holiday dates and `source:"user-assumption"`. Omission inherits saved defaults;
@@ -54,7 +69,8 @@ model. Manual orders are for manual replay/running manual forward paper, not
 an automatic strategy branch.
 
 Forward orders, amendments and protection changes are queued by actual decision
-time for subsequently eligible candles. Earlier terms can remain effective;
+time for subsequently eligible candles; automatic replay closes also wait
+for subsequent candles. Earlier terms can remain effective;
 inspect `pendingProtection` and event evidence. Do not backdate a new decision
 into a candle that has already started. A queued close is not a filled close.
 

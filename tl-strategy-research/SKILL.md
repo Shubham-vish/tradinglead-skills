@@ -14,8 +14,11 @@ This skill owns `backtesting.research`, **not** the `research.*` HTML library.
 
 1. Select an existing **completed active backtest** and read its current
    revision, parameters, frozen candle coverage, warmup, execution mode and
-   configuration. Restore a saved snapshot to an available active slot first
-   if necessary; never delete another run automatically.
+   configuration. Use a **Python** source run: the current research evaluator
+   executes Python candidate parameters, not Pine `strategy()` source. Do not
+   submit Pine backtests for this experiment or present a Python failure as
+   Pine parameter research. Restore a saved snapshot to an available active
+   slot first if necessary; never delete another run automatically.
 2. Choose `sweep`, `holdout` or `walkForward` deliberately. Use only parameter
    keys meaningful to the saved Python source.
 3. Build a bounded Cartesian grid: at most 4 flat keys, at most 12 candidate

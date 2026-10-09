@@ -1,13 +1,13 @@
 # tl-tlscript command reference
 
-Generated from live discovery. Recheck the addressed tab before use.
+Generated from a command-catalog snapshot. Recheck the addressed tab before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
 ## `indicators.listCapabilities`
 
-Discover TLScript-Pine: the supported Pine indicator runtime, input contract, bounds and example. Not TradingView runtime equivalence, the retired limited TLScript language, or Pine strategy backtesting.
+Discover TLScript-Pine: the supported Pine indicator runtime, input contract, bounds and example. Not TradingView runtime equivalence or the retired limited TLScript language. Pine strategy backtesting lives under the backtesting.* commands, not this indicator surface.
 
 Retry key: **not required**. External local-assistant access is still required.
 
@@ -31,6 +31,18 @@ Retry key: **required**. External local-assistant access is still required.
 | --- | --- |
 | `id` | Saved script ID; supply id OR entityId. |
 | `entityId` | Applied chart instance; supply entityId OR id. |
+
+## `indicators.openDraft`
+
+Open arbitrary source as an unsaved draft in the mounted Studio (e.g. a backtest run's strategy). Switches the Studio language. Refuses to discard unsaved edits. Open workspace panel indicators first. Requires indicator grant and retry key; does not change or save chart instances.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `source` | Draft source code (required). |
+| `language` | python or pine (default python). |
+| `title` | Optional draft title. |
 
 ## `indicators.validate`
 
@@ -73,6 +85,7 @@ Retry key: **required**. External local-assistant access is still required.
 | `inputs` | Optional declared Pine input values; omitted fields use source defaults. |
 | `id` | Optional existing Pine indicator ID. |
 | `expectedRevision` | Required current revision when id is supplied. |
+| `replace` | Optional boolean; true overwrites an existing saved indicator with the same name instead of failing on a duplicate title. |
 
 ## `indicators.delete`
 
@@ -160,3 +173,25 @@ Retry key: **required**. External local-assistant access is still required.
 | Parameter | Contract |
 | --- | --- |
 | `entityId` | Pine chart entity ID. |
+
+## `indicators.getSettings`
+
+Read named applied plot settings without source or execution. Use the primary entityId from applied; keep the returned snapshot for setSettings.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `entityId` | Primary applied chart entity ID. |
+
+## `indicators.setSettings`
+
+Apply named appearance without executing source. Requires unchanged expected snapshot, indicator grant and retry key. Re-read settings after a conflict; no saved-source or backtest changes.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `entityId` | Primary applied chart entity ID. |
+| `settings` | Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata. |
+| `expected` | Unmodified getSettings snapshot for stale-write protection. |

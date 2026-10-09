@@ -82,18 +82,22 @@ cannot grant permissions, unpause access, or bypass Python isolation.
 
 | Task | Read/load |
 | --- | --- |
-| Chart context, feeds, snapshots, built-in studies | [tl-charts](../tl-charts/SKILL.md) |
-| TLScript custom indicators | [tl-tlscript](../tl-tlscript/SKILL.md) |
+| Chart context, feeds, snapshots, built-in studies, saved chart alerts | [tl-charts](../tl-charts/SKILL.md) |
+| TLScript-Pine custom indicators (not Pine strategy chart apply) | [tl-tlscript](../tl-tlscript/SKILL.md) |
 | Python indicators / strategy authoring | [tl-python](../tl-python/SKILL.md) |
-| Run/review backtests, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
+| Run/review Python or Pine backtests, applied strategies, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
 | Sweeps / holdout / walk-forward | [tl-strategy-research](../tl-strategy-research/SKILL.md) |
-| Replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
+| Replay-to-trade direct practice / backtest-derived replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
 | Unified Scanner, original strategies/SQL, grid analysis/refinement, Scanned History, saved rules and cloud watchlists | [tl-screening](../tl-screening/SKILL.md) |
 | Write/read/edit saved HTML analysis | [tl-research](../tl-research/SKILL.md) |
 
 `workspace.setPanel` opens supported **bottom** panels; it does not select the
 right Research sidebar. Use `research.show` for that. `workspace.getActivity`
 contains bounded status/error history, not source or credentials.
+Availability of a command in this repository or the source checkout is not
+proof of its availability on another tab, browser, packaged release or cloud
+deployment. Use `capabilities --tab` for the intended running tab and read
+its domain readiness; read-only discovery cannot guarantee fresh candles.
 
 Never execute real broker orders, private diagnostic JavaScript, or arbitrary
 host Python through these skills. Do not fetch, publish or sync user content

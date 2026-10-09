@@ -1,6 +1,6 @@
 ---
 name: tl-screening
-description: Operate the unified TradingLead Scanner, original strategies, custom conditions and SQL; inspect/filter/sort/select the real results grid, refine stocks into another scan, reopen Scanned History and reuse saved rules. Also routes legacy jobs and local broker TLScript scans. Explicit tab targeting, revisions, bounded reads and separate cloud-write grants.
+description: Operate the unified TradingLead Scanner, original strategies, custom conditions and SQL; inspect/filter/sort/select the real results grid, refine stocks into another scan, reopen Scanned History and reuse saved rules. Also routes legacy jobs and local broker TLScript-Pine indicator scans. Explicit tab targeting, revisions, bounded reads and separate cloud-write grants.
 ---
 
 # Screening and cloud watchlists
@@ -15,10 +15,13 @@ constructing a request.
 | --- | --- | --- |
 | Unified visible Scanner: presets, original strategies, custom rules, SQL | `screening.getState`, `screening.catalog`, `screening.listUniverses` | `screening.configure`, `screening.run`, `screening.getResults` |
 | Existing separate backend strategy jobs (not the visible Scanner) | `screener.listCapabilities`, `universe.list` | `screener.run` |
-| Local provider candles + bounded TLScript | `providerScreener.listCapabilities`, `feeds.list` | `providerScreener.run` |
+| Local provider candles + bounded TLScript-Pine indicator | `providerScreener.listCapabilities`, `feeds.list` | `providerScreener.run` |
 
 Changing a chart to Kite/Fyers does **not** change backend screening to that
 provider. Local Python indicators do not automatically become backend filters.
+Provider connections and interval support depend on the addressed Desktop
+tab; browser feed availability is a different surface. A listed provider is
+not proof that its data is connected, entitled or fresh.
 
 ## Unified visible Scanner
 
@@ -219,10 +222,12 @@ original strategies in the visible comparison workflow.
 ### Provider scan
 
 Discover supported providers/intervals and supply 1-50 explicit canonical
-tickers, the provider, TLScript source, interval and a supported condition.
+tickers, the provider, TLScript-Pine **indicator** source, interval and a
+supported condition.
 Read [tl-tlscript](../tl-tlscript/SKILL.md) before authoring. Bars are bounded
 to 2-1000. The newest candle is conservatively excluded; broker requests
-consume quota. Poll `providerScreener.getResults`.
+consume quota. Secondary-data requests and Pine strategies are not supported
+on this scan surface. Poll `providerScreener.getResults`.
 
 There is no silent provider/SQL fallback. Local runs expire after 30 minutes
 or reload; an expired job is not an empty successful result.
@@ -249,3 +254,8 @@ Cloud watchlist writes are separate:
 Open a verified result via [tl-charts](../tl-charts/SKILL.md), or save its
 analysis with [tl-research](../tl-research/SKILL.md). Do not invent a match for
 unsupported fundamentals, conditions, datasets or indicators.
+
+Watchlist row sorting/popovers, visual heatmaps and sidebar layout controls are
+UI features, not registered `screening.*` commands. Use actual scanner
+analysis/selection commands only for the visible Scanner result grid; do not
+claim the grid commands manage a watchlist or a market heatmap.

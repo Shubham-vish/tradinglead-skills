@@ -1,9 +1,21 @@
 # tl-paper-trading command reference
 
-Generated from live discovery. Recheck the addressed tab before use.
+Generated from a command-catalog snapshot. Recheck the addressed tab before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
+
+## `backtesting.practice`
+
+Start manual replay trading directly from the paused chart replay cursor. Captures bounded original-source candles, virtual capital and costs; no strategy or Python execution. Local-only, single position, fixed symbol/interval.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `config` | Optional simulation config. Defaults: 100000 virtual units, no automatic brackets, shorting allowed, zero warmup; configured costs still apply. |
+
+Compatibility alias: `simulation.practice`. Same runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.replay`
 
@@ -76,7 +88,7 @@ Compatibility alias: `simulation.step`. Same runtime and retry identity; prefer 
 
 ## `backtesting.order`
 
-Queue an entry/exit for MANUAL replay or running manual forward paper. Supports market/limit/stop/stop_limit and brackets. Forward fills require a candle opening after the decision.
+Submit an entry/exit for MANUAL replay or running manual forward paper. Replay market orders fill at the current revealed close with costs; other orders and protection use later candles. Forward fills require a candle opening after the decision. Inspect orderExecution for filled/rejected immediate outcomes.
 
 Retry key: **required**. External local-assistant access is still required.
 
@@ -133,7 +145,7 @@ Compatibility alias: `simulation.protect`. Same runtime and retry identity; pref
 
 ## `backtesting.close`
 
-Queue a full/partial reduce-only paper close for a subsequent eligible candle. Forward eligibility starts after the actual decision. Never invent an end-of-run close.
+Explicit full/partial reduce-only close. Manual replay fills at the current revealed close with costs, including the final candle; inspect orderExecution for filled/rejected outcomes. Automatic replay and forward closes remain queued for subsequent eligible candles. Never auto-liquidates at end of history.
 
 Retry key: **required**. External local-assistant access is still required.
 

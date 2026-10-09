@@ -1,6 +1,6 @@
 # tl-python command reference
 
-Generated from live discovery. Recheck the addressed tab before use.
+Generated from a command-catalog snapshot. Recheck the addressed tab before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -77,6 +77,7 @@ Retry key: **required**. External local-assistant access is still required.
 | `parameters` | Optional finite JSON parameter object; nested configurations supported. |
 | `id` | Optional saved ID. |
 | `expectedRevision` | Required with id. |
+| `replace` | Optional boolean; true overwrites an existing saved indicator with the same name instead of failing on a duplicate title. |
 
 ## `pythonIndicators.applied`
 
@@ -145,3 +146,35 @@ Retry key: **required**. External local-assistant access is still required.
 | --- | --- |
 | `instanceId` | Stable applied ID OR entityId. |
 | `entityId` | Native entity alternative. |
+
+## `pythonIndicators.validate`
+
+Validate Python syntax with the editor's isolated AST checker. Does not execute imports, fetch candles, save source or certify strategy correctness. Unavailable runtime is an error, not a valid result.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `source` | Nonempty Python source. |
+
+## `pythonIndicators.getSettings`
+
+Read named applied plot settings without source or execution. Use the primary entityId from applied; keep the returned snapshot for setSettings.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `entityId` | Primary applied chart entity ID. |
+
+## `pythonIndicators.setSettings`
+
+Apply named appearance without executing source. Requires unchanged expected snapshot, indicator grant and retry key. Re-read settings after a conflict; no saved-source or backtest changes.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `entityId` | Primary applied chart entity ID. |
+| `settings` | Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata. |
+| `expected` | Unmodified getSettings snapshot for stale-write protection. |

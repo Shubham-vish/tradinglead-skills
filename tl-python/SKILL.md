@@ -1,6 +1,6 @@
 ---
 name: tl-python
-description: Author and manage isolated TradingLead Python indicators and strategy source. Use for calculate(bars, params), typed parameter declarations, supported plots/drawings, bundled Strategy/TA examples, local source history, apply/update and native input/style controls. No unrestricted Python, external data fetching or live orders.
+description: Author and manage isolated TradingLead Python indicators and strategy source. Use for syntax-only validation, calculate(bars, params), typed inputs, plots/drawings, saved source history, apply/update and named appearance settings. Desktop Strategy SDK requirements differ from browser-compatible Python; no live broker orders.
 ---
 
 # TradingLead Python authoring and indicators
@@ -11,10 +11,16 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read
 
 ## Runtime and data contract
 
-Require `executionReady:true` and the current isolated runtime status. Do not
-fall back to host Python or request blanket filesystem/network access.
-Saving source is possible without executing it; **save is not syntax validation**.
-There is no advertised `pythonIndicators.validate` command.
+Check the addressed tab's runtime readiness before executing. Browser-compatible
+standard-library/NumPy/pandas indicators may run in a disposable browser
+sandbox; the bundled `tradinglead` Strategy SDK, native/OS packages and hard
+process isolation require Desktop. Neither case permits unrestricted host
+Python, filesystem/network access or a silent runtime substitution. Saving
+source is possible without executing it; **save is not syntax validation**.
+`pythonIndicators.validate` checks syntax with the isolated AST checker
+without running imports or calculations. Inspect `valid` and `diagnostics`;
+`validation:"syntax-only"` does not certify strategy correctness. An
+unavailable checker is an error.
 
 The entry point is `calculate(bars, params)`. Bars are chronological OHLCV
 dictionaries; `time` is milliseconds, `volume` can be `None`. Output values
@@ -37,20 +43,24 @@ def calculate(bars, params):
 
 Keep plot IDs stable so appearance survives replacement/restoration. Drawings
 are bounded and use returned input-bar timestamps; discover supported shapes.
-Current limits are 50,000 source characters, 5,000 indicator candles, 6 plots
-and 100 drawings. The entire command must still fit the 64 KiB bridge.
+Discover current runtime limits for candles, plots and drawings. There is no
+fixed source-character cap; storage, the 2 MiB command/transport budgets and
+runtime limits still apply. Leave room for the complete request envelope.
 
 Typed `# @input` JSON comments support `int`, `float`, `bool`, `string`, `enum`,
 plus title/group/description/min/max/step/options. Keep domain validation in
-Python too. The primitive parameter map allows 100 keys, 100-character names,
-16,000-character strings and 48 KiB serialized UTF-8 JSON overall. Nested
-user values and reserved keys, including `_simulation`, are rejected.
+Python too. Read the runtime's current parameter limits before use. Validated finite JSON
+parameters may include nested objects and arrays; `_simulation` is reserved.
+The sweep grid in [tl-strategy-research](../tl-strategy-research/SKILL.md)
+still requires flat parameter keys and bounded candidates.
 
 ## Local source and chart lifecycle
 
-1. Read capabilities/examples and inspect the intended chart.
+1. Read capabilities/examples, inspect the chart and optionally run
+   `pythonIndicators.validate`; syntax-only success is not an execution test.
 2. Optionally call `pythonIndicators.save` with title, source and parameters.
-   Existing source updates require current `expectedRevision`.
+   Updates need the current `expectedRevision`; `replace:true` explicitly
+   replaces a same-title saved item. Reread after a conflict.
 3. `pythonIndicators.apply` executes source **OR** a saved `id`; use a retry
    key. Supplying `instanceId` updates that applied instance; `entityId` is
    the alternative target, not an additional simultaneous target.
@@ -66,9 +76,12 @@ are distinct.
 
 `showInputs` opens typed calculation controls; user Apply is explicit.
 Programmatic recalculation uses `apply` with new parameters and the existing
-target. `setVisibility` and `showSettings` do not run Python. Native colors,
-widths and aliases can be adjusted in the opened dialog; no generic public
-style-setter command is advertised.
+target. `setVisibility` and `showSettings` do not run Python. Named appearance
+is also programmable: use the primary applied `entityId` with
+`pythonIndicators.getSettings`, preserve the full returned snapshot as
+`expected`, clone/edit supported style fields as `settings`, then call
+`pythonIndicators.setSettings` with a retry key. Preserve plot IDs/order and
+metadata; reread on conflict. It does not recalculate or save source.
 
 ## Strategies are separate from indicator plotting
 

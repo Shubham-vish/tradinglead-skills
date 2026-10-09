@@ -1,6 +1,6 @@
 # tl-backtesting command reference
 
-Generated from live discovery. Recheck the addressed tab before use.
+Generated from a command-catalog snapshot. Recheck the addressed tab before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -91,6 +91,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | Parameter | Contract |
 | --- | --- |
 | `search` | Optional text, max 100 chars. |
+| `scope` | Optional all\|backtest\|paper. Paper includes replay and forward; filters before pagination. Storage usage remains account-wide. |
 | `offset` | 0-100. |
 | `limit` | 1-100; follow nextOffset until null. |
 
@@ -146,6 +147,20 @@ Retry key: **required**. External local-assistant access is still required.
 
 Compatibility alias: `simulation.libraryDelete`. Same runtime and retry identity; prefer the canonical name.
 
+## `backtesting.libraryUpdate`
+
+Edit a saved snapshot's display name, notes and tags only. Immutable run evidence, active work and cloud layout are unchanged.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Saved ID. |
+| `expectedLibraryRevision` | Current saved revision. |
+| `metadata` | {name?:max100,notes?:max2000,tags?:up to10 strings max30}. |
+
+Compatibility alias: `simulation.libraryUpdate`. Same runtime and retry identity; prefer the canonical name.
+
 ## `backtesting.compare`
 
 Compare 2-4 same-sample saved snapshots. Metrics/assumptions are byte-bounded; follow nextOffset until null.
@@ -185,27 +200,29 @@ Compatibility alias: `simulation.setChartOptions`. Same runtime and retry identi
 
 ## `backtesting.run`
 
-Start an isolated Python backtest excluding the newest candle. Returns preparing; poll get. Sequential mode supplies prefix-only candles and post-fill account state. Requires research grant/retry key.
+Start an isolated Python or TLScript-Pine strategy() backtest excluding the newest candle. Returns preparing; poll get. Pine reconstructs a per-candle position series from its emulator and runs the shared engine. Sequential mode (Python only) supplies prefix-only candles and post-fill account state. Requires research grant/retry key.
 
 Retry key: **required**. External local-assistant access is still required.
 
 | Parameter | Contract |
 | --- | --- |
-| `source` | Python calculate source OR saved id. |
-| `id` | Saved Python source OR source. |
+| `language` | python (default) or pine. |
+| `source` | Python calculate source, or Pine strategy() source when language is pine, OR use a saved id. |
+| `id` | Saved Python (py_) or Pine (pine_) source id instead of source. |
 | `expectedRevision` | Optional saved source revision. |
-| `parameters` | Validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
-| `strategyMode` | vectorized (default) or sequential. |
+| `parameters` | Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
+| `strategyMode` | Python only: vectorized (default) or sequential; Pine is vectorized only. |
 | `config` | Optional capabilities.config fields. |
 | `bars` | 2-5000, default 1000; sequential max/default 250. |
 | `range` | Optional inclusive {from,to} epoch ms. Omit to use chart selection; null uses trailing loaded bars. Missing coverage or excess candles fails explicitly. |
 | `sessionSchedule` | Optional forward-branch session defaults; same user-assumption schema as forward. Does not fabricate or filter backtest candles. |
+| `versionSuffix` | Optional short version label appended to the run title (e.g. "aggressive" → "Name - aggressive") so different parameter variants stay distinguishable on the chart legend and in history. |
 
 Compatibility alias: `simulation.run`. Same runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.get`
 
-Read status, accounting, pending orders, prefix-safe position analytics and paged ledger/equity/research. Analytics details: first 25 rows each with totals/truncation. No source or raw candles.
+Read status, accounting, pending orders, prefix-safe position analytics and paged ledger/equity/research. Analytics details: first 25 rows each with totals/truncation. Optional explicit regular-sampling assumptions enable annualized risk statistics. No source or raw candles.
 
 Retry key: **not required**. External local-assistant access is still required.
 
@@ -215,6 +232,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `section` | trades\|events\|equity\|research, default trades. |
 | `offset` | Nonnegative page offset. |
 | `limit` | 1-100, default 50; research pages use nextOffset until null. |
+| `risk` | Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual}; omitted means no annualization. |
 
 Compatibility alias: `simulation.get`. Same runtime and retry identity; prefer the canonical name.
 
@@ -294,3 +312,53 @@ Retry key: **required**. External local-assistant access is still required.
 | `expectedRevision` | Current run revision. |
 
 Compatibility alias: `simulation.delete`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.applyStrategy`
+
+Apply a Python or TLScript-Pine strategy to the chart like an indicator. Only one strategy applies at a time; applying a different one fails until the current is removed. The Backtesting panel reflects the applied strategy and it recomputes when the chart symbol/timeframe changes.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `language` | python (default) or pine. |
+| `source` | Strategy source to apply (required). |
+| `sourceId` | Optional saved source id, for opening it in Studio. |
+| `revision` | Optional saved source revision. |
+| `parameters` | Optional Python JSON parameters. |
+| `title` | Optional display title (defaults to the strategy's own name). |
+| `version` | Optional short version label shown after the name (e.g. "aggressive") so different parameter variants stay distinguishable on the chart legend. |
+
+Compatibility alias: `simulation.applyStrategy`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.removeStrategy`
+
+Remove the strategy currently applied to the chart. Its last backtest run and saved history are retained.
+
+Retry key: **required**. External local-assistant access is still required.
+
+Parameters: `{}`.
+
+Compatibility alias: `simulation.removeStrategy`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.appliedStrategy`
+
+Read the strategy currently applied to the chart, if any, including its live run id and status.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+Parameters: `{}`.
+
+Compatibility alias: `simulation.appliedStrategy`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.setStrategyAutoRerun`
+
+Enable or disable automatic recomputation of the applied strategy when the chart symbol/timeframe changes.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `enabled` | Boolean; false disables auto-rerun. |
+
+Compatibility alias: `simulation.setStrategyAutoRerun`. Same runtime and retry identity; prefer the canonical name.

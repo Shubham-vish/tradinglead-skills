@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { skillNames, ownerFor, references } = require("./sync-commands.cjs");
+const { skillNames, ownerFor, references, validateCatalog } = require("./sync-commands.cjs");
 const { validate } = require("./validate.cjs");
 const { install } = require("./install.cjs");
 
@@ -22,6 +22,26 @@ test("all live-catalog commands, generated references, examples and skill links 
 	const research = references(withoutGrants).get("tl-strategy-research/commands.md");
 	assert.match(research, /Do not infer grant permissions/);
 	assert.doesNotMatch(research, /External permission:.*cloud watchlist/);
+});
+
+test("sync validates 256 descriptors and exact UTF-8 catalog byte limit", () => {
+	const commands = Array.from({ length: 256 }, (_, index) => ({
+		type: `chart.command${index}`, description: "Read chart", mutates: false, params: {},
+	}));
+	const catalog = { version: 1, commands, desktopActions: [] };
+	assert.doesNotThrow(() => validateCatalog(catalog));
+	assert.throws(() => validateCatalog({ ...catalog, commands: [...commands, { ...commands[0], type: "chart.extra" }] }), /Invalid or oversized/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [...commands.slice(1), commands[1]] }), /Invalid command descriptor/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [{ ...commands[0], type: 'chart.open; eval("unsafe")' }] }), /Invalid command descriptor/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [{ ...commands[0], mutates: "false" }] }), /Invalid command descriptor/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [{ ...commands[0], params: [] }] }), /Invalid command descriptor/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [{ ...commands[0], params: { value: 1 } }] }), /Invalid command descriptor/);
+	const boundary = [{ ...commands[0], params: { value: "" } }];
+	const overhead = Buffer.byteLength(JSON.stringify(boundary));
+	boundary[0].params.value = "x".repeat(128 * 1024 - overhead);
+	assert.doesNotThrow(() => validateCatalog({ ...catalog, commands: boundary }));
+	boundary[0].params.value += "\u20ac";
+	assert.throws(() => validateCatalog({ ...catalog, commands: boundary }), /Invalid or oversized/);
 });
 
 test("installer is idempotent and verifies links without replacing existing skills", () => {
