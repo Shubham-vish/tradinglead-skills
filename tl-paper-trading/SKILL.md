@@ -35,6 +35,11 @@ paused replay cursor:
    filled/rejected outcomes. Other order types/protection require subsequent
    candles; an accepted order alone is not a fill.
 
+Interval notes: single-stock practice may be recaptured at another interval
+by the chart; changes that overlap open exposure are rejected and restored, and
+sessions rebased this way report `analytics: null` with a reason (balance and
+ledger stay valid). Multi-stock sessions keep one fixed interval.
+
 ## Forward paper
 
 `backtesting.forward` starts from a completed backtest on its **fresh live

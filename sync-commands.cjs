@@ -15,7 +15,7 @@ function ownerFor(type) {
 	if (family === "backtesting") return action === "research" ? "tl-strategy-research" : paper.has(action) ? "tl-paper-trading" : "tl-backtesting";
 	const owner = {
 		workspace: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts",
-		alerts: "tl-charts", feeds: "tl-charts", universe: "tl-charts",
+		alerts: "tl-charts", feeds: "tl-charts", marketData: "tl-charts", universe: "tl-charts",
 		intelligence: "tl-charts", futures: "tl-charts", heatmap: "tl-charts",
 		indicators: "tl-tlscript", pythonIndicators: "tl-python", screener: "tl-screening", providerScreener: "tl-screening",
 		watchlists: "tl-screening", screening: "tl-screening", research: "tl-research",

@@ -3,7 +3,7 @@
 Generated from a bounded command-catalog snapshot; check the addressed app's live catalog before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-139 canonical commands; 39 compatibility aliases; 4 native Desktop controls.
+140 canonical commands; 39 compatibility aliases; 4 native Desktop controls.
 
 | Registered command | Skill | Retry key |
 | --- | --- | --- |
@@ -138,6 +138,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `alerts.setEnabled` | [tl-charts](tl-charts/SKILL.md) | Required |
 | `alerts.delete` | [tl-charts](tl-charts/SKILL.md) | Required |
 | `feeds.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `marketData.getBars` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `universe.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `screener.listCapabilities` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screener.run` | [tl-screening](tl-screening/SKILL.md) | Not required |
