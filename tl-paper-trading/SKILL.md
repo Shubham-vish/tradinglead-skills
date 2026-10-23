@@ -1,13 +1,22 @@
 ---
 name: tl-paper-trading
-description: Control TradingLead simulation-only replay-to-trade practice, backtest-derived replay and forward paper sessions, including immediate manual market fills at the revealed close, stepping, protection, partial closes and pause/resume. Never live broker orders.
+description: Use TradingLead's manual replay practice, backtest-derived replay and forward paper sessions: simulated orders, protection, partial closes and pause/resume. Not strategy research, simulator development, standalone chart playback or live broker orders.
 ---
 
 # Replay and forward paper execution
 
-Start with [tl-desktop](../tl-desktop/SKILL.md) and
-[tl-backtesting](../tl-backtesting/SKILL.md). Read `backtesting.capabilities`
+Start with [tl-desktop](../tl-desktop/SKILL.md). Read `backtesting.capabilities`
 and [commands.md](commands.md). These commands are **simulation-only**.
+Use [tl-backtesting](../tl-backtesting/SKILL.md) for a backtest-derived branch
+or shared saved-run operations, not as a prerequisite for direct manual
+practice. Use [tl-charts](../tl-charts/SKILL.md) for standalone chart playback;
+moving a chart cursor is not placing a paper order.
+
+Paper and backtests share chart arrows, entry/exit labels and position-level
+styles. The selected-label mode shows the selected or latest visible exit;
+all-visible labels also show entry quantity and price. Same-candle legs share
+a bounded label while the ledger retains every leg. Paper alone offers eligible
+close/protection actions; backtest levels are read-only.
 
 ## Historical replay and direct practice
 

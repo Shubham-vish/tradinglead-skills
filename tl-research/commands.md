@@ -36,6 +36,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Save account-local HTML research, without changing chart or backtests. Local AI access and top-level retry key required. Use research.show to display.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -47,6 +48,7 @@ Retry key: **required**. External local-assistant access is still required.
 Replace an owned report's title and HTML using its current revision. Local AI access and retry key required.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -60,6 +62,7 @@ Retry key: **required**. External local-assistant access is still required.
 Delete one owned HTML report only, not analysis runs. Local AI access and retry key required.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |

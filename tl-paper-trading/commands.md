@@ -7,9 +7,10 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 
 ## `backtesting.practice`
 
-Start manual replay trading directly from the paused chart replay cursor. Captures bounded original-source candles, virtual capital and costs; no strategy or Python execution. Local-only, single position, fixed symbol/interval.
+Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument, fixed interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -22,6 +23,7 @@ Compatibility alias: `simulation.practice`. Same runtime and retry identity; pre
 Create a fresh paper-replay branch from a completed backtest using identical frozen candles/settings. Starts flat by default; automatic strategy is explicit. Never live orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -36,6 +38,7 @@ Compatibility alias: `simulation.replay`. Same runtime and retry identity; prefe
 Start local forward PAPER from a completed backtest on its fresh live 1-240 minute chart. Seeds flat; manual by default, optional sequential Python. No broker orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -50,6 +53,7 @@ Compatibility alias: `simulation.forward`. Same runtime and retry identity; pref
 Stop a forward-paper clock without closing exposure or deleting orders. Never auto-resumes.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -63,6 +67,7 @@ Compatibility alias: `simulation.pause`. Same runtime and retry identity; prefer
 Explicitly resume paused forward paper on the original fresh live chart. Stale data/corrections/gaps block it. Missed contiguous candles require explicit catchUp.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -74,9 +79,10 @@ Compatibility alias: `simulation.resume`. Same runtime and retry identity; prefe
 
 ## `backtesting.step`
 
-Advance historical paper replay through frozen candles; automatic sequential mode steps exactly one. Forward paper advances only from its feed. No next candle means no fill.
+Advance historical replay. Manual practice fetches the next bounded page from its saved feed when captured candles run out, retaining the same account. Inspect paper.history for waiting/search limits. Backtest-derived replay remains frozen; automatic sequential mode steps exactly one. Forward paper advances only from its feed. No next candle means no fill.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -86,17 +92,33 @@ Retry key: **required**. External local-assistant access is still required.
 
 Compatibility alias: `simulation.step`. Same runtime and retry identity; prefer the canonical name.
 
+## `backtesting.back`
+
+Rewind manual practice replay to the state before its last Next/Play step: the candle, fills, orders and balance from that step and anything placed since are undone. Saved with the session (recent steps, bounded in size); unavailable after history is rolled or the interval changes.
+
+Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Replay ID. |
+| `expectedRevision` | Required current run revision. |
+
+Compatibility alias: `simulation.back`. Same runtime and retry identity; prefer the canonical name.
+
 ## `backtesting.order`
 
 Submit an entry/exit for MANUAL replay or running manual forward paper. Replay market orders fill at the current revealed close with costs; other orders and protection use later candles. Forward fills require a candle opening after the decision. Inspect orderExecution for filled/rejected immediate outcomes.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Replay/forward ID. |
 | `expectedRevision` | Current run revision. |
 | `order` | {side:buy\|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?} |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
 Compatibility alias: `simulation.order`. Same runtime and retry identity; prefer the canonical name.
 
@@ -105,12 +127,14 @@ Compatibility alias: `simulation.order`. Same runtime and retry identity; prefer
 Cancel a pending paper order; filled orders cannot be cancelled. Forward cancellation is queued for candles opening after the decision; earlier terms remain effective.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Replay/forward ID. |
 | `expectedRevision` | Current run revision. |
 | `orderId` | Pending order ID. |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
 Compatibility alias: `simulation.cancelOrder`. Same runtime and retry identity; prefer the canonical name.
 
@@ -119,6 +143,7 @@ Compatibility alias: `simulation.cancelOrder`. Same runtime and retry identity; 
 Replace pending paper order terms atomically; invalid input preserves the original. Forward amendments are queued by decision time, never backdated into the forming candle.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -126,6 +151,7 @@ Retry key: **required**. External local-assistant access is still required.
 | `expectedRevision` | Current run revision. |
 | `orderId` | Pending order ID. |
 | `order` | Full replacement order, same fields as simulation.order. |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
 Compatibility alias: `simulation.replaceOrder`. Same runtime and retry identity; prefer the canonical name.
 
@@ -134,12 +160,14 @@ Compatibility alias: `simulation.replaceOrder`. Same runtime and retry identity;
 Change paper position protection. Forward changes are queued for candles opening after the decision. No broker call; inspect pendingProtection for queued terms.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Replay/forward ID. |
 | `expectedRevision` | Current run revision. |
 | `protection` | {stopLoss?:positive\|null,takeProfit?:positive\|null,trailingStopPct?:0-99} |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
 Compatibility alias: `simulation.protect`. Same runtime and retry identity; prefer the canonical name.
 
@@ -148,11 +176,14 @@ Compatibility alias: `simulation.protect`. Same runtime and retry identity; pref
 Explicit full/partial reduce-only close. Manual replay fills at the current revealed close with costs, including the final candle; inspect orderExecution for filled/rejected outcomes. Automatic replay and forward closes remain queued for subsequent eligible candles. Never auto-liquidates at end of history.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Replay/forward ID. |
 | `expectedRevision` | Current run revision. |
 | `quantity` | Optional positive quantity, default full position. |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
+| `all` | Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request. |
 
 Compatibility alias: `simulation.close`. Same runtime and retry identity; prefer the canonical name.

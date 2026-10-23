@@ -3,12 +3,12 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
 const skillNames = [
-	"tl-desktop", "tl-charts", "tl-tlscript", "tl-python", "tl-backtesting",
+	"tl-desktop", "tl-charts", "tl-patterns", "tl-tlscript", "tl-python", "tl-backtesting",
 	"tl-strategy-research", "tl-paper-trading", "tl-screening", "tl-research",
 ];
 const MAX_CATALOG_ENTRIES = 256;
 const MAX_CATALOG_BYTES = 128 * 1024;
-const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "order", "cancelOrder", "replaceOrder", "protect", "close"]);
+const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "back", "order", "cancelOrder", "replaceOrder", "protect", "close"]);
 function ownerFor(type) {
 	const canonical = type.replace(/^simulation\./, "backtesting.");
 	const [family, action] = canonical.split(".");
@@ -16,7 +16,7 @@ function ownerFor(type) {
 	const owner = {
 		workspace: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts",
 		alerts: "tl-charts", feeds: "tl-charts", marketData: "tl-charts", universe: "tl-charts",
-		intelligence: "tl-charts", futures: "tl-charts", heatmap: "tl-charts",
+		intelligence: "tl-charts", futures: "tl-charts", heatmap: "tl-charts", patterns: "tl-patterns",
 		indicators: "tl-tlscript", pythonIndicators: "tl-python", screener: "tl-screening", providerScreener: "tl-screening",
 		watchlists: "tl-screening", screening: "tl-screening", research: "tl-research",
 	}[family];
@@ -32,6 +32,7 @@ function validateCatalog(catalog) {
 	for (const command of catalog.commands) {
 		if (!/^[A-Za-z][A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*$/.test(command.type) || names.has(command.type) ||
 			typeof command.description !== "string" || typeof command.mutates !== "boolean" ||
+			(command.permission !== undefined && command.permission !== "indicators") ||
 			!command.params || typeof command.params !== "object" || Array.isArray(command.params) ||
 			Object.values(command.params).some(value => typeof value !== "string")) throw new Error("Invalid command descriptor.");
 		names.add(command.type);
@@ -72,7 +73,8 @@ function references(catalog) {
 		];
 		for (const command of owned) {
 			lines.push(`## \`${command.type}\``, "", command.description, "",
-				`Retry key: **${command.mutates ? "required" : "not required"}**. External local-assistant access is still required.`, "");
+				`Retry key: **${command.mutates ? "required" : "not required"}**. External local-assistant access is still required.`,
+				...(command.permission === "indicators" ? ["Local indicator/backtesting grant required."] : []), "");
 			if (Object.keys(command.params).length) {
 				lines.push("| Parameter | Contract |", "| --- | --- |",
 					...Object.entries(command.params).map(([key, description]) => `| \`${key}\` | ${cell(description)} |`), "");
@@ -88,11 +90,18 @@ function references(catalog) {
 	}
 	return output;
 }
+function checkReferences(catalog, root = __dirname) {
+	const changed = [...references(catalog)].filter(([file, contents]) =>
+		!fs.existsSync(path.join(root, file)) || fs.readFileSync(path.join(root, file), "utf8") !== contents).map(([file]) => file);
+	if (changed.length) throw new Error(`Live catalog drift: ${changed.join(", ")}. Review the addressed app and refresh with sync-commands.cjs --tab TAB_ID.`);
+}
 function main(argv) {
 	const options = {};
-	for (let index = 0; index < argv.length; index += 2) {
-		if (!["--tab", "--cli"].includes(argv[index]) || !argv[index + 1] || options[argv[index]]) throw new Error("Use --tab TAB_ID [--cli /path/to/cli.cjs].");
-		options[argv[index]] = argv[index + 1];
+	for (let index = 0; index < argv.length; index++) {
+		const flag = argv[index];
+		if (!["--tab", "--cli", "--check"].includes(flag) || options[flag] ||
+			(flag !== "--check" && (!argv[index + 1] || argv[index + 1].startsWith("--")))) throw new Error("Use --tab TAB_ID [--cli /path/to/cli.cjs] [--check].");
+		options[flag] = flag === "--check" ? true : argv[++index];
 	}
 	if (!options["--tab"]) throw new Error("An explicit --tab is required.");
 	const cli = path.resolve(options["--cli"] || path.join(__dirname, "../TradingLead-Desktop/cli.cjs"));
@@ -106,11 +115,16 @@ function main(argv) {
 	const commands = frontend.capabilities.map(({ type, description, mutates, permission, params }) =>
 		({ type, description, mutates, ...(permission ? { permission } : {}), params }));
 	const catalog = { version: 1, commands, desktopActions: desktop.actions.map(({ action, description }) => ({ action, description })) };
+	if (options["--check"]) {
+		checkReferences(catalog);
+		console.log(`Verified live catalog parity for ${commands.length} commands; no files changed.`);
+		return;
+	}
 	const documents = references(catalog);
 	for (const [file, contents] of documents) fs.writeFileSync(path.join(__dirname, file), contents);
 	console.log(`Updated ${documents.size} reference files for ${commands.length} commands across ${skillNames.length} skills.`);
 }
-module.exports = { skillNames, ownerFor, validateCatalog, references };
+module.exports = { skillNames, ownerFor, validateCatalog, references, checkReferences };
 if (require.main === module) {
 	try { main(process.argv.slice(2)); }
 	catch (error) { console.error(error.message); process.exitCode = 1; }

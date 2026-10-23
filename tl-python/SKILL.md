@@ -9,6 +9,12 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read
 `pythonIndicators.capabilities` before execution; exact commands are in
 [commands.md](commands.md).
 
+**Owns:** Writing/revising Python source and using the existing source-library
+and indicator commands. Strategy execution and result evidence belong to
+[tl-backtesting](../tl-backtesting/SKILL.md); parameter experiments belong to
+[tl-strategy-research](../tl-strategy-research/SKILL.md). This is not the
+implementation guide for changing TradingLead's Python runtime or simulator.
+
 ## Runtime and data contract
 
 Check the addressed tab's runtime readiness before executing. Browser-compatible
@@ -54,16 +60,22 @@ parameters may include nested objects and arrays; `_simulation` is reserved.
 The sweep grid in [tl-strategy-research](../tl-strategy-research/SKILL.md)
 still requires flat parameter keys and bounded candidates.
 
-## Local source and chart lifecycle
+## Account source and chart lifecycle
 
 1. Read capabilities/examples, inspect the chart and optionally run
    `pythonIndicators.validate`; syntax-only success is not an execution test.
 2. Optionally call `pythonIndicators.save` with title, source and parameters.
    Updates need the current `expectedRevision`; `replace:true` explicitly
    replaces a same-title saved item. Reread after a conflict.
+   Source is cached locally and synchronized to the account library when
+   configured/authorized. Inspect cloud confirmation: `persisted:true` alone
+   is not proof of cross-device storage. Offline/conflicting writes retain
+   the local source and report their state.
 3. `pythonIndicators.apply` executes source **OR** a saved `id`; use a retry
    key. Supplying `instanceId` updates that applied instance; `entityId` is
    the alternative target, not an additional simultaneous target.
+   Optional `strategyMode` selects vectorized/sequential for this chart
+   instance; omission uses the saved mode. Saving can also retain the mode.
 4. Inspect `pythonIndicators.applied` for status, error, plot metadata and
    provenance. Inspect plotted values through `chart.snapshot`.
 5. Treat failures and missing-runtime diagnostics explicitly; do not fabricate
@@ -74,14 +86,33 @@ new source revision. `remove` detaches an applied instance and owned drawings,
 not its saved source. Stable instance IDs, native entity IDs and library IDs
 are distinct.
 
+External save/apply show their result in Studio by default; use
+`showInStudio:false` for deliberate headless work. Inspect `data.studio`:
+`status:"error",operationCompleted:true` means the mutation succeeded but
+Studio could not show it. Preserve returned IDs and dirty drafts; resolve the
+blocker and retry only `indicators.openEditor`, not the completed save/apply.
+
+The shared `indicators.openEditor` command opens Studio, waits for mounting and
+selects Python automatically. Supply exactly one saved `id`, stable applied
+`instanceId` (preferred), or current native `entityId`. Applied snapshots reopen
+their exact source, parameters, execution mode and update target without running
+Python. Clean editors refresh; dirty drafts, restoring targets and noneditable
+source are protected. `indicators.editorState.visible` reports actual host
+visibility, separately from the embedded editor's `open` state.
+
 `showInputs` opens typed calculation controls; user Apply is explicit.
 Programmatic recalculation uses `apply` with new parameters and the existing
 target. `setVisibility` and `showSettings` do not run Python. Named appearance
-is also programmable: use the primary applied `entityId` with
+is also programmable: use a stable `instanceId` OR primary applied `entityId` with
 `pythonIndicators.getSettings`, preserve the full returned snapshot as
 `expected`, clone/edit supported style fields as `settings`, then call
 `pythonIndicators.setSettings` with a retry key. Preserve plot IDs/order and
 metadata; reread on conflict. It does not recalculate or save source.
+For defaults, separately read `getSettings` with `defaults:true`. Copy desired
+default style/visibility fields into `settings` and pass `reset:["style"]`,
+`["visibility"]` or both to clear those retained overrides. Keep the unmodified
+**current**, not default, snapshot as `expected`. Stable targets tolerate native
+entity replacement but never silently select a different logical study.
 
 ## Strategies are separate from indicator plotting
 

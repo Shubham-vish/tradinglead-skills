@@ -1,12 +1,15 @@
 ---
 name: tl-charts
-description: Control TradingLead charts through discovered commands. Use for feed and symbol discovery, chart navigation, interval changes, candle/study snapshots, reload/live controls, native studies and saved chart alerts. Distinguishes data readiness from freshness and backend screening.
+description: Control TradingLead charts through discovered commands. Use for ticker/feed discovery, chart navigation, interval changes, snapshots, reload/live controls, native studies and alerts. Historical weekday/time-window studies belong to tl-patterns; multi-stock screening belongs to tl-screening.
 ---
 
 # TradingLead charts and native studies
 
 Start with [tl-desktop](../tl-desktop/SKILL.md). Exact fields:
 [commands.md](commands.md).
+
+For the separate **Patterns** sidebar and its `patterns.*` study lifecycle,
+load [tl-patterns](../tl-patterns/SKILL.md). Charts does not own those commands.
 
 ## Discover, navigate, verify
 
@@ -119,8 +122,8 @@ Navigation state is per-chart, in memory, not a saved cross-device preference.
 
 To read OHLCV values directly (not navigate the visible chart), use the
 read-only `marketData.getBars` command — it fetches candles through the exact
-same feed path the chart uses, for whichever feed the caller names (owned by
-`tl-private-market-data`). Pick the feed id with `feeds.list`; give the window as
+same feed path the chart uses, for whichever feed the caller names. Pick the
+feed id with `feeds.list`; give the window as
 `from`+`to`, `to`+`countBack`, or just `countBack` (≤5000 bars; `time` is epoch
 ms UTC). It never substitutes a feed, and the result is history, not a live
 quote.

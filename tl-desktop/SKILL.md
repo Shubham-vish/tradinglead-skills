@@ -73,6 +73,40 @@ Do not combine `--params` with `--params-file`.
   source and parameter payloads and assume they fit.
 - Identity comes from the active app session, not a `userId` command parameter.
   Stop and rediscover on account changes.
+- Current catalogs retain `permission:"indicators"` for local indicator and
+  backtesting changes. Older bridges may omit it: absence is not an access
+  grant. Pine errors can include bounded diagnostic locations, runtime stage
+  context and optional profiles; generic errors do not expose arbitrary
+  native fields. Python apply retains its bounded diagnostic text.
+- External Pine save/apply/update and Python save/apply default to visible
+  Studio presentation; `showInStudio:false` opts out. Check `data.studio`:
+  a presentation error with `operationCompleted:true` does not undo the
+  mutation. Preserve its IDs and retry only `indicators.openEditor` after
+  resolving the blocker; never recreate an applied instance to reopen its UI.
+  Dirty drafts are preserved. Read `indicators.editorState.visible` rather
+  than assuming a mounted/embedded editor is visible.
+
+## Read error codes, not messages
+
+Current Desktop bridges forward short, single-line domain messages (for
+example which parameter is invalid). Messages that could carry URLs, file
+paths, credentials or Python runtime text are replaced with `"Command failed."`;
+older packaged bridges always replace them. Act on `code` first and use the
+message as detail:
+
+| Code | Meaning and next step |
+| --- | --- |
+| `INVALID_PARAMS` | Parameters are strict: an unknown key, wrong type or out-of-range value. Reread that exact command's descriptor and send only its listed keys (e.g. `backtesting.run` takes `versionSuffix`, `backtesting.applyStrategy` takes `version`). |
+| `CHART_NOT_READY` / `CHART_CHANGED` / `SIMULATION_CONTEXT_CHANGED` | Poll `chart.getState` until `ready:true` on the intended context, then retry with a **new** key. |
+| `REVISION_CONFLICT` / `REVISION_REQUIRED` | Reread the item and pass its current revision. |
+| `SIMULATION_HISTORY_FULL` | Active-run slots are full. Save to the library or ask before deleting; never delete user runs automatically. |
+| `BACKTEST_COMPARISON_INCOMPATIBLE` | The runs differ in sample, mode/state or horizon, or include a legacy Pine re-simulation; see [tl-backtesting](../tl-backtesting/SKILL.md). |
+| `STRATEGY_ALREADY_APPLIED` | `backtesting.removeStrategy` first, only if the user intends to replace it. |
+| `UNSUPPORTED_FEED` / `UNSUPPORTED_SYMBOL` / `DESKTOP_REQUIRED` | Pick a feed/interval from `feeds.list`; no fallback is chosen for you. |
+| `SIGN_IN_REQUIRED` / `AGENT_DISABLED` / `APPROVAL_REQUIRED` | Only the user can resolve these; report and stop. |
+
+`workspace.getActivity` lists recent codes. If the code alone is ambiguous,
+ask the user to read the message shown in the app rather than guessing.
 
 Desktop local access is automatic for the active account unless paused.
 Cloud watchlist and saved-screener writes need a separate user grant and real sign-in. Agents
@@ -80,9 +114,15 @@ cannot grant permissions, unpause access, or bypass Python isolation.
 
 ## Route the task
 
+Choose the outcome owner below, not every skill containing the same language
+or command prefix. Connection guidance is shared; companion workflows are
+needed only when the request crosses their boundary. A Pine backtest does not
+require the Python guide, and direct paper practice does not require a backtest.
+
 | Task | Read/load |
 | --- | --- |
 | Chart context, feeds, snapshots, built-in studies, saved chart alerts | [tl-charts](../tl-charts/SKILL.md) |
+| Historical Patterns: one ticker across weekdays/IST windows, filters, statistics and dated chart navigation | [tl-patterns](../tl-patterns/SKILL.md) |
 | TLScript-Pine custom indicators (not Pine strategy chart apply) | [tl-tlscript](../tl-tlscript/SKILL.md) |
 | Python indicators / strategy authoring | [tl-python](../tl-python/SKILL.md) |
 | Run/review Python or Pine backtests, applied strategies, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |

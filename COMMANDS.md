@@ -3,7 +3,7 @@
 Generated from a bounded command-catalog snapshot; check the addressed app's live catalog before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-140 canonical commands; 39 compatibility aliases; 4 native Desktop controls.
+159 canonical commands; 42 compatibility aliases; 4 native Desktop controls.
 
 | Registered command | Skill | Retry key |
 | --- | --- | --- |
@@ -26,6 +26,17 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `screening.load` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screening.save` | [tl-screening](tl-screening/SKILL.md) | Required |
 | `screening.delete` | [tl-screening](tl-screening/SKILL.md) | Required |
+| `patterns.getState` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.show` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.hide` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.searchSymbols` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.configure` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.useChartTicker` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.run` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.cancel` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.getResults` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.setAnalysis` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
+| `patterns.openOccurrence` | [tl-patterns](tl-patterns/SKILL.md) | Not required |
 | `research.listCapabilities` | [tl-research](tl-research/SKILL.md) | Not required |
 | `research.list` | [tl-research](tl-research/SKILL.md) | Not required |
 | `research.get` | [tl-research](tl-research/SKILL.md) | Not required |
@@ -50,6 +61,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.libraryRestore` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.libraryDelete` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.libraryUpdate` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
+| `backtesting.libraryExport` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
+| `backtesting.libraryImport` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.compare` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `backtesting.research` | [tl-strategy-research](tl-strategy-research/SKILL.md) | Required |
 | `backtesting.getChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
@@ -63,6 +76,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.pause` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `backtesting.resume` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `backtesting.step` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
+| `backtesting.back` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `backtesting.order` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `backtesting.cancelOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `backtesting.replaceOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
@@ -85,6 +99,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.libraryRestore` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.libraryDelete` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.libraryUpdate` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
+| `simulation.libraryExport` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
+| `simulation.libraryImport` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.compare` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `simulation.research` | [tl-strategy-research](tl-strategy-research/SKILL.md) | Required |
 | `simulation.getChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
@@ -98,6 +114,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.pause` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.resume` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.step` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
+| `simulation.back` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.order` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.cancelOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.replaceOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
@@ -158,10 +175,15 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `indicators.openDraft` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.validate` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
 | `indicators.list` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
+| `indicators.purchased` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
+| `indicators.sales` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
+| `indicators.applyPurchased` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
+| `indicators.publishPaid` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.get` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
 | `indicators.save` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.delete` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.applied` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
+| `indicators.retryRestores` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.apply` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.update` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |
 | `indicators.remove` | [tl-tlscript](tl-tlscript/SKILL.md) | Required |

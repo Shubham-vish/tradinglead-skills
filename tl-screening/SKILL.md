@@ -17,6 +17,10 @@ constructing a request.
 | Existing separate backend strategy jobs (not the visible Scanner) | `screener.listCapabilities`, `universe.list` | `screener.run` |
 | Local provider candles + bounded TLScript-Pine indicator | `providerScreener.listCapabilities`, `feeds.list` | `providerScreener.run` |
 
+For one ticker across historical weekdays/time windows, use
+[tl-patterns](../tl-patterns/SKILL.md), not a Scanner SQL
+workaround. The `patterns.*` commands own that separate sidebar.
+
 Changing a chart to Kite/Fyers does **not** change backend screening to that
 provider. Local Python indicators do not automatically become backend filters.
 Provider connections and interval support depend on the addressed Desktop
@@ -25,29 +29,20 @@ not proof that its data is connected, entitled or fresh.
 
 ## Unified visible Scanner
 
-### Local login-free UI testing
+### Authentication and fixture boundaries
 
-In a development build on localhost with the existing development-login
-configuration, Scan offers **Try sample screener**. This
-explicit opt-in uses four synthetic stocks and device-local saved definitions,
-not the cloud API. `screening.getState` reports `preview:true` and
-`storage:"local-device"`. The same configure/run/results/save/load commands
-operate on that visible preview; sample saves use the existing local assistant
-grant, never a cloud-write grant. SQL, historical-date queries, unknown stocks,
-cloud watchlist writes and opening sample values as real charts are unavailable.
-
-Use this only to demonstrate UI/command behavior. It does not establish that
-production login, MySQL, Cosmos, billing or paid-plan enforcement works. Exit
-sample preview to restore normal real-sign-in requirements. The preview cannot
-activate on production origins or production builds.
+The current website Scanner requires real sign-in. Older sample/development
+branches and deterministic browser fixtures are not evidence that the addressed
+app offers a login-free preview. Inspect its actual state and capabilities;
+never substitute sample data for failed account/API access.
 
 Use the `screening.*` family for actions the user should see in the Scan sidebar.
 These commands call the same controller and API as its buttons, not a parallel
-hidden scanner. Cloud requires real sign-in. The explicitly configured localhost
-development account can use a real-data local reader: `development:true` and
-`preview:false` are not synthetic sample mode. It cannot write cloud watchlists.
+hidden scanner. Cloud requires real sign-in.
 Open `/charts` first. `screening.getState` connects the visible **Scanner** and
 returns its draft revision, current view, stage summaries and pending refinement.
+`getState` and `show` reopen an already-mounted hidden Scanner; result polling
+does not repeatedly force the sidebar open.
 Discover the server catalog and available lists. An older running reader may
 offer presets/SQL but not strategy endpoints or history, even when source code
 has been updated. Do not silently substitute another backend or restart services.

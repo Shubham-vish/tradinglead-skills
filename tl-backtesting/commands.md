@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 List account-local reusable strategy setups, not result history. No source or execution.
 
 Retry key: **not required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -23,6 +24,7 @@ Compatibility alias: `simulation.presetList`. Same runtime and retry identity; p
 Read an owned complete setup including local Python source. Does not load a draft or run code.
 
 Retry key: **not required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -35,6 +37,7 @@ Compatibility alias: `simulation.presetGet`. Same runtime and retry identity; pr
 Save a complete account-local setup. No strategy execution, chart changes or result-history writes. Requires a top-level retry ID.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -50,6 +53,7 @@ Compatibility alias: `simulation.presetSave`. Same runtime and retry identity; p
 Delete an owned reusable setup only. Current drafts, source libraries and existing runs are untouched. Requires a top-level retry ID.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -102,6 +106,7 @@ Compatibility alias: `simulation.libraryList`. Same runtime and retry identity; 
 Save a stopped active run into larger local IndexedDB history. No silent eviction or cloud writes.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -116,6 +121,7 @@ Compatibility alias: `simulation.librarySave`. Same runtime and retry identity; 
 Copy stopped legacy active runs safely into IndexedDB without deleting originals or overwriting existing saved snapshots.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 Parameters: `{}`.
 
@@ -126,6 +132,7 @@ Compatibility alias: `simulation.libraryMigrate`. Same runtime and retry identit
 Restore one saved snapshot to a free active slot. Never overwrites active work or starts execution; running sessions restore paused.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -139,6 +146,7 @@ Compatibility alias: `simulation.libraryRestore`. Same runtime and retry identit
 Explicitly remove a saved snapshot only; active run and cloud layout are untouched.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -152,6 +160,7 @@ Compatibility alias: `simulation.libraryDelete`. Same runtime and retry identity
 Edit a saved snapshot's display name, notes and tags only. Immutable run evidence, active work and cloud layout are unchanged.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -160,6 +169,33 @@ Retry key: **required**. External local-assistant access is still required.
 | `metadata` | {name?:max100,notes?:max2000,tags?:up to10 strings max30}. |
 
 Compatibility alias: `simulation.libraryUpdate`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.libraryExport`
+
+Read one locally saved snapshot's full payload, summary and display metadata so it can be backed up to the cloud or exported to a file. Active work, chart and cloud layout are unchanged.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Saved ID. |
+
+Compatibility alias: `simulation.libraryExport`. Same runtime and retry identity; prefer the canonical name.
+
+## `backtesting.libraryImport`
+
+Import a run payload from a cloud backup or exported file as a NEW local saved snapshot, so saved history survives a browser change. Never overwrites active work; a run already saved on this device is rejected. Requires the local indicator grant and retry key.
+
+Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
+
+| Parameter | Contract |
+| --- | --- |
+| `run` | Full saved run payload (as returned by libraryExport). |
+| `summary` | Saved run summary projection from libraryExport. |
+| `detail` | Optional display metadata {name?:max100,notes?:max2000,tags?:up to10 strings max30}. |
+
+Compatibility alias: `simulation.libraryImport`. Same runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.compare`
 
@@ -187,22 +223,24 @@ Compatibility alias: `simulation.getChartOptions`. Same runtime and retry identi
 
 ## `backtesting.setChartOptions`
 
-Set local display preferences or draggable date boundaries without rerunning Python. Selected dates apply to future runs; never alters existing results.
+Set account-local persisted drawing styles, display preferences or date boundaries without rerunning strategies or changing trades. Selected dates apply to future runs.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
-| `options` | Partial {visible,scope:all\|selected,markers,labels:none\|selected\|all,connections,riskLevels,openPosition,replayCutoff,styles}. Toggles boolean; styles maps profit\|loss\|selected\|stop\|target\|entry\|cutoff to partial {color,width:1-4,style:0(solid)\|1(dotted)\|2(dashed),visible}. |
+| `options` | Partial {visible,scope:all\|selected,markers,labels:none\|selected\|all,connections,riskLevels,openPosition,replayCutoff,paperClosedTrades,paperActivePosition,textClosedSide\|Price\|Pnl\|Reason,textActiveSide\|Price\|Pnl (which label lines show),styles,drawing}. Toggles boolean; replayCutoff defaults false and controls the line and timestamp together. Styles maps profit\|loss\|selected\|stop\|target\|entry\|cutoff to partial {color,width:1-4,style:0(solid)\|1(dotted)\|2(dashed),visible}. Drawing defaults are in capabilities.chartOptions.drawing: arrowMode compact\|adjustable; arrowHeight10-300, arrowMargin/labelGap0-200 (% candle range); arrowWidth/fillMarkWidth1-6px; fontSize/positionFontSize8-24px; fillMarkBars1-10 candles; fillMarkStyle0-2; fillMarks/bold/italic boolean; cutoffTransparency integer0-100 (0 opaque,100 line hidden; timestamp unaffected); buy/sell arrow/text/fill colors, profit/loss text colors, position/quantity backgrounds, quantityTextColor, cutoffLabelTextColor and cutoffLabelBackground accept auto or hex/rgb/rgba. Cutoff line color is styles.cutoff.color; timestamp colors are independent. Nested patches merge; appearance never changes execution or ledger data. |
 | `range` | Optional {from,to} epoch ms inclusive, visible to seed loaded visible closed candles, or null to clear. |
 
 Compatibility alias: `simulation.setChartOptions`. Same runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.run`
 
-Start an isolated Python or TLScript-Pine strategy() backtest excluding the newest candle. Returns preparing; poll get. Pine reconstructs a per-candle position series from its emulator and runs the shared engine. Sequential mode (Python only) supplies prefix-only candles and post-fill account state. Requires research grant/retry key.
+Start a Python or Pine strategy() backtest on captured closed candles. Returns preparing; poll get. Pine preserves its own fills, fees, quantity and equity without re-simulation; Python uses the shared signal engine. Requires research grant/retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -211,12 +249,14 @@ Retry key: **required**. External local-assistant access is still required.
 | `id` | Saved Python (py_) or Pine (pine_) source id instead of source. |
 | `expectedRevision` | Optional saved source revision. |
 | `parameters` | Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
-| `strategyMode` | Python only: vectorized (default) or sequential; Pine is vectorized only. |
-| `config` | Optional capabilities.config fields. |
-| `bars` | 2-5000, default 1000; sequential max/default 250. |
-| `range` | Optional inclusive {from,to} epoch ms. Omit to use chart selection; null uses trailing loaded bars. Missing coverage or excess candles fails explicitly. |
-| `sessionSchedule` | Optional forward-branch session defaults; same user-assumption schema as forward. Does not fabricate or filter backtest candles. |
+| `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
+| `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
+| `bars` | 2-5000, default1000; Python sequential max/default250. |
+| `range` | Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns. |
+| `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
 | `versionSuffix` | Optional short version label appended to the run title (e.g. "aggressive" → "Name - aggressive") so different parameter variants stay distinguishable on the chart legend and in history. |
+| `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
+| `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
 
 Compatibility alias: `simulation.run`. Same runtime and retry identity; prefer the canonical name.
 
@@ -268,11 +308,13 @@ Compatibility alias: `simulation.cancel`. Same runtime and retry identity; prefe
 Restore the run's feed/symbol/interval, wait for native history, then focus its fills. Restores replay cutoff for replay runs; clears cutoff for batch. No provider fallback or removal of user drawings.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Owned run ID. |
 | `tradeId` | Optional closed trade to focus. |
+| `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
 Compatibility alias: `simulation.show`. Same runtime and retry identity; prefer the canonical name.
 
@@ -281,6 +323,7 @@ Compatibility alias: `simulation.show`. Same runtime and retry identity; prefer 
 Detach this run's chart overlays only. Retains the run, trades, source and saved history; use show to add it again. Does not stop paper execution or alter replay time.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -293,6 +336,7 @@ Compatibility alias: `simulation.removeFromChart`. Same runtime and retry identi
 Open the displayed run's native in-chart settings dialog. Visibility, arrows, lines, labels and risk-level controls do not rerun or delete research.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -305,6 +349,7 @@ Compatibility alias: `simulation.showSettings`. Same runtime and retry identity;
 Explicitly delete one local, non-running simulation; cloud layouts and Python sources remain unchanged.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -318,6 +363,7 @@ Compatibility alias: `simulation.delete`. Same runtime and retry identity; prefe
 Apply a Python or TLScript-Pine strategy to the chart like an indicator. Only one strategy applies at a time; applying a different one fails until the current is removed. The Backtesting panel reflects the applied strategy and it recomputes when the chart symbol/timeframe changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -328,6 +374,13 @@ Retry key: **required**. External local-assistant access is still required.
 | `parameters` | Optional Python JSON parameters. |
 | `title` | Optional display title (defaults to the strategy's own name). |
 | `version` | Optional short version label shown after the name (e.g. "aggressive") so different parameter variants stay distinguishable on the chart legend. |
+| `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
+| `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
+| `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
+| `bars` | 2-5000, default1000; Python sequential max/default250. |
+| `range` | Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns. |
+| `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
+| `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
 
 Compatibility alias: `simulation.applyStrategy`. Same runtime and retry identity; prefer the canonical name.
 
@@ -336,6 +389,7 @@ Compatibility alias: `simulation.applyStrategy`. Same runtime and retry identity
 Remove the strategy currently applied to the chart. Its last backtest run and saved history are retained.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 Parameters: `{}`.
 
@@ -356,6 +410,7 @@ Compatibility alias: `simulation.appliedStrategy`. Same runtime and retry identi
 Enable or disable automatic recomputation of the applied strategy when the chart symbol/timeframe changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |

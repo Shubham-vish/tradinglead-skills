@@ -177,6 +177,97 @@
       }
     },
     {
+      "type": "patterns.getState",
+      "description": "Open Historical Patterns and read the visible draft/revisions, chart ticker, analysis controls and job state. Does not fetch candles.",
+      "mutates": false,
+      "params": {}
+    },
+    {
+      "type": "patterns.show",
+      "description": "Open the existing Historical Patterns sidebar, optionally expanded. Keeps the current study and chart unchanged.",
+      "mutates": false,
+      "params": {
+        "expanded": "Optional boolean."
+      }
+    },
+    {
+      "type": "patterns.hide",
+      "description": "Close Historical Patterns and cancel pending study work. Applied results remain in this account's mounted workspace.",
+      "mutates": false,
+      "params": {}
+    },
+    {
+      "type": "patterns.searchSymbols",
+      "description": "Search the active chart feed's NSE catalog. Does not select a ticker, run analysis or switch feeds.",
+      "mutates": false,
+      "params": {
+        "query": "1-100 characters."
+      }
+    },
+    {
+      "type": "patterns.configure",
+      "description": "Replace the visible study draft without executing. NSE regular-session 15m only; no provider fallback.",
+      "mutates": false,
+      "params": {
+        "expectedRevision": "Current draft revision from getState.",
+        "query": "{symbol,weekdays,startMinute,endMinute,count,mode,conditionWeekday?}; optional resolution:'15'. ISO weekdays 1-7; IST minutes, exclusive end; count 1-200 candidate weeks; separate|grouped."
+      }
+    },
+    {
+      "type": "patterns.useChartTicker",
+      "description": "Copy the ready active chart's NSE ticker into the visible draft, without executing or changing the chart.",
+      "mutates": false,
+      "params": {
+        "expectedRevision": "Current draft revision."
+      }
+    },
+    {
+      "type": "patterns.run",
+      "description": "Start one visible historical study. Poll getResults; may consume provider quota. SQL-backed panes batch selected windows; never silently change sources.",
+      "mutates": false,
+      "params": {
+        "expectedRevision": "Current draft revision; concurrent studies are rejected."
+      }
+    },
+    {
+      "type": "patterns.cancel",
+      "description": "Cancel this study job. Previous applied results remain labelled separately; provider work already sent is not undone.",
+      "mutates": false,
+      "params": {
+        "runId": "Current job ID from run or getState."
+      }
+    },
+    {
+      "type": "patterns.getResults",
+      "description": "Read job state and bounded occurrences from the actual filtered study, including all-page statistics and provenance. Does not rerun or open a hidden panel.",
+      "mutates": false,
+      "params": {
+        "runId": "Job or retained applied-result ID.",
+        "offset": "Optional 0-1400, default 0.",
+        "limit": "Optional 1-10, default 6.",
+        "includeBars": "Optional boolean, default false. At most 175 UTC-ms OHLCV candles per occurrence."
+      }
+    },
+    {
+      "type": "patterns.setAnalysis",
+      "description": "Change the same visible result filters, ordering, rebasing, card size, page or view as the UI. No data request.",
+      "mutates": false,
+      "params": {
+        "runId": "Applied-result ID.",
+        "expectedAnalysisRevision": "Current analysis revision.",
+        "analysis": "Partial {direction:all|down|up,threshold:0..20,measure:up|sideways|recovery,band:0..20,sort:new|old,rebased:boolean,showExcluded:boolean,density:compact|comfortable|large|xlarge|xxlarge,view:charts|statistics|table,page:0..233}. Discover current values in getState."
+      }
+    },
+    {
+      "type": "patterns.openOccurrence",
+      "description": "Open an exact complete occurrence in the original chart pane through the shared navigator. Preserves source guards; no feed fallback or replay exit.",
+      "mutates": false,
+      "params": {
+        "runId": "Applied-result ID.",
+        "occurrenceId": "Exact ID from getResults."
+      }
+    },
+    {
       "type": "research.listCapabilities",
       "description": "Discover saved HTML research limits, rendering and authoring guidance. No market-data fetch.",
       "mutates": false,
@@ -320,7 +411,7 @@
     },
     {
       "type": "backtesting.practice",
-      "description": "Start manual replay trading directly from the paused chart replay cursor. Captures bounded original-source candles, virtual capital and costs; no strategy or Python execution. Local-only, single position, fixed symbol/interval.",
+      "description": "Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument, fixed interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -404,6 +495,25 @@
       }
     },
     {
+      "type": "backtesting.libraryExport",
+      "description": "Read one locally saved snapshot's full payload, summary and display metadata so it can be backed up to the cloud or exported to a file. Active work, chart and cloud layout are unchanged.",
+      "mutates": false,
+      "params": {
+        "runId": "Saved ID."
+      }
+    },
+    {
+      "type": "backtesting.libraryImport",
+      "description": "Import a run payload from a cloud backup or exported file as a NEW local saved snapshot, so saved history survives a browser change. Never overwrites active work; a run already saved on this device is rejected. Requires the local indicator grant and retry key.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "run": "Full saved run payload (as returned by libraryExport).",
+        "summary": "Saved run summary projection from libraryExport.",
+        "detail": "Optional display metadata {name?:max100,notes?:max2000,tags?:up to10 strings max30}."
+      }
+    },
+    {
       "type": "backtesting.compare",
       "description": "Compare 2-4 same-sample saved snapshots. Metrics/assumptions are byte-bounded; follow nextOffset until null.",
       "mutates": false,
@@ -415,14 +525,14 @@
     },
     {
       "type": "backtesting.research",
-      "description": "Run bounded sweep/holdout/rolling walk-forward on one completed run's frozen source/candles. Poll get section research; cancel with cancel. Starts each segment flat; selects on training net P&L only. Vectorized causality remains unverified.",
+      "description": "Run bounded Python or Pine sweep/holdout/rolling walk-forward on a completed run's frozen source/candles. Pine uses actual fills, unchanged execution settings and captured request history only; no Python runtime or new fetches. Poll get section research; cancel with cancel. Every segment starts flat; selection uses training net P&L only. Source lookahead remains unverified.",
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "runId": "Completed active backtest.",
+        "runId": "Completed active backtest. Legacy Pine runs without authoritative fills/input metadata/frozen request history must be rerun first.",
         "expectedRevision": "Current revision.",
         "mode": "sweep|holdout|walkForward.",
-        "grid": "Up to 4 flat Python parameter keys with value arrays; Cartesian max12.",
+        "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
         "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks."
@@ -436,17 +546,17 @@
     },
     {
       "type": "backtesting.setChartOptions",
-      "description": "Set local display preferences or draggable date boundaries without rerunning Python. Selected dates apply to future runs; never alters existing results.",
+      "description": "Set account-local persisted drawing styles, display preferences or date boundaries without rerunning strategies or changing trades. Selected dates apply to future runs.",
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "options": "Partial {visible,scope:all|selected,markers,labels:none|selected|all,connections,riskLevels,openPosition,replayCutoff,styles}. Toggles boolean; styles maps profit|loss|selected|stop|target|entry|cutoff to partial {color,width:1-4,style:0(solid)|1(dotted)|2(dashed),visible}.",
+        "options": "Partial {visible,scope:all|selected,markers,labels:none|selected|all,connections,riskLevels,openPosition,replayCutoff,paperClosedTrades,paperActivePosition,textClosedSide|Price|Pnl|Reason,textActiveSide|Price|Pnl (which label lines show),styles,drawing}. Toggles boolean; replayCutoff defaults false and controls the line and timestamp together. Styles maps profit|loss|selected|stop|target|entry|cutoff to partial {color,width:1-4,style:0(solid)|1(dotted)|2(dashed),visible}. Drawing defaults are in capabilities.chartOptions.drawing: arrowMode compact|adjustable; arrowHeight10-300, arrowMargin/labelGap0-200 (% candle range); arrowWidth/fillMarkWidth1-6px; fontSize/positionFontSize8-24px; fillMarkBars1-10 candles; fillMarkStyle0-2; fillMarks/bold/italic boolean; cutoffTransparency integer0-100 (0 opaque,100 line hidden; timestamp unaffected); buy/sell arrow/text/fill colors, profit/loss text colors, position/quantity backgrounds, quantityTextColor, cutoffLabelTextColor and cutoffLabelBackground accept auto or hex/rgb/rgba. Cutoff line color is styles.cutoff.color; timestamp colors are independent. Nested patches merge; appearance never changes execution or ledger data.",
         "range": "Optional {from,to} epoch ms inclusive, visible to seed loaded visible closed candles, or null to clear."
       }
     },
     {
       "type": "backtesting.run",
-      "description": "Start an isolated Python or TLScript-Pine strategy() backtest excluding the newest candle. Returns preparing; poll get. Pine reconstructs a per-candle position series from its emulator and runs the shared engine. Sequential mode (Python only) supplies prefix-only candles and post-fill account state. Requires research grant/retry key.",
+      "description": "Start a Python or Pine strategy() backtest on captured closed candles. Returns preparing; poll get. Pine preserves its own fills, fees, quantity and equity without re-simulation; Python uses the shared signal engine. Requires research grant/retry key.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -455,12 +565,14 @@
         "id": "Saved Python (py_) or Pine (pine_) source id instead of source.",
         "expectedRevision": "Optional saved source revision.",
         "parameters": "Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar.",
-        "strategyMode": "Python only: vectorized (default) or sequential; Pine is vectorized only.",
-        "config": "Optional capabilities.config fields.",
-        "bars": "2-5000, default 1000; sequential max/default 250.",
-        "range": "Optional inclusive {from,to} epoch ms. Omit to use chart selection; null uses trailing loaded bars. Missing coverage or excess candles fails explicitly.",
-        "sessionSchedule": "Optional forward-branch session defaults; same user-assumption schema as forward. Does not fabricate or filter backtest candles.",
-        "versionSuffix": "Optional short version label appended to the run title (e.g. \"aggressive\" → \"Name - aggressive\") so different parameter variants stay distinguishable on the chart legend and in history."
+        "strategyMode": "Python: vectorized (default) or sequential. Pine: vectorized only.",
+        "config": "Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings.",
+        "bars": "2-5000, default1000; Python sequential max/default250.",
+        "range": "Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns.",
+        "sessionSchedule": "Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles.",
+        "versionSuffix": "Optional short version label appended to the run title (e.g. \"aggressive\" → \"Name - aggressive\") so different parameter variants stay distinguishable on the chart legend and in history.",
+        "inputs": "Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs.",
+        "pineSettings": "Pine only: explicit overrides {initial_capital,default_qty_type:fixed|cash|percent_of_equity,default_qty_value,commission_type:percent|cash_per_contract|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added."
       }
     },
     {
@@ -539,13 +651,23 @@
     },
     {
       "type": "backtesting.step",
-      "description": "Advance historical paper replay through frozen candles; automatic sequential mode steps exactly one. Forward paper advances only from its feed. No next candle means no fill.",
+      "description": "Advance historical replay. Manual practice fetches the next bounded page from its saved feed when captured candles run out, retaining the same account. Inspect paper.history for waiting/search limits. Backtest-derived replay remains frozen; automatic sequential mode steps exactly one. Forward paper advances only from its feed. No next candle means no fill.",
       "mutates": true,
       "permission": "indicators",
       "params": {
         "runId": "Replay ID.",
         "expectedRevision": "Required current run revision.",
         "count": "1-100, default 1; automatic sequential mode requires 1."
+      }
+    },
+    {
+      "type": "backtesting.back",
+      "description": "Rewind manual practice replay to the state before its last Next/Play step: the candle, fills, orders and balance from that step and anything placed since are undone. Saved with the session (recent steps, bounded in size); unavailable after history is rolled or the interval changes.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Replay ID.",
+        "expectedRevision": "Required current run revision."
       }
     },
     {
@@ -556,7 +678,8 @@
       "params": {
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
-        "order": "{side:buy|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?}"
+        "order": "{side:buy|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?}",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
       }
     },
     {
@@ -567,7 +690,8 @@
       "params": {
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
-        "orderId": "Pending order ID."
+        "orderId": "Pending order ID.",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
       }
     },
     {
@@ -579,7 +703,8 @@
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
         "orderId": "Pending order ID.",
-        "order": "Full replacement order, same fields as simulation.order."
+        "order": "Full replacement order, same fields as simulation.order.",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
       }
     },
     {
@@ -590,7 +715,8 @@
       "params": {
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
-        "protection": "{stopLoss?:positive|null,takeProfit?:positive|null,trailingStopPct?:0-99}"
+        "protection": "{stopLoss?:positive|null,takeProfit?:positive|null,trailingStopPct?:0-99}",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
       }
     },
     {
@@ -601,7 +727,9 @@
       "params": {
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
-        "quantity": "Optional positive quantity, default full position."
+        "quantity": "Optional positive quantity, default full position.",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument).",
+        "all": "Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request."
       }
     },
     {
@@ -611,7 +739,8 @@
       "permission": "indicators",
       "params": {
         "runId": "Owned run ID.",
-        "tradeId": "Optional closed trade to focus."
+        "tradeId": "Optional closed trade to focus.",
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
       }
     },
     {
@@ -654,7 +783,14 @@
         "revision": "Optional saved source revision.",
         "parameters": "Optional Python JSON parameters.",
         "title": "Optional display title (defaults to the strategy's own name).",
-        "version": "Optional short version label shown after the name (e.g. \"aggressive\") so different parameter variants stay distinguishable on the chart legend."
+        "version": "Optional short version label shown after the name (e.g. \"aggressive\") so different parameter variants stay distinguishable on the chart legend.",
+        "inputs": "Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs.",
+        "pineSettings": "Pine only: explicit overrides {initial_capital,default_qty_type:fixed|cash|percent_of_equity,default_qty_value,commission_type:percent|cash_per_contract|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added.",
+        "config": "Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings.",
+        "bars": "2-5000, default1000; Python sequential max/default250.",
+        "range": "Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns.",
+        "strategyMode": "Python: vectorized (default) or sequential. Pine: vectorized only.",
+        "sessionSchedule": "Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles."
       }
     },
     {
@@ -765,6 +901,25 @@
       }
     },
     {
+      "type": "simulation.libraryExport",
+      "description": "Compatibility alias for backtesting.libraryExport. Same behavior, grants and retry keys.",
+      "mutates": false,
+      "params": {
+        "runId": "See canonical backtesting command."
+      }
+    },
+    {
+      "type": "simulation.libraryImport",
+      "description": "Compatibility alias for backtesting.libraryImport. Same behavior, grants and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "run": "See canonical backtesting command.",
+        "summary": "See canonical backtesting command.",
+        "detail": "See canonical backtesting command."
+      }
+    },
+    {
       "type": "simulation.compare",
       "description": "Compatibility alias for backtesting.compare. Same behavior, grants and retry keys.",
       "mutates": false,
@@ -821,7 +976,9 @@
         "bars": "See canonical backtesting command.",
         "range": "See canonical backtesting command.",
         "sessionSchedule": "See canonical backtesting command.",
-        "versionSuffix": "See canonical backtesting command."
+        "versionSuffix": "See canonical backtesting command.",
+        "inputs": "See canonical backtesting command.",
+        "pineSettings": "See canonical backtesting command."
       }
     },
     {
@@ -910,6 +1067,16 @@
       }
     },
     {
+      "type": "simulation.back",
+      "description": "Compatibility alias for backtesting.back. Same behavior, grants and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command."
+      }
+    },
+    {
       "type": "simulation.order",
       "description": "Compatibility alias for backtesting.order. Same behavior, grants and retry keys.",
       "mutates": true,
@@ -917,7 +1084,8 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
-        "order": "See canonical backtesting command."
+        "order": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command."
       }
     },
     {
@@ -928,7 +1096,8 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
-        "orderId": "See canonical backtesting command."
+        "orderId": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command."
       }
     },
     {
@@ -940,7 +1109,8 @@
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
         "orderId": "See canonical backtesting command.",
-        "order": "See canonical backtesting command."
+        "order": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command."
       }
     },
     {
@@ -951,7 +1121,8 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
-        "protection": "See canonical backtesting command."
+        "protection": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command."
       }
     },
     {
@@ -962,7 +1133,9 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
-        "quantity": "See canonical backtesting command."
+        "quantity": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command.",
+        "all": "See canonical backtesting command."
       }
     },
     {
@@ -972,7 +1145,8 @@
       "permission": "indicators",
       "params": {
         "runId": "See canonical backtesting command.",
-        "tradeId": "See canonical backtesting command."
+        "tradeId": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command."
       }
     },
     {
@@ -1015,7 +1189,14 @@
         "revision": "See canonical backtesting command.",
         "parameters": "See canonical backtesting command.",
         "title": "See canonical backtesting command.",
-        "version": "See canonical backtesting command."
+        "version": "See canonical backtesting command.",
+        "inputs": "See canonical backtesting command.",
+        "pineSettings": "See canonical backtesting command.",
+        "config": "See canonical backtesting command.",
+        "bars": "See canonical backtesting command.",
+        "range": "See canonical backtesting command.",
+        "strategyMode": "See canonical backtesting command.",
+        "sessionSchedule": "See canonical backtesting command."
       }
     },
     {
@@ -1267,15 +1448,15 @@
     },
     {
       "type": "marketData.getBars",
-      "description": "Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Returns up to 5000 bounded candles with epoch-millisecond UTC `time`; no feed is ever silently substituted. This is history, not a live/streaming quote, and the receipt time is not provider freshness. Broker feeds (kite/fyers/web-dhan/...) need the feed connected (`feeds.list` → `available:true`), else `DESKTOP_REQUIRED`.",
+      "description": "Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Pick the feed with feeds.list (default built-in cloud, or a connected broker like kite, fyers, web-dhan). Give the window as from+to, to+countBack, or just countBack. Returns up to 5000 bounded candles with epoch-millisecond UTC times; not a live/streaming quote and receipt time is not provider freshness. No feed is ever silently substituted.",
       "mutates": false,
       "params": {
-        "feed": "Feed id from `feeds.list` (e.g. `default`, `kite`, `fyers`, `web-dhan`)",
-        "symbol": "Canonical ticker in the feed's format, e.g. `NSE:RELIANCE-EQ`",
-        "resolution": "`1,2,3,5,10,15,30,60,120,180,240,1D,1W,1M`",
-        "from": "Optional window start: `YYYY-MM-DD` or epoch seconds",
-        "to": "Optional window end: `YYYY-MM-DD` or epoch seconds; defaults to now",
-        "countBack": "Optional candle count ending at `to` (1-5000)"
+        "feed": "Feed id from feeds.list (e.g. default, kite, fyers, web-dhan).",
+        "symbol": "Canonical ticker in the feed's format, e.g. NSE:RELIANCE-EQ.",
+        "resolution": "Whole minutes 1-1440 (including 3,10,20,45,75,90), or 1D,1W,1M. Broker custom intervals require a compatible exact-divisor native base; no provider substitution.",
+        "from": "Optional window start: YYYY-MM-DD or epoch seconds. Supply from and/or countBack.",
+        "to": "Optional window end: YYYY-MM-DD or epoch seconds; defaults to now.",
+        "countBack": "Optional number of candles ending at 'to' (1-5000). Supply from and/or countBack."
       }
     },
     {
@@ -1400,75 +1581,120 @@
     },
     {
       "type": "indicators.editorState",
-      "description": "Read the mounted Studio's draft source, dirty/compile state and selected chart instance. Open the indicators workspace panel first if unavailable.",
+      "description": "Read Studio's current source, parameters, dirty/compile state, selected instance and actual workspace visibility. An open mounted editor may still be hidden.",
       "mutates": false,
       "params": {}
     },
     {
       "type": "indicators.openEditor",
-      "description": "Load a saved source OR applied instance in the mounted Studio. Refuses to discard unsaved edits. Open workspace panel indicators first. Requires indicator grant and retry key; does not change chart instances.",
+      "description": "Open Studio and load exact saved or applied Pine/Python source, inputs and update target. Waits for mounting; refuses dirty drafts and unavailable/private source. Requires indicator grant and retry key; never runs source or changes chart instances.",
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "id": "Saved script ID; supply id OR entityId.",
-        "entityId": "Applied chart instance; supply entityId OR id."
+        "id": "Saved Pine/Python script ID; choose exactly one selector.",
+        "instanceId": "Stable applied Pine/Python instance ID; preferred over entityId.",
+        "entityId": "Current native applied Pine/Python entity ID."
       }
     },
     {
       "type": "indicators.openDraft",
-      "description": "Open arbitrary source as an unsaved draft in the mounted Studio (e.g. a backtest run's strategy). Switches the Studio language. Refuses to discard unsaved edits. Open workspace panel indicators first. Requires indicator grant and retry key; does not change or save chart instances.",
+      "description": "Open Studio and load arbitrary source as an unsaved draft. Waits for mounting and switches language without discarding dirty edits. Requires indicator grant and retry key; never saves or applies source.",
       "mutates": true,
       "permission": "indicators",
       "params": {
         "source": "Draft source code (required).",
         "language": "python or pine (default python).",
-        "title": "Optional draft title."
+        "title": "Optional draft title.",
+        "inputs": "Optional typed Pine inputs by variable ID; Pine only.",
+        "pineSettings": "Optional explicit Pine strategy execution overrides; Pine only."
       }
     },
     {
       "type": "indicators.validate",
-      "description": "Compile TLScript-Pine in the isolated Pine worker without saving or applying it. Returns input metadata or source diagnostics. Pine strategies are rejected.",
+      "description": "Compile TLScript-Pine indicators or strategies in the isolated Pine worker without saving or applying. Returns kind and input metadata or source diagnostics, not calculation correctness. Strategies execute through backtesting commands only.",
       "mutates": false,
       "params": {
-        "source": "Nonempty Pine indicator source; no fixed character cap. Execution and transport limits still apply."
+        "source": "Nonempty Pine indicator or strategy source; no fixed character cap. Execution and transport limits still apply.",
+        "profile": "Optional boolean; include bounded compile timing."
       }
     },
     {
       "type": "indicators.list",
-      "description": "List saved indicator metadata for the signed-in account on this browser/device. Use get for source. Local storage only; not cloud-synced.",
+      "description": "Refresh this account's saved indicator metadata with a device cache. Use get for source. Reports offline/conflicting or unconfirmed cloud state rather than claiming account persistence.",
       "mutates": false,
       "params": {}
     },
     {
+      "type": "indicators.purchased",
+      "description": "Read this authenticated account's purchased native indicator collection, independent of chart placement. Does not purchase, import source, or grant a license.",
+      "mutates": false,
+      "params": {
+        "cursor": "Optional cursor from the previous collection page."
+      }
+    },
+    {
+      "type": "indicators.sales",
+      "description": "Read this authenticated creator's native indicator sales and manual settlement status. Does not transfer money.",
+      "mutates": false,
+      "params": {
+        "cursor": "Optional cursor from the previous sales page."
+      }
+    },
+    {
+      "type": "indicators.applyPurchased",
+      "description": "Apply a purchased native indicator as an apply-only linked chart instance after server license verification. No editable import or payment. Requires indicator grant and retry key.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "shareId": "Purchased native indicator share ID.",
+        "inputs": "Optional declared Pine input values."
+      }
+    },
+    {
+      "type": "indicators.publishPaid",
+      "description": "Publish a saved Pine indicator as a separate paid apply-only publication and register its fixed-term checkout. Requires verified seller approval, current saved revision, indicator grant and retry key. Does not charge a buyer or transfer money. Existing free shares cannot become paid.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "id": "Saved Pine indicator ID.",
+        "expectedRevision": "Current saved local revision.",
+        "amountMinor": "Total INR price in paise, 1 through 10000000.",
+        "termDays": "30, 90 or 365.",
+        "visibility": "link or public; public requires moderation.",
+        "shareId": "Optional existing paid publication to update with unchanged terms."
+      }
+    },
+    {
       "type": "indicators.get",
-      "description": "Read the current saved TLScript-Pine source and inputs from this account's local library. Historical revisions are not retained.",
+      "description": "Read current saved TLScript-Pine source and inputs after refreshing this account's library. Offline reads use the retained device cache; this command addresses the current local revision only.",
       "mutates": false,
       "params": {
         "id": "Saved Pine indicator ID.",
-        "revision": "Optional required current revision; older revisions are unavailable."
+        "revision": "Optional required current revision; older revisions are unavailable through this command."
       }
     },
     {
       "type": "indicators.save",
-      "description": "Compile and save TLScript-Pine source and inputs locally. Updating requires the current revision. Requires the local indicator grant and retry key; never updates chart instances.",
+      "description": "Compile and save TLScript-Pine indicator or strategy source and inputs to this account with a device cache. Cloud persistence is confirmed separately; conflicts/offline retain local source. Updating requires the current local revision. Requires indicator grant and retry key; never updates chart instances or runs a strategy. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.",
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "source": "Pine indicator source.",
+        "source": "Pine indicator or strategy source.",
         "inputs": "Optional declared Pine input values; omitted fields use source defaults.",
-        "id": "Optional existing Pine indicator ID.",
-        "expectedRevision": "Required current revision when id is supplied.",
-        "replace": "Optional boolean; true overwrites an existing saved indicator with the same name instead of failing on a duplicate title."
+        "id": "Optional existing Pine source ID.",
+        "expectedRevision": "Required current local revision when id is supplied.",
+        "replace": "Optional boolean; true explicitly replaces a same-name device library file. Does not silently replace a conflicting account version.",
+        "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
       }
     },
     {
       "type": "indicators.delete",
-      "description": "Delete a saved local script at its current revision. Does not remove chart instances. Requires the AI indicator grant and a retry key.",
+      "description": "Delete an account library file at its current device revision and report cloud confirmation. Does not remove chart instances or revoke separately published shares. Requires indicator grant and a retry key.",
       "mutates": true,
       "permission": "indicators",
       "params": {
         "id": "Saved indicator ID.",
-        "expectedRevision": "Current saved revision."
+        "expectedRevision": "Current saved local revision."
       }
     },
     {
@@ -1478,28 +1704,42 @@
       "params": {}
     },
     {
+      "type": "indicators.retryRestores",
+      "description": "Retry pending saved Pine chart instances using Studio's restore queue. Requires a registered chart, indicator grant and retry key. Acknowledges the request, not successful restoration; poll indicators.applied for history readiness, restorationStatus and restoreErrors. Does not change saved source or resolve layout conflicts.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {}
+    },
+    {
       "type": "indicators.apply",
-      "description": "Add TLScript-Pine to the ready chart. Supply source OR saved id. Saved input values are used unless explicitly overridden. Requires local indicator grant and retry key; no feed fallback.",
+      "description": "Add TLScript-Pine to the ready chart. Supply source OR saved id. Saved input values are used unless explicitly overridden. Requires local indicator grant and retry key; no feed fallback. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.",
       "mutates": true,
       "permission": "indicators",
       "params": {
         "source": "Pine indicator source; mutually exclusive with id.",
         "id": "Saved Pine indicator ID; mutually exclusive with source.",
         "expectedRevision": "Optional required saved revision.",
-        "inputs": "Optional declared input IDs mapped to strings, finite numbers or booleans."
+        "inputs": "Optional declared input IDs mapped to strings, finite numbers or booleans.",
+        "profile": "Optional boolean; include bounded execution timings.",
+        "realtime": "Optional boolean, default false. Experimental chart-session-only intrabar state; sampled updates, minute intervals, observed live closure required; no replay or secondary requests. Not persisted.",
+        "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
       }
     },
     {
       "type": "indicators.update",
-      "description": "Recalculate and replace one owned TLScript-Pine instance. Retains its supported appearance and other chart objects. Supply source OR saved id; requires local indicator grant and retry key.",
+      "description": "Recalculate one owned Pine instance, retaining supported appearance. Supply source OR saved id, or omit both to retain its existing source/private artifact. Requires indicator grant and retry key; never adds a missing target. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.",
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Existing Pine chart entity to replace.",
-        "source": "Pine source; mutually exclusive with id.",
-        "id": "Saved Pine indicator ID; mutually exclusive with source.",
+        "entityId": "Current Pine entity OR instanceId.",
+        "instanceId": "Stable ID from indicators.applied; mutually exclusive with entityId.",
+        "source": "Optional replacement Pine source; mutually exclusive with id.",
+        "id": "Optional saved Pine replacement; mutually exclusive with source.",
         "expectedRevision": "Optional required saved revision.",
-        "inputs": "Optional declared Pine input values."
+        "inputs": "Optional declared inputs; omitted uses saved/default inputs for replacement source, current inputs otherwise. Merge desired edits into applied.inputs to retain other values.",
+        "profile": "Optional boolean; include bounded execution timings.",
+        "realtime": "Optional boolean; omission retains the selected instance mode. Explicit update resets intrabar state. Experimental, sampled chart-session-only; minute intervals and observed closure, no replay/secondary requests; not persisted.",
+        "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
       }
     },
     {
@@ -1508,7 +1748,8 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Pine chart entity ID."
+        "entityId": "Pine entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId."
       }
     },
     {
@@ -1517,7 +1758,8 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Pine chart entity ID.",
+        "entityId": "Pine entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "visible": "Required boolean."
       }
     },
@@ -1527,7 +1769,8 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Pine chart entity ID."
+        "entityId": "Pine entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId."
       }
     },
     {
@@ -1536,7 +1779,8 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Pine chart entity ID."
+        "entityId": "Pine entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId."
       }
     },
     {
@@ -1547,7 +1791,7 @@
     },
     {
       "type": "pythonIndicators.list",
-      "description": "List this account's local Python source metadata. No code executes.",
+      "description": "Refresh this account's Python source metadata with a device cache and explicit cloud-sync state. No code executes.",
       "mutates": false,
       "params": {}
     },
@@ -1590,16 +1834,18 @@
     },
     {
       "type": "pythonIndicators.save",
-      "description": "Save Python source locally, without executing or syntax validation. Indicator grant and retry key required.",
+      "description": "Save Python source/settings to this account with a device cache, without execution or syntax validation. Returns cloud confirmation or retained-local offline/conflict state. Indicator grant and retry key required. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.",
       "mutates": true,
       "permission": "indicators",
       "params": {
         "title": "1-100 characters.",
-        "source": "Nonempty source; no fixed character cap. Storage and transport limits still apply.",
+        "source": "Nonempty source; no fixed character cap. Storage and cloud transport limits still apply.",
         "parameters": "Optional finite JSON parameter object; nested configurations supported.",
+        "strategyMode": "Optional vectorized or sequential strategy mode; retained with source and backups.",
         "id": "Optional saved ID.",
-        "expectedRevision": "Required with id.",
-        "replace": "Optional boolean; true overwrites an existing saved indicator with the same name instead of failing on a duplicate title."
+        "expectedRevision": "Required current local revision with id.",
+        "replace": "Optional boolean; explicitly replaces a same-name device file, never silently a conflicting account version.",
+        "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
       }
     },
     {
@@ -1610,7 +1856,7 @@
     },
     {
       "type": "pythonIndicators.apply",
-      "description": "Execute isolated Python and attach/update native plots. Requires ready isolation, indicator grant and retry key; no script approval dialog.",
+      "description": "Execute isolated Python and attach/update native plots. Requires ready isolation, indicator grant and retry key; no script approval dialog. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -1618,8 +1864,10 @@
         "id": "Saved Python ID OR source.",
         "expectedRevision": "Optional revision with id.",
         "parameters": "Optional JSON parameters, including nested objects and arrays.",
+        "strategyMode": "Optional vectorized or sequential; overrides the saved strategy mode for this chart instance only.",
         "instanceId": "Stable applied ID to update.",
-        "entityId": "Native entity alternative to instanceId."
+        "entityId": "Native entity alternative to instanceId.",
+        "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
       }
     },
     {
@@ -1673,10 +1921,12 @@
     },
     {
       "type": "indicators.getSettings",
-      "description": "Read named applied plot settings without source or execution. Use the primary entityId from applied; keep the returned snapshot for setSettings.",
+      "description": "Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected.",
       "mutates": false,
       "params": {
-        "entityId": "Primary applied chart entity ID."
+        "entityId": "Primary applied entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId.",
+        "defaults": "Optional boolean, default false. Read source-derived default appearance without changing it."
       }
     },
     {
@@ -1685,17 +1935,21 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Primary applied chart entity ID.",
+        "entityId": "Primary applied entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "settings": "Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata.",
-        "expected": "Unmodified getSettings snapshot for stale-write protection."
+        "expected": "Unmodified current getSettings snapshot for stale-write protection.",
+        "reset": "Optional array of style and/or visibility. Clear retained appearance overrides for those pages; also copy the corresponding default values into settings."
       }
     },
     {
       "type": "pythonIndicators.getSettings",
-      "description": "Read named applied plot settings without source or execution. Use the primary entityId from applied; keep the returned snapshot for setSettings.",
+      "description": "Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected.",
       "mutates": false,
       "params": {
-        "entityId": "Primary applied chart entity ID."
+        "entityId": "Primary applied entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId.",
+        "defaults": "Optional boolean, default false. Read source-derived default appearance without changing it."
       }
     },
     {
@@ -1704,9 +1958,11 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "entityId": "Primary applied chart entity ID.",
+        "entityId": "Primary applied entity OR instanceId.",
+        "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "settings": "Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata.",
-        "expected": "Unmodified getSettings snapshot for stale-write protection."
+        "expected": "Unmodified current getSettings snapshot for stale-write protection.",
+        "reset": "Optional array of style and/or visibility. Clear retained appearance overrides for those pages; also copy the corresponding default values into settings."
       }
     }
   ],

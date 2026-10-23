@@ -89,6 +89,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Add a native study; no source execution/removals. Requires indicator grant and retry key. Verify chart.snapshot.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -111,6 +112,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Toggle one exact built-in native study, never a managed script or drawing. Requires matching current visibility, indicator grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -124,6 +126,7 @@ Retry key: **required**. External local-assistant access is still required.
 Remove one exact built-in native study only. Requires matching current visibility, indicator grant and retry key. Does not delete saved source or drawings.
 
 Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
@@ -256,18 +259,18 @@ Parameters: `{}`.
 
 ## `marketData.getBars`
 
-Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Returns up to 5000 bounded candles with epoch-millisecond UTC `time`; no feed is ever silently substituted. This is history, not a live/streaming quote, and the receipt time is not provider freshness. Broker feeds (kite/fyers/web-dhan/...) need the feed connected (`feeds.list` → `available:true`), else `DESKTOP_REQUIRED`.
+Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Pick the feed with feeds.list (default built-in cloud, or a connected broker like kite, fyers, web-dhan). Give the window as from+to, to+countBack, or just countBack. Returns up to 5000 bounded candles with epoch-millisecond UTC times; not a live/streaming quote and receipt time is not provider freshness. No feed is ever silently substituted.
 
 Retry key: **not required**. External local-assistant access is still required.
 
 | Parameter | Contract |
 | --- | --- |
-| `feed` | Feed id from `feeds.list` (e.g. `default`, `kite`, `fyers`, `web-dhan`) |
-| `symbol` | Canonical ticker in the feed's format, e.g. `NSE:RELIANCE-EQ` |
-| `resolution` | `1,2,3,5,10,15,30,60,120,180,240,1D,1W,1M` |
-| `from` | Optional window start: `YYYY-MM-DD` or epoch seconds |
-| `to` | Optional window end: `YYYY-MM-DD` or epoch seconds; defaults to now |
-| `countBack` | Optional candle count ending at `to` (1-5000) |
+| `feed` | Feed id from feeds.list (e.g. default, kite, fyers, web-dhan). |
+| `symbol` | Canonical ticker in the feed's format, e.g. NSE:RELIANCE-EQ. |
+| `resolution` | Whole minutes 1-1440 (including 3,10,20,45,75,90), or 1D,1W,1M. Broker custom intervals require a compatible exact-divisor native base; no provider substitution. |
+| `from` | Optional window start: YYYY-MM-DD or epoch seconds. Supply from and/or countBack. |
+| `to` | Optional window end: YYYY-MM-DD or epoch seconds; defaults to now. |
+| `countBack` | Optional number of candles ending at 'to' (1-5000). Supply from and/or countBack. |
 
 ## `universe.list`
 
