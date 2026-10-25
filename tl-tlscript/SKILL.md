@@ -8,6 +8,10 @@ description: Author and manage TradingLead TLScript-Pine indicators and strategy
 Start with [tl-desktop](../tl-desktop/SKILL.md), then read
 `indicators.listCapabilities`. [commands.md](commands.md) is the command reference.
 
+Guided synthetic Practice Labs are intentionally for humans, without AI lesson
+commands. Normal-account indicator commands do not address their isolated
+training library or complete lesson tasks.
+
 **Owns:** Writing/revising Pine indicators or strategies and using existing validation,
 library and chart-instance commands. It does not implement Pine compiler or
 renderer features. Pine strategy execution belongs to
@@ -118,6 +122,29 @@ source and inputs; dirty drafts are preserved.
   unavailable targets or private source. `indicators.openDraft` opens unsaved
   Python/Pine source without applying it. Inspect `indicators.editorState.visible`;
   an embedded editor's `open:true` alone is not actual visibility.
+  To start the toolbar's guided **New** draft through the same command, send
+  `{source:"",language:"pine"}` (or `"python"`), with a retry key. Omit inputs
+  and execution settings. It clears saved/update identity and compilation,
+  focuses the editor and leaves chart instances unchanged. The draft contains
+  only shared language-specific guidance comments: Pine `//@version=6` and
+  declaration/input/calculation guidance, or Python `calculate(bars, params)`
+  guidance. No actual starter calculation, plot or trade is inserted.
+  Dirty/busy drafts are refused; this never discards user edits or compiles.
+  Manually emptied text is never repopulated. Pine's explicit empty draft
+  survives local draft recovery; Python's draft is only
+  retained while its editor stays mounted.
+
+Studio's **Problems** list combines source diagnostics and operation/storage
+feedback. Only real source locations navigate code or enter fix prompts;
+an operation failure is not a fabricated source diagnostic. Validation results
+and the current `editorState.compiled` flag remain separate: opening source,
+including a saved strategy, does not imply it was compiled.
+
+Colored directional Pine labels use owned native callout badges; transparent
+up/down labels keep text-only anchors. Box `size.auto` adapts to available
+geometry, unlike an explicitly selected fixed size. These are disclosed native
+rendering approximations, not new Pine APIs or TradingView visual equivalence.
+Use ordinary apply/update/input/style commands; no pixel-click command is needed.
 
 ## Execution evidence and persistence
 

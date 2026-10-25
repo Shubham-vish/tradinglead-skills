@@ -9,6 +9,11 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read `backtesting.capabilities`
 [commands.md](commands.md). Prefer `backtesting.*`; `simulation.*` names are
 compatibility aliases, not a second engine.
 
+Guided synthetic Practice Labs are intentionally human-operated and have no AI
+lesson commands. They are not normal-account backtests or
+`backtesting.practice` paper sessions; never guess a training scope or redirect
+normal-account commands into a lesson.
+
 **Owns:** Running, inspecting and preserving a strategy result through existing
 commands. Use [tl-python](../tl-python/SKILL.md) only when authoring or debugging
 Python source/SDK usage; a Pine run does not require that skill or Python
@@ -45,13 +50,17 @@ contract, not indicator-only validation.
    requests cancellation; inspect the resulting state afterward.
 
 Python sequential mode sees only completed-prefix candles and post-fill account state.
-Its maximum/default is 250 candles; vectorized mode supports at most 5,000
-with a default of 1,000. The newest candle is excluded. No real broker execution
+Its maximum/default is 250 candles; Pine and vectorized Python support at most
+20,000 with a default of 20,000. Existing setups retain explicit saved limits.
+The newest candle is excluded. No real broker execution
 occurs. Source with hard-coded future information is not automatically certified.
 
-Omitted `range` uses the chart's selection; `range:null` uses trailing loaded
-bars. An explicit `{from,to}` uses inclusive epoch milliseconds and requires
-actual coverage. Do not silently shrink the request or invent candles.
+Omitted `range` uses the chart's selection; `range:null` fetches the latest closed
+source candles up to the cap or source exhaustion, not unlimited history.
+An explicit `{from,to}` uses inclusive epoch milliseconds and requires verified
+source-session coverage within the cap. Apply pins the period for symbol/timeframe
+reruns; chart zoom does not change it. Fetch failure must not produce a shorter
+successful backtest. Inspect the returned actual period and candle count.
 
 Python signals are decided at candle close and fill on a later eligible candle. Read
 capabilities for ambiguous-bar, stop/target, gap, trailing and accounting rules.
@@ -89,7 +98,7 @@ cutoff; source lookahead is still the author's responsibility.
 
 | Store | Workflow |
 | --- | --- |
-| Active runs | `list/get/delete`; up to three active local runs, including an applied strategy's run. A fourth `run` fails with `SIMULATION_HISTORY_FULL` |
+| Active runs | `list/get/delete`; up to three active local runs, including an applied strategy's run. Lossless compressed snapshots have a 3 MiB stored budget and 32 Mi character raw limit; legacy raw snapshots remain readable. A fourth `run` fails with `SIMULATION_HISTORY_FULL` |
 | Larger saved snapshots | `libraryList/librarySave/libraryRestore/libraryDelete/libraryMigrate/libraryUpdate`; IndexedDB, bounded to 100 runs / 100 MB per account |
 | Reusable complete setups | `presetList/presetGet/presetSave/presetDelete`; source, parameters, mode, config, bars, range and session assumptions |
 
@@ -130,12 +139,28 @@ Legacy `pine-direction-resimulation-legacy` runs must be rerun first.
   `tradeId`; this is an intentional chart navigation.
 - `getChartOptions` / `setChartOptions` control marker/label/connection/risk
   visibility, styles and future-run date selection without rerunning Python.
+  Read `options` (saved), `effectiveOptions` (including preview), and `preview`
+  separately. Default `action:"save"` persists immediately. For reversible
+  appearance edits, use `action:"preview"`, `previewId:"YOUR_SESSION_ID"` and
+  `options`; then `action:"apply"` or `"cancel"` with that ID, omitting
+  options/range. Repeated preview replaces that session's patch. Each action
+  needs a fresh retry key. Competing user settings are refused, not discarded;
+  runtime closure/revocation clears agent previews. Cancellation cannot undo a
+  completed Apply. Re-read after uncertain transport outcomes.
+  Discover drawing bounds in `capabilities.chartOptions.drawing`: arrow/fill
+  widths, leader width/color/style, path font/color/bold/italic and label gap
+  are nested `drawing` options; connection layer widths/styles use `styles`.
+  Adaptive label placement is automatic, not an execution setting.
+  `scriptPlots` maps discovered projection plot keys to visibility booleans;
+  `scriptDrawings` toggles Pine drawings/effects/tables independently of trade
+  markers/labels. No separate legend-click API is necessary.
 - `showSettings` opens the real native chart dialog.
 - `removeFromChart` detaches overlays but retains results and does not stop
   a paper clock. `delete` is a separate destructive active-run operation.
 - `applyStrategy` attaches one Python or Pine strategy to the chart; read
-  `appliedStrategy` for its run/status. Another strategy is refused until
-  `removeStrategy`; removal retains the last run/history. With automatic
+  `appliedStrategy` for its run/status. Another explicit Apply replaces the
+  applied strategy in place, cancels its in-flight run and reruns while retaining
+  the auto-rerun choice. `removeStrategy` retains the last run/history. With automatic
   rerun enabled the applied strategy recomputes on chart symbol/interval
   change. `setStrategyAutoRerun` explicitly toggles that behavior. Confirm
   chart readiness and the resulting run before treating a rerun as complete;

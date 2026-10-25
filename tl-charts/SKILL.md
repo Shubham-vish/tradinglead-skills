@@ -120,6 +120,13 @@ Navigation state is per-chart, in memory, not a saved cross-device preference.
 
 ## Raw candles without the chart
 
+The native OHLC legend keeps a stable values row; it does not cache candles or
+invent crosshair/replay values. Use `chart.snapshot` for bounded data reads.
+Native OHLC visibility/collapse remain native-owned UI controls, not new agent
+commands. Chart Grid's offscreen-canvas virtualization and progressive loading
+do not introduce an external Grid configuration command; `chart.open` controls
+the main chart, not gallery filters or pages.
+
 To read OHLCV values directly (not navigate the visible chart), use the
 read-only `marketData.getBars` command — it fetches candles through the exact
 same feed path the chart uses, for whichever feed the caller names. Pick the

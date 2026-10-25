@@ -17,6 +17,14 @@ styles. The selected-label mode shows the selected or latest visible exit;
 all-visible labels also show entry quantity and price. Same-candle legs share
 a bounded label while the ledger retains every leg. Paper alone offers eligible
 close/protection actions; backtest levels are read-only.
+Shared appearance preview/apply/cancel uses `backtesting.setChartOptions`;
+see [tl-backtesting](../tl-backtesting/SKILL.md). It changes no paper orders,
+virtual balance or clock.
+
+The separate synthetic **Practice Labs** at `/lab/practice/*` are guided
+human-operated lessons, not `backtesting.practice` paper sessions. Their
+navigation, coach, progress and reset intentionally have no AI commands.
+Never send normal-account commands to guessed training scopes.
 
 ## Historical replay and direct practice
 

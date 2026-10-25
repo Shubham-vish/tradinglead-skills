@@ -101,7 +101,7 @@ message as detail:
 | `REVISION_CONFLICT` / `REVISION_REQUIRED` | Reread the item and pass its current revision. |
 | `SIMULATION_HISTORY_FULL` | Active-run slots are full. Save to the library or ask before deleting; never delete user runs automatically. |
 | `BACKTEST_COMPARISON_INCOMPATIBLE` | The runs differ in sample, mode/state or horizon, or include a legacy Pine re-simulation; see [tl-backtesting](../tl-backtesting/SKILL.md). |
-| `STRATEGY_ALREADY_APPLIED` | `backtesting.removeStrategy` first, only if the user intends to replace it. |
+| `STRATEGY_ALREADY_APPLIED` | Older catalogs may refuse replacement: inspect the addressed contract before explicitly removing. Current Apply replaces in place and retains auto-rerun intent. |
 | `UNSUPPORTED_FEED` / `UNSUPPORTED_SYMBOL` / `DESKTOP_REQUIRED` | Pick a feed/interval from `feeds.list`; no fallback is chosen for you. |
 | `SIGN_IN_REQUIRED` / `AGENT_DISABLED` / `APPROVAL_REQUIRED` | Only the user can resolve these; report and stop. |
 
@@ -111,6 +111,14 @@ ask the user to read the message shown in the app rather than guessing.
 Desktop local access is automatic for the active account unless paused.
 Cloud watchlist and saved-screener writes need a separate user grant and real sign-in. Agents
 cannot grant permissions, unpause access, or bypass Python isolation.
+
+## Guided Practice Labs
+
+These synthetic-price lessons are separate from `backtesting.practice` paper
+accounts. Practice Labs are intentionally human-operated, with no AI lesson
+navigation, coach, completion or reset commands. Do not invent a `practice.*`
+namespace or target guessed training scopes. Ordinary product commands operate
+the normal account workspace, not the lesson's isolated synthetic runtime.
 
 ## Route the task
 
@@ -138,6 +146,11 @@ Availability of a command in this repository or the source checkout is not
 proof of its availability on another tab, browser, packaged release or cloud
 deployment. Use `capabilities --tab` for the intended running tab and read
 its domain readiness; read-only discovery cannot guarantee fresh candles.
+
+The October 26, 2026 guided-New-draft and appearance-preview reference refresh is
+**source/isolated-test verified**, not installed-app verified. The read-only
+Desktop check returned `ready:false` and no registered tabs; no live chart was
+modified. Rediscover a ready addressed tab before using these additive fields.
 
 Never execute real broker orders, private diagnostic JavaScript, or arbitrary
 host Python through these skills. Do not fetch, publish or sync user content

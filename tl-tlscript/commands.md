@@ -36,18 +36,18 @@ Local indicator/backtesting grant required.
 
 ## `indicators.openDraft`
 
-Open Studio and load arbitrary source as an unsaved draft. Waits for mounting and switches language without discarding dirty edits. Requires indicator grant and retry key; never saves or applies source.
+Open Studio and load source as an unsaved draft, or start New with source:"": language-specific guidance comments only (Pine includes //@version=6), not an executable starter. Waits for mounting and preserves dirty edits. Requires indicator grant and retry key; never compiles, saves, applies or removes chart instances.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
-| `source` | Draft source code (required). |
+| `source` | Required string. Exact empty string requests a detached New draft with shared language-specific guidance comments; whitespace-only source is rejected. This does not repopulate text the user manually empties. |
 | `language` | python or pine (default python). |
 | `title` | Optional draft title. |
-| `inputs` | Optional typed Pine inputs by variable ID; Pine only. |
-| `pineSettings` | Optional explicit Pine strategy execution overrides; Pine only. |
+| `inputs` | Optional typed Pine inputs by variable ID; Pine only, nonempty source required. |
+| `pineSettings` | Optional explicit Pine strategy execution overrides; Pine only, nonempty source required. |
 
 ## `indicators.validate`
 

@@ -213,7 +213,7 @@ Compatibility alias: `simulation.compare`. Same runtime and retry identity; pref
 
 ## `backtesting.getChartOptions`
 
-Read local overlay visibility, active chart date selection and draggable range handle IDs. Does not change strategy or accounting.
+Read saved options, effective preview options, preview owner/ID/validity, active date selection and range handle IDs. Never executes a strategy.
 
 Retry key: **not required**. External local-assistant access is still required.
 
@@ -223,15 +223,17 @@ Compatibility alias: `simulation.getChartOptions`. Same runtime and retry identi
 
 ## `backtesting.setChartOptions`
 
-Set account-local persisted drawing styles, display preferences or date boundaries without rerunning strategies or changing trades. Selected dates apply to future runs.
+Save account-local chart appearance/date selection, or preview/apply/cancel appearance edits without strategy execution. Preview does not persist; competing settings owners are refused. Runtime disposal clears agent previews; cancellation after a save is not rollback.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
-| `options` | Partial {visible,scope:all\|selected,markers,labels:none\|selected\|all,connections,riskLevels,openPosition,replayCutoff,paperClosedTrades,paperActivePosition,textClosedSide\|Price\|Pnl\|Reason,textActiveSide\|Price\|Pnl (which label lines show),styles,drawing}. Toggles boolean; replayCutoff defaults false and controls the line and timestamp together. Styles maps profit\|loss\|selected\|stop\|target\|entry\|cutoff to partial {color,width:1-4,style:0(solid)\|1(dotted)\|2(dashed),visible}. Drawing defaults are in capabilities.chartOptions.drawing: arrowMode compact\|adjustable; arrowHeight10-300, arrowMargin/labelGap0-200 (% candle range); arrowWidth/fillMarkWidth1-6px; fontSize/positionFontSize8-24px; fillMarkBars1-10 candles; fillMarkStyle0-2; fillMarks/bold/italic boolean; cutoffTransparency integer0-100 (0 opaque,100 line hidden; timestamp unaffected); buy/sell arrow/text/fill colors, profit/loss text colors, position/quantity backgrounds, quantityTextColor, cutoffLabelTextColor and cutoffLabelBackground accept auto or hex/rgb/rgba. Cutoff line color is styles.cutoff.color; timestamp colors are independent. Nested patches merge; appearance never changes execution or ledger data. |
+| `options` | Partial {visible,scope:all\|selected,markers,labels:none\|selected\|all,connections,riskLevels,openPosition,replayCutoff,paperClosedTrades,paperActivePosition,textClosedSide\|Price\|Pnl\|Reason,textActiveSide\|Price\|Pnl (which label lines show),styles,drawing,scriptPlots,scriptDrawings}. scriptPlots maps keys from get.chartProjection.pineVisuals.plots to boolean visibility (512 saved keys maximum; each key at most 512 characters). scriptDrawings toggles Pine drawings, effects and tables; trade labels remain independent. Toggles boolean; replayCutoff defaults false and controls the line and timestamp together. Styles maps profit\|loss\|selected\|stop\|target\|entry\|cutoff to partial {color,width:1-4,style:0(solid)\|1(dotted)\|2(dashed),visible}. Drawing defaults are in capabilities.chartOptions.drawing: arrowMode compact\|adjustable; arrowHeight8-300, arrowMargin0-100, labelGap0-200 (% candle range); arrowWidth/fillMarkWidth1-6px; fontSize/positionFontSize/pathFontSize8-24px; leaderWidth1-4px, leaderStyle0-2, leaderColor/pathTextColor auto or native color, pathBold/pathItalic boolean; fillMarkBars1-10 candles; fillMarkStyle0-2; fillMarks/bold/italic boolean; cutoffTransparency integer0-100 (0 opaque,100 line hidden; timestamp unaffected); buy/sell arrow/text/fill colors, profit/loss text colors, position/quantity backgrounds, quantityTextColor, cutoffLabelTextColor and cutoffLabelBackground accept auto or hex/rgb/rgba. Cutoff line color is styles.cutoff.color; timestamp colors are independent. Nested patches merge; appearance never changes execution or ledger data. |
 | `range` | Optional {from,to} epoch ms inclusive, visible to seed loaded visible closed candles, or null to clear. |
+| `action` | Optional save (default)\|preview\|apply\|cancel. Preview replaces this owner's staged appearance patch. Apply persists that patch; cancel restores saved appearance. Date ranges are save-only. |
+| `previewId` | Required for preview/apply/cancel: 1-80 letters, numbers, underscores or hyphens. Reuse within one preview session, with a fresh retry key for each action. Omit for save. |
 
 Compatibility alias: `simulation.setChartOptions`. Same runtime and retry identity; prefer the canonical name.
 
@@ -251,8 +253,8 @@ Local indicator/backtesting grant required.
 | `parameters` | Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
 | `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
 | `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
-| `bars` | 2-5000, default1000; Python sequential max/default250. |
-| `range` | Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns. |
+| `bars` | 2-20000, default20000; Python sequential max/default250. |
+| `range` | Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period. |
 | `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
 | `versionSuffix` | Optional short version label appended to the run title (e.g. "aggressive" → "Name - aggressive") so different parameter variants stay distinguishable on the chart legend and in history. |
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
@@ -360,7 +362,7 @@ Compatibility alias: `simulation.delete`. Same runtime and retry identity; prefe
 
 ## `backtesting.applyStrategy`
 
-Apply a Python or TLScript-Pine strategy to the chart like an indicator. Only one strategy applies at a time; applying a different one fails until the current is removed. The Backtesting panel reflects the applied strategy and it recomputes when the chart symbol/timeframe changes.
+Apply a Python or TLScript-Pine strategy to the chart like an indicator and immediately run it. Only one strategy applies at a time: every apply (edited source, new inputs/parameters or a different script) replaces the applied one in place, cancels any in-flight run of the old version and reruns, keeping the auto-rerun choice. It reruns on chart symbol/timeframe change (newest run wins). The Backtesting panel shows the latest live run; the previous result stays dimmed until the rerun settles.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
@@ -377,8 +379,8 @@ Local indicator/backtesting grant required.
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
 | `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
 | `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
-| `bars` | 2-5000, default1000; Python sequential max/default250. |
-| `range` | Optional inclusive {from,to} epoch ms, null for trailing loaded history, omitted uses chart selection. Apply pins this choice for reruns. |
+| `bars` | 2-20000, default20000; Python sequential max/default250. |
+| `range` | Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period. |
 | `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
 | `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
 
@@ -397,7 +399,7 @@ Compatibility alias: `simulation.removeStrategy`. Same runtime and retry identit
 
 ## `backtesting.appliedStrategy`
 
-Read the strategy currently applied to the chart, if any, including its live run id and status.
+Read the strategy currently applied to the chart, if any, including liveRunId (newest run, null until a rerun is accepted), previousRunId (last completed result kept while rerunning), runContext ({symbol,resolution} being computed), status (applied/running/error), error and autoRerun.
 
 Retry key: **not required**. External local-assistant access is still required.
 
