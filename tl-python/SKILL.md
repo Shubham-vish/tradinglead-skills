@@ -12,12 +12,13 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read
 **Owns:** Writing/revising Python source and using the existing source-library
 and indicator commands. Strategy execution and result evidence belong to
 [tl-backtesting](../tl-backtesting/SKILL.md); parameter experiments belong to
-[tl-strategy-research](../tl-strategy-research/SKILL.md). This is not the
+[tl-strategy-optimization](../tl-strategy-optimization/SKILL.md). This is not the
 implementation guide for changing TradingLead's Python runtime or simulator.
 
 ## Runtime and data contract
 
-Check the addressed tab's runtime readiness before executing. Browser-compatible
+Check `executionReady` in the `pythonIndicators.capabilities` response and the
+addressed tab's runtime details before executing. Browser-compatible
 standard-library/NumPy/pandas indicators may run in a disposable browser
 sandbox; the bundled `tradinglead` Strategy SDK, native/OS packages and hard
 process isolation require Desktop. Neither case permits unrestricted host
@@ -28,9 +29,11 @@ without running imports or calculations. Inspect `valid` and `diagnostics`;
 `validation:"syntax-only"` does not certify strategy correctness. An
 unavailable checker is an error.
 
-The entry point is `calculate(bars, params)`. Bars are chronological OHLCV
+The entry point is `calculate(bars, params)`, or
+`calculate(bars, params, context)` for declared secondary datasets. Bars are chronological OHLCV
 dictionaries; `time` is milliseconds, `volume` can be `None`. Output values
-must align to the input candles and be finite numbers or `None`.
+must align to the input candles: scalar plots use finite numbers or `None`,
+while `candles`/`bars` plots use OHLC dictionaries or `None`.
 
 ```python
 # @input {"id":"enabled","type":"bool","default":true,"group":"Display"}
@@ -54,11 +57,19 @@ fixed source-character cap; storage, the 2 MiB command/transport budgets and
 runtime limits still apply. Leave room for the complete request envelope.
 
 Typed `# @input` JSON comments support `int`, `float`, `bool`, `string`, `enum`,
-plus title/group/description/min/max/step/options. Keep domain validation in
+`color` (`#RRGGBB`) and `null`, plus
+title/group/description/min/max/step/options. Keep domain validation in
 Python too. Read the runtime's current parameter limits before use. Validated finite JSON
 parameters may include nested objects and arrays; `_simulation` is reserved.
-The sweep grid in [tl-strategy-research](../tl-strategy-research/SKILL.md)
+The sweep grid in [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md)
 still requires flat parameter keys and bounded candidates.
+
+Optional `# @data` JSON comments declare same-provider secondary datasets; for
+example `# @data {"id":"daily","timeframe":"1D","bars":1000}`. Read supplied
+`context["datasets"]["daily"]["bars"]` and align backward by `closeTime`, never
+by the higher-timeframe open time or a future value. Missing provider data is
+an error, not permission to fetch it from Python. Input values do not rewrite
+these declarations. Discover the full contract and limits in capabilities.
 
 ## Account source and chart lifecycle
 
@@ -84,7 +95,9 @@ still requires flat parameter keys and bounded candidates.
 `list/get/history/restore/delete` manage saved source. Restoration creates a
 new source revision. `remove` detaches an applied instance and owned drawings,
 not its saved source. Stable instance IDs, native entity IDs and library IDs
-are distinct.
+are distinct; none is a backtest `runId`. On `apply`, omitting `parameters`
+uses the saved parameters (or `{}` for inline source); supplying `parameters`
+replaces that object, not a deep merge. Include the values you need to retain.
 
 External save/apply show their result in Studio by default; use
 `showInStudio:false` for deliberate headless work. Inspect `data.studio`:
@@ -100,6 +113,25 @@ Python. Clean editors refresh; dirty drafts, restoring targets and noneditable
 source are protected. `indicators.editorState.visible` reports actual host
 visibility, separately from the embedded editor's `open` state.
 
+For an unsaved handoff, use `indicators.openDraft` with `language:"python"`
+and nonempty `source`, optionally `title`; this command has no Python
+`parameters` or `strategyMode` field. A nonempty Python draft starts with `{}`
+parameters and retains the editor's execution mode; use explicit save/apply
+parameters for reproducible execution. To request the toolbar's guided **New**
+draft, send exactly `{"source":"","language":"python"}` with a retry key.
+It seeds guidance comments only, clears saved/update identity,
+and does not compile, execute or alter chart instances. Whitespace-only source is
+invalid. A manually emptied editor is not repopulated; Python draft retention
+lasts only while its editor stays mounted.
+
+Opening source/New preserves dirty drafts and refuses `DRAFT_DIRTY` or `BUSY`;
+save/discard locally or wait rather than inventing a discard override. Cancelled
+requests do not roll back completed writes: inspect the library/applied state
+before retrying with the same key and identical parameters. Studio opening
+exits native chart fullscreen before showing its dock; `STUDIO_NOT_VISIBLE`
+requires resolving visibility, not reapplying a study. Read `editorState.dock`;
+there is no command to select Studio's right/window docking mode.
+
 `showInputs` opens typed calculation controls; user Apply is explicit.
 Programmatic recalculation uses `apply` with new parameters and the existing
 target. `setVisibility` and `showSettings` do not run Python. Named appearance
@@ -113,6 +145,17 @@ default style/visibility fields into `settings` and pass `reset:["style"]`,
 `["visibility"]` or both to clear those retained overrides. Keep the unmodified
 **current**, not default, snapshot as `expected`. Stable targets tolerate native
 entity replacement but never silently select a different logical study.
+
+## Manual and unavailable surfaces
+
+Runtime installation/setup, editor clipboard/AI-fix controls, library backup
+import/export and cloud-conflict resolution remain UI workflows, not commands.
+Do not invoke host Python or private diagnostics to fill those gaps.
+The command catalog has no Python restore-queue retry command; inspect
+`pythonIndicators.applied` restore errors and use Studio recovery. Reapplying
+requires exact source or a saved ID even when updating an `instanceId`.
+Source and isolated-test evidence do not establish installed Desktop/native
+rendering or account-cloud readiness; discover the intended tab separately.
 
 ## Strategies are separate from indicator plotting
 

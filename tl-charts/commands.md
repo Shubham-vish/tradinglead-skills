@@ -1,9 +1,221 @@
 # tl-charts command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
+
+## `chart.viewState`
+
+Read bounded native chart view/scale/timezone and drawing toolbar state.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+Parameters: `{}`.
+
+## `chart.setView`
+
+Set native view; ranges request positioning, not verified history. Symbol/interval: chart.open. Date: guarded navigator.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `chartType` | Optional named chart type. |
+| `priceScale` | {mode?:normal\|percent\|log,autoScale?:boolean} |
+| `visibleRange` | {preset:5y\|1y\|6m\|3m\|1m\|5d\|1d} OR {from,to} epoch seconds |
+| `goToDate` | UTC date, offset ISO timestamp, or epoch seconds. |
+| `timezone` | Available timezone ID from viewState. |
+| `legend` | {ohlcVisible:boolean} |
+
+## `chart.compare`
+
+List/add/remove native Compare/Overlay only; never other studies. Adds use selected feed; no fallback.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `action` | list\|add\|remove |
+| `symbol` | Required for add. |
+| `kind` | Optional add: compare (default)\|overlay. |
+| `id` | Exact listed id for remove. |
+| `offset` | Optional list offset. |
+| `limit` | Optional list 1-50. |
+
+## `chart.action`
+
+Request native toolbar action. Screenshot returns bounded PNG, not a file. Replay guards undo/redo/date/compare.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `action` | undo\|redo\|settings\|screenshot\|fullscreen\|resetScale\|objectTree\|compareDialog\|goToDate |
+| `enabled` | Required boolean only for fullscreen. |
+
+## `drawings.list`
+
+Page user drawings only: id/tool, up to 10 time/price points, visible/locked; excludes managed visuals.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `offset` | Optional 0-10000. |
+| `limit` | Optional 1-50, default 50. |
+
+## `drawings.create`
+
+Create one allowlisted user drawing with exact tool point count. Epoch seconds/prices; no raw overrides.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `tool` | Allowlisted tool; see public guide. |
+| `points` | 1-7 {time:integer epoch seconds,price:finite} |
+| `text` | Optional text for text tool, max 500. |
+| `locked` | Optional boolean. |
+
+## `drawings.update`
+
+Hide/lock/remove up to 50 exact user drawing IDs; never studies or managed visuals. Preflights all targets; not transactional.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `ids` | 1-50 unique IDs from list. |
+| `visible` | Optional boolean. |
+| `locked` | Optional boolean. |
+| `remove` | Optional true; exclusive with visible/locked. |
+
+## `drawings.setMode`
+
+Set drawing modes/tool or reorder existing favorites. Confirmed removeAll deletes all user drawings, preserving managed visuals.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `tool` | Optional allowlisted drawing/cursor/brush/measure/zoom tool. |
+| `magnet` | Optional boolean. |
+| `lockAll` | Optional boolean. |
+| `hideAll` | Optional boolean. |
+| `favoriteOrder` | All current favorite tool IDs from chart.viewState, ordered; max 50. |
+| `removeAll` | Optional true. |
+| `confirm` | Required true only with removeAll. |
+
+## `studyTemplates.manage`
+
+Native indicator templates, not drawing styles/layouts. Apply replaces native studies only, preserving symbol/interval; no replay. Indicator grant/retry key required, including list.
+
+Retry key: **required**. External local-assistant access is still required.
+Local indicator/backtesting grant required.
+
+| Parameter | Contract |
+| --- | --- |
+| `action` | list\|save\|apply\|delete |
+| `name` | Required except list; max 80. |
+| `replace` | save only: true to overwrite. |
+| `confirm` | Required true for apply/delete. |
+| `offset` | list only, 0-10000. |
+| `limit` | list only, 1-50. |
+
+## `layout.getState`
+
+Read split-chart layout: active pane, maximized pane, split sizes and each pane's last symbol/feed/interval. chart.*/studies.*/indicators.* always target the active pane.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `saved` | Optional boolean: also list up to 50 saved chart layouts (needs sign-in). |
+
+## `layout.set`
+
+Change split layout, active pane (retargets chart.* commands), focus/restore, split sizes, fullscreen or pane linking.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `layout` | single\|columns\|rows\|grid |
+| `activePane` | Pane id in layout |
+| `maximize` | bool |
+| `horizontal` | 25-75 |
+| `vertical` | 25-75 |
+| `fullscreen` | bool |
+| `sync` | {symbol?,interval?} bools: active pane drives others |
+
+## `layout.saved`
+
+Save the active pane's chart as a named saved layout, or load a saved layout id (from layout.getState saved:true) into the active pane, replacing its chart.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `action` | save\|load. |
+| `name` | save: 1-64 chars. |
+| `id` | load: saved layout id. |
+
+## `grid.getState`
+
+Read the mounted Chart Grid: settings, universe, ranking, paging and a bounded page of card symbols with load status.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `offset` | Optional 0-499 card offset. |
+| `limit` | Optional 1-100, default 24. |
+| `options` | Optional boolean: include universe choices (max 200). |
+
+## `grid.configure`
+
+Change the mounted Chart Grid; source/sort/filter/paging changes reset page. Verify with grid.getState.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `universe` | getState option |
+| `timeframe` | 5-1M |
+| `candles` | 50-500 |
+| `density` | size |
+| `pageSize` | 6\|12\|18\|24 |
+| `paging` | pages\|more |
+| `indicators` | sma20\|ema50 |
+| `volume` | bool |
+| `sort` | {field,direction} |
+| `filters` | partial; null clears |
+| `page` | 1-based |
+| `linkTimeframe` | bool |
+| `refresh` | true |
+| `chartIndicators` | copy\|basic |
+| `theme` | id |
+| `width` | px |
+| `expanded` | bool |
+| `openCard` | page symbol to active chart |
+| `panel` | close\|openPage, alone |
+
+## `grid.open`
+
+Open the Chart Grid sidebar, optionally with explicit symbols or a completed visible scan's tickers in grid order.
+
+Retry key: **required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `symbols` | 1-500 tickers |
+| `runId` | Screening runId |
+| `scope` | all\|filtered\|selected scan rows |
+| `label` | 1-120 chars |
+| `timeframe` | Optional |
+| `candles` | Optional |
+| `pageSize` | Optional |
 
 ## `chart.getState`
 
@@ -167,120 +379,13 @@ Retry key: **required**. External local-assistant access is still required.
 | `type` | Selected drawing type from state. |
 | `name` | Exact saved name from list. |
 
-## `intelligence.catalog`
-
-Read up to 50 authorized published report names and filter availability from the open Market Intelligence panel. Not streaming quotes.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-Parameters: `{}`.
-
-## `intelligence.getReport`
-
-Read at most 10 authorized published report rows with snapshot provenance. Requires the mounted panel and a dataset from intelligence.catalog; not live quotes or redistribution rights.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `dataset` | Exact available dataset from intelligence.catalog. |
-| `symbol` | Optional supported canonical symbol filter. |
-| `date` | Optional YYYY-MM-DD snapshot date. |
-
-## `futures.getReport`
-
-Read at most five published NSE participant summaries from the mounted Futures panel. Aggregate reports, not live positions or forecasts.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `isIndex` | Optional boolean, true for index futures (default), false for stock futures. |
-
-## `heatmap.getState`
-
-Read current heatmap settings, aggregate breadth and quote receipt time from the open panel. No per-ticker quotes; receipt time is not provider freshness.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-Parameters: `{}`.
-
-## `alerts.list`
-
-List this account's saved cloud chart alert rules (id, ticker, timeframe, status, direction, price/trendline, frequency, price source). Read-only; does not return live trigger state.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-Parameters: `{}`.
-
-## `alerts.create`
-
-Create a horizontal latest-price alert on a symbol, monitored from shared cloud quotes while the Alerts Activity tab is open. Trendline alerts must be drawn on the chart. Requires sign-in, local write permission and an idempotencyKey.
-
-Retry key: **required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `ticker` | Canonical ticker, e.g. NSE:TCS-EQ |
-| `price` | Finite price level to cross |
-| `direction` | Optional above\|below\|either\|touch, default above |
-| `timeframe` | Optional resolution for bar bucketing, e.g. 1, 15, 1D; default 1D |
-| `frequency` | Optional once\|once_per_bar\|every_cross, default once |
-| `name` | Optional label |
-
-## `alerts.setEnabled`
-
-Enable (resume) or disable (pause) a saved alert rule by id, using its latest saved version. Requires sign-in, write permission and an idempotencyKey.
-
-Retry key: **required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `id` | Saved alert rule id |
-| `enabled` | Required boolean; true resumes, false pauses |
-
-## `alerts.delete`
-
-Delete a saved alert rule by id. Does not remove chart drawings. Requires sign-in, write permission and an idempotencyKey.
-
-Retry key: **required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `id` | Saved alert rule id |
-
 ## `feeds.list`
 
-Discover chart feeds. Chart feeds do not change the backend screening source.
+Discover chart feeds. Inspect discovery.status: failed broker discovery returns only default with an explicit error, never cached brokers. Chart feeds do not change the backend screening source.
 
 Retry key: **not required**. External local-assistant access is still required.
 
 Parameters: `{}`.
-
-## `marketData.getBars`
-
-Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Pick the feed with feeds.list (default built-in cloud, or a connected broker like kite, fyers, web-dhan). Give the window as from+to, to+countBack, or just countBack. Returns up to 5000 bounded candles with epoch-millisecond UTC times; not a live/streaming quote and receipt time is not provider freshness. No feed is ever silently substituted.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `feed` | Feed id from feeds.list (e.g. default, kite, fyers, web-dhan). |
-| `symbol` | Canonical ticker in the feed's format, e.g. NSE:RELIANCE-EQ. |
-| `resolution` | Whole minutes 1-1440 (including 3,10,20,45,75,90), or 1D,1W,1M. Broker custom intervals require a compatible exact-divisor native base; no provider substitution. |
-| `from` | Optional window start: YYYY-MM-DD or epoch seconds. Supply from and/or countBack. |
-| `to` | Optional window end: YYYY-MM-DD or epoch seconds; defaults to now. |
-| `countBack` | Optional number of candles ending at 'to' (1-5000). Supply from and/or countBack. |
-
-## `universe.list`
-
-List available stock categories or the symbols in one category.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `category` | Optional category identifier from this command. |
 
 ## `chart.open`
 

@@ -1,12 +1,39 @@
 # TradingLead command ownership
 
 Generated from a bounded command-catalog snapshot; check the addressed app's live catalog before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-159 canonical commands; 42 compatibility aliases; 4 native Desktop controls.
+192 canonical commands; 49 compatibility aliases; 4 native Desktop controls.
 
 | Registered command | Skill | Retry key |
 | --- | --- | --- |
+| `watchlists.getRows` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `watchlists.select` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `watchlists.setView` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `watchlists.removeSymbols` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `watchlists.manage` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `symbol.details` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `peers.get` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `peers.configure` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `indices.getState` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `heatmap.configure` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `watchlists.multiView` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `chart.viewState` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `chart.setView` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `chart.compare` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `chart.action` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `drawings.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `drawings.create` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `drawings.update` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `drawings.setMode` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `studyTemplates.manage` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `layout.getState` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `layout.set` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `layout.saved` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `grid.getState` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `grid.configure` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `grid.open` | [tl-charts](tl-charts/SKILL.md) | Required |
 | `screening.getState` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screening.show` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screening.catalog` | [tl-screening](tl-screening/SKILL.md) | Not required |
@@ -64,7 +91,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.libraryExport` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `backtesting.libraryImport` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.compare` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
-| `backtesting.research` | [tl-strategy-research](tl-strategy-research/SKILL.md) | Required |
+| `backtesting.research` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
 | `backtesting.getChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `backtesting.setChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.run` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
@@ -90,6 +117,13 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.removeStrategy` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `backtesting.appliedStrategy` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `backtesting.setStrategyAutoRerun` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
+| `backtesting.researchPreview` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Not required |
+| `backtesting.researchMeasure` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
+| `backtesting.researchRerun` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
+| `backtesting.optimize` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
+| `backtesting.optimizePreview` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Not required |
+| `backtesting.optimizeMeasure` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
+| `backtesting.optimizeRerun` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
 | `simulation.practice` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required |
 | `simulation.capabilities` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `simulation.list` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
@@ -102,7 +136,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.libraryExport` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `simulation.libraryImport` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.compare` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
-| `simulation.research` | [tl-strategy-research](tl-strategy-research/SKILL.md) | Required |
+| `simulation.research` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
 | `simulation.getChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `simulation.setChartOptions` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.run` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
@@ -128,9 +162,14 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.removeStrategy` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
 | `simulation.appliedStrategy` | [tl-backtesting](tl-backtesting/SKILL.md) | Not required |
 | `simulation.setStrategyAutoRerun` | [tl-backtesting](tl-backtesting/SKILL.md) | Required |
+| `simulation.researchPreview` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Not required |
+| `simulation.researchMeasure` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
+| `simulation.researchRerun` | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Required |
 | `workspace.getState` | [tl-desktop](tl-desktop/SKILL.md) | Not required |
 | `workspace.getActivity` | [tl-desktop](tl-desktop/SKILL.md) | Not required |
 | `workspace.setPanel` | [tl-desktop](tl-desktop/SKILL.md) | Not required |
+| `workspace.openSidebar` | [tl-desktop](tl-desktop/SKILL.md) | Not required |
+| `workspace.setTheme` | [tl-desktop](tl-desktop/SKILL.md) | Not required |
 | `chart.getState` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `chart.snapshot` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `chart.setLive` | [tl-charts](tl-charts/SKILL.md) | Not required |
@@ -146,17 +185,19 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `drawingTemplates.state` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `drawingTemplates.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `drawingTemplates.apply` | [tl-charts](tl-charts/SKILL.md) | Required |
-| `intelligence.catalog` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `intelligence.getReport` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `futures.getReport` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `heatmap.getState` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `alerts.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `alerts.create` | [tl-charts](tl-charts/SKILL.md) | Required |
-| `alerts.setEnabled` | [tl-charts](tl-charts/SKILL.md) | Required |
-| `alerts.delete` | [tl-charts](tl-charts/SKILL.md) | Required |
+| `intelligence.catalog` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `intelligence.getReport` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `futures.getReport` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `heatmap.getState` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `alerts.list` | [tl-alerts](tl-alerts/SKILL.md) | Not required |
+| `alerts.create` | [tl-alerts](tl-alerts/SKILL.md) | Required |
+| `alerts.setEnabled` | [tl-alerts](tl-alerts/SKILL.md) | Required |
+| `alerts.update` | [tl-alerts](tl-alerts/SKILL.md) | Required |
+| `alerts.activity` | [tl-alerts](tl-alerts/SKILL.md) | Not required |
+| `alerts.delete` | [tl-alerts](tl-alerts/SKILL.md) | Required |
 | `feeds.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `marketData.getBars` | [tl-charts](tl-charts/SKILL.md) | Not required |
-| `universe.list` | [tl-charts](tl-charts/SKILL.md) | Not required |
+| `marketData.getBars` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `universe.list` | [tl-markets](tl-markets/SKILL.md) | Not required |
 | `screener.listCapabilities` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screener.run` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `screener.getResults` | [tl-screening](tl-screening/SKILL.md) | Not required |
@@ -165,9 +206,9 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `providerScreener.run` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `providerScreener.getResults` | [tl-screening](tl-screening/SKILL.md) | Not required |
 | `providerScreener.cancel` | [tl-screening](tl-screening/SKILL.md) | Not required |
-| `watchlists.list` | [tl-screening](tl-screening/SKILL.md) | Not required |
-| `watchlists.create` | [tl-screening](tl-screening/SKILL.md) | Required |
-| `watchlists.addSymbols` | [tl-screening](tl-screening/SKILL.md) | Required |
+| `watchlists.list` | [tl-markets](tl-markets/SKILL.md) | Not required |
+| `watchlists.create` | [tl-markets](tl-markets/SKILL.md) | Required |
+| `watchlists.addSymbols` | [tl-markets](tl-markets/SKILL.md) | Required |
 | `chart.open` | [tl-charts](tl-charts/SKILL.md) | Not required |
 | `indicators.listCapabilities` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |
 | `indicators.editorState` | [tl-tlscript](tl-tlscript/SKILL.md) | Not required |

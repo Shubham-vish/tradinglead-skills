@@ -1,13 +1,20 @@
 ---
 name: tl-screening
-description: Operate the unified TradingLead Scanner, original strategies, custom conditions and SQL; inspect/filter/sort/select the real results grid, refine stocks into another scan, reopen Scanned History and reuse saved rules. Also routes legacy jobs and local broker TLScript-Pine indicator scans. Explicit tab targeting, revisions, bounded reads and separate cloud-write grants.
+description: Operate the unified TradingLead Scanner (Scan sidebar), original strategies, custom conditions and SQL; inspect/filter/sort/select the real results grid, refine stocks into another scan, reopen Scanned History, reuse saved screener rules and hand results to Chart Grid or a cloud watchlist. Also routes legacy jobs and local broker TLScript-Pine indicator scans. Watchlist management itself belongs to tl-markets.
 ---
 
-# Screening and cloud watchlists
+# Screening (Scan sidebar)
 
 Start with [tl-desktop](../tl-desktop/SKILL.md). Read
 [commands.md](commands.md) and discover the chosen screening surface before
 constructing a request.
+
+`mutates:false` is a command grant/retry classification, **not** a promise of
+no effects: opening/configuring changes the visible workspace, and running
+consumes account/provider allowance and may persist a completed scan in history.
+These actions still need external assistant access and real service authorization.
+They have no write retry receipt; inspect state after an uncertain start instead
+of automatically starting another chargeable run.
 
 ## Choose the data source explicitly
 
@@ -96,6 +103,27 @@ equally to UI and command runs. Do not silently split an oversized list into
 extra chargeable scans. Source data can have unresolved split/bonus defects;
 report the warning rather than interpreting every price jump as a signal.
 
+For a daily gain of at least 4% from the previous observed close, discover
+`gainers` and its parameters, then configure a preset definition with
+`mode:"preset"`, `preset:"gainers"`, `timeframe:"1D"` and
+`parameters:{"min_change_pct":4,"change_basis":"previous_close"}`.
+Use `"open"` only when the user means gain from that candle's open. Discover
+the permitted lookback/limit and universe, and follow the same revision/run/poll
+sequence above. This screens the latest stored eligible bar per ticker, not
+live percentage movers; inspect returned dates and warnings before calling it
+today's result. It does not find every historical day with a 4% move.
+
+For Custom SQL, first verify `screening.catalog.capabilities.permissions.sql`
+and its advertised `sql` schema. A supported daily definition uses
+`mode:"sql"`, `timeframe:"1D"`, permitted `lookback_days`/`limit`, and
+`sql:"SELECT ticker, datetime, close FROM ticker_summary_daily ORDER BY close DESC"`.
+Use that table only if the addressed catalog advertises it. Select unqualified
+physical table/column names, not calculated rule fields such as `rsi14` or
+`sma20`. The server scopes every physical read to the selected stocks, timeframe
+and dates; changing timeframe does not rewrite SQL table names. SQL completion
+and the copy/paste AI prompt are UI assistance, not a validation or execution
+bypass. Review any generated SQL before the explicit run.
+
 ### Original strategies in the same Scanner
 
 Discover `screening.catalog.strategiesCatalog.screeners` and their parameter
@@ -104,6 +132,8 @@ an empty successful strategy registry. Use `mode:"classic"` with
 `screeners:[{name,parameters}]`; do not send UI `enabled` flags or a pipeline.
 Up to five distinct parameter instances may be combined. Original algorithms
 are not interchangeable with similarly named presets.
+The Classic strategy named **Patterns Filter** is one of those multi-stock
+rules, not the separate single-ticker Historical Patterns sidebar.
 
 ```json
 {
@@ -139,6 +169,8 @@ instances are distinct. Successful sibling rules survive partial failures.
    selection and expanded analysis the user sees. Arrays replace the
    corresponding state; omitted fields stay unchanged. `reset:true` is
    exclusive. Invalid requests must not partially change the grid.
+   Up to 20 filters are supported, including two AND conditions on the same
+   discovered column for a lower/upper range; values must match its type.
 3. Read analysis again after a display change. Read `screening.getState` for
    the current draft revision, then call `screening.refine` with both revisions,
    `runId` and `scope:"filtered"` or `"selected"`.
@@ -157,6 +189,26 @@ is tab-only; individual history snapshots persist separately.
 After `ANALYSIS_CONFLICT` or `REVISION_CONFLICT`, rediscover and reconsider the
 user's current state; never blindly retry a mutation. Expanded analysis is a
 real modal; close it with `setAnalysis` (`expanded:false`) before showing setup.
+
+### Read original rows, selected stocks or an export
+
+`screening.getResults` pages the current run's original returned rows; it does
+not apply the grid's filters or join earlier refinement stages.
+`screening.getAnalysis` pages the current filtered/sorted, joined grid.
+For a user-requested report/export, traverse the appropriate row pagination
+and, for analysis values, column pagination. Keep the same run and analysis
+revision across reads; if the user changes the grid, reread rather than mixing
+different snapshots. There is no dedicated `screening.export` command.
+
+To save the visible filtered selection as a cloud watchlist, collect canonical
+`ticker` values from analysis `rows` whose `selected` is true across **all row
+pages**, deduplicate, then use `watchlists.create` or `watchlists.addSymbols` ([tl-markets](../tl-markets/SKILL.md))
+with explicit `symbols`. Do not rely on `selectedTickers` alone: that response
+list is capped at 100 and `selectionTruncated` reports the omission. Selection
+arrays replace rather than append, so splitting `setAnalysis` calls is not a
+way to accumulate a larger selection. Honor the addressed runtime's limits.
+Cloud watchlist writes accept at most 500 explicit symbols per command; do not
+silently drop excess selected stocks or split writes without reviewing scope.
 
 ### Scanned History, drafts and cache
 
@@ -207,6 +259,8 @@ retrying, especially after a tab reload (retry receipts are session-local).
 Discover actual screener names/parameters. Supply 1-500 canonical tickers and
 1-5 supported screener configurations. Source is the backend `default` surface,
 not a guessed broker ID. Poll `screener.getResults` using the returned run ID.
+Its successful terminal job status is `done`, not the visible Scanner's
+`completed`; inspect its `matchedSymbols` and per-stock errors.
 
 The public backend scan now uses the authenticated, plan-limited screening
 path and reads current stored candles. `refreshCache` is only a compatibility
@@ -223,6 +277,10 @@ Read [tl-tlscript](../tl-tlscript/SKILL.md) before authoring. Bars are bounded
 to 2-1000. The newest candle is conservatively excluded; broker requests
 consume quota. Secondary-data requests and Pine strategies are not supported
 on this scan surface. Poll `providerScreener.getResults`.
+Its terminal statuses are `completed` or `completed_with_errors`; inspect each
+row even after an `ok` command response. Conditions use a finite numeric
+`value` within ±1e9. `plotIndex` selects a real numeric output, not an arbitrary
+plot inferred from a compiled script.
 
 There is no silent provider/SQL fallback. Local runs expire after 30 minutes
 or reload; an expired job is not an empty successful result.
@@ -234,23 +292,27 @@ partial failures and truncation. A failed symbol is not a valid non-match.
 Use the matching `cancel` command when requested; cancellation may not undo a
 backend computation already dispatched.
 
-Cloud watchlist writes are separate:
+Saving results to a cloud watchlist is owned by
+[tl-markets](../tl-markets/SKILL.md): pass verified explicit `symbols` (or a
+completed legacy `screener.run` job's `runId`) to `watchlists.create` or
+`watchlists.addSymbols` there, with its sign-in and cloud-write rules.
 
-1. Read `watchlists.list` and verify a **real signed-in account**.
-2. Require the user's separate cloud-write grant. Local Desktop automatic
-   access/development preview is not that grant.
-3. Use `watchlists.create` or `watchlists.addSymbols`, with `symbols` **OR**
-   a completed backend `runId`, not both. For provider scan matches, pass the
-   verified explicit `symbols`; do not pass a provider run ID to the backend
-   watchlist service.
-4. Use a retry key and inspect the persisted outcome. Do not overwrite an
-   existing different list or change broker watchlists.
+To chart results as cards, use `grid.open` from
+[tl-charts](../tl-charts/layouts-grid.md): `{"runId": ...}` for a completed
+visible run (all result tickers in result order, deduplicated, about 1025 rows
+maximum, `truncated` flag). Add `"scope":"filtered"` or `"scope":"selected"` to
+chart only the rows that survive the results grid's current filters, or the
+selected ones among them (`ANALYSIS_CHANGED` if the grid changes mid-read;
+`NO_SYMBOLS` if none qualify). Explicit `symbols` (max 500) remain available.
+This only reads screening state; it does not change the run, draft or grid
+analysis.
 
 Open a verified result via [tl-charts](../tl-charts/SKILL.md), or save its
 analysis with [tl-research](../tl-research/SKILL.md). Do not invent a match for
 unsupported fundamentals, conditions, datasets or indicators.
 
-Watchlist row sorting/popovers, visual heatmaps and sidebar layout controls are
-UI features, not registered `screening.*` commands. Use actual scanner
-analysis/selection commands only for the visible Scanner result grid; do not
-claim the grid commands manage a watchlist or a market heatmap.
+Use the scanner analysis/selection commands only for the visible Scanner result
+grid; they do not manage the Watch grid, watchlists or the market heatmap (see
+[tl-markets](../tl-markets/SKILL.md)). User sign-in, provider connection and
+cloud-write approval remain intentional user-only boundaries; do not use
+arbitrary JavaScript to fake missing commands.

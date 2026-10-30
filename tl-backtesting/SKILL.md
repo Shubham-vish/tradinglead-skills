@@ -1,6 +1,6 @@
 ---
 name: tl-backtesting
-description: Use TradingLead to run and inspect Python or TLScript-Pine strategy backtests, applied strategy state, saved runs, presets, comparisons and exports. Owns single-run execution and evidence, not simulator implementation, parameter research, manual paper orders or HTML reports.
+description: Use TradingLead to run and inspect Python or TLScript-Pine strategy backtests, applied strategy state, saved runs, presets, comparisons and exports. Owns single-run execution and evidence, not simulator implementation, parameter optimization, manual paper orders or HTML reports.
 ---
 
 # Backtesting, saved setups and result evidence
@@ -21,14 +21,16 @@ runtime readiness. Pine strategy source must follow the discovered backtest
 contract, not indicator-only validation.
 
 **Does not own:** Parameter experiments
-([tl-strategy-research](../tl-strategy-research/SKILL.md)), paper orders
+([tl-strategy-optimization](../tl-strategy-optimization/SKILL.md)), paper orders
 ([tl-paper-trading](../tl-paper-trading/SKILL.md)), HTML reports
 ([tl-research](../tl-research/SKILL.md)), or changes to TradingLead's engine.
 
 ## Run deliberately
 
-1. Confirm the chart's feed/symbol/interval and loaded history. Source IDs,
-   run IDs and preset IDs are different.
+1. Confirm the active account, chart's feed/symbol/interval and loaded history.
+   The command captures that chart context; there are no `account`, `feed`,
+   `symbol` or `interval` overrides on `run`/`applyStrategy`. Stop and rediscover
+   after an account change.
 2. Discover supported strategy output and configuration. State initial
    capital, quantity, instrument model, commission, slippage, warmup, stops and
    targets explicitly where relevant; do not label user assumptions
@@ -43,7 +45,10 @@ contract, not indicator-only validation.
    `pineSettings`: initial capital, quantity type/value, commission type/value,
    integer slippage ticks, pyramiding and long/short margin. Omit overrides to
    preserve declaration defaults. Generic Python config is rejected for Pine.
-   Do not invent a Pine parameter-grid API or assume TradingView equivalence.
+   Pine parameter experiments on a completed frozen run belong to
+   [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md), including preview,
+   explicit measurement and confirmed selected-parameter rerun. Do not invent
+   grid fields on `run` or assume TradingView equivalence.
 4. The returned run can be `preparing`. Poll `backtesting.get` until a terminal
    result or explicit error. Never report that a merely accepted run completed.
 5. Read metrics, trades, events and equity with bounded pages. `cancel`
@@ -80,9 +85,28 @@ override flags remain rejected; these historical fills are not real-tick parity.
 Primary and authorized secondary history are frozen at the closed-candle
 cutoff; source lookahead is still the author's responsibility.
 
+## Source, applied definition and frozen result are different
+
+| Identity | Correct operation |
+| --- | --- |
+| Saved source `py_…` / `pine_…` | Author/save/read through `pythonIndicators.*` / `indicators.*`; saving does not apply or backtest |
+| Applied strategy | `applyStrategy` requires exact `source` text; optional `sourceId` / `revision` identify its saved **draft base**, not verified text equality |
+| Frozen result `sim-…` | `get` / revision-pinned `export`; this source, inputs, settings and candles are the evidence, not the current source-library file |
+| Preset / saved snapshot | Reusable Python setup / archived result respectively; neither is an applied chart-instance ID |
+
+`run` accepts source **or** `id` plus optional saved `expectedRevision`.
+`applyStrategy` takes `source`, optional `sourceId` and `revision`, **not** `id`
+or `expectedRevision`. Run labels use `versionSuffix`; Apply labels use
+`version`. Saved Python parameters and Pine inputs can supply defaults for
+saved-ID runs, but Python `strategyMode` still defaults to vectorized: pass it
+explicitly along with config, bars/range and session assumptions when reproducing
+a sequential setup. Saved Pine source inputs are not per-run `pineSettings`.
+Applied draft runs expose `strategy.baseSource` with `relationship:"draft-base"`;
+their `strategy.sourceId/revision` remain null.
+
 ## Read evidence without changing the run
 
-- `backtesting.get`: page `trades`, `events`, `equity` or `research`; inspect
+- `backtesting.get`: page `trades`, `events`, `equity` or `optimization` (legacy `research`); inspect
   totals, offsets and analytics truncation. `risk` permits explicit regular
   sampling assumptions for annualized statistics; omission does not annualize.
 - `backtesting.export`: stopped runs only. Fix `expectedRevision` across all
@@ -123,6 +147,14 @@ run/summary and optional name/notes/tags into saved storage. It does not execute
 the source or restore an active run. Inspect the live contract and size limits;
 do not treat arbitrary JSON as a valid saved run or overwrite user evidence.
 
+Cloud backup is a **separate manual Saved History UI workflow**, when configured
+and authorized: save locally, choose Back up on that saved row, and inspect its
+confirmed cloud revision. Cloud Restore imports into the local saved library;
+`libraryRestore` then needs a free active slot. There are no public
+`backtesting.cloud*` commands. `librarySave`/`libraryExport` alone never upload,
+and chart-layout/replay preference sync is not a backup of the run ledger.
+Do not invoke private cloud clients, tokens or endpoints to fill this command gap.
+
 `compare` compares 2-4 same-sample saved snapshots. Follow pagination and
 disclose differing assumptions instead of ranking incompatible runs. All runs
 must share feed, symbol, interval, primary candle fingerprint, first/last
@@ -162,7 +194,9 @@ Legacy `pine-direction-resimulation-legacy` runs must be rerun first.
   applied strategy in place, cancels its in-flight run and reruns while retaining
   the auto-rerun choice. `removeStrategy` retains the last run/history. With automatic
   rerun enabled the applied strategy recomputes on chart symbol/interval
-  change. `setStrategyAutoRerun` explicitly toggles that behavior. Confirm
+  change **while Backtesting and the document are visible**, reconciling when
+  reopened. Hidden automatic work is suspended; explicit Run/Apply is separate.
+  `setStrategyAutoRerun` explicitly toggles that behavior. Confirm
   chart readiness and the resulting run before treating a rerun as complete;
   applied setup retains inputs, execution settings, bars/range and session
   defaults. `indicators.openDraft` can open its unsaved source in Studio with
@@ -179,18 +213,49 @@ Legacy `pine-direction-resimulation-legacy` runs must be rerun first.
   grouped on-chart without dropping ledger rows. Backtest levels are read-only;
   paper close/protection actions are never offered on a completed backtest.
 
+### Apply, edit, reapply and reload safely
+
+Read `appliedStrategy` after Apply, then poll its accepted `liveRunId` through
+`get`. Apply acknowledgement is not run completion. Reapply the exact edited
+source and complete desired setup; saving the library source alone changes
+neither an existing applied definition nor a frozen result.
+
+The last completed report survives a failed/cancelled replacement and exhausted
+chart-transition retries. Inspect `stale`, `failedRunId`, `error` and bounded
+`diagnostics`; stale results are not evidence for the current setup/chart.
+Only a successful replacement discards the previous owned report. Capacity
+recovery uses applied-lifecycle ownership/recorded attempt IDs, never matching
+titles or source text; unrelated manual runs and unowned legacy failures are
+not automatically reclaimed. The known-good result is not pre-deleted.
+
+`persistence:"local"` confirms only the applied definition's local save.
+`"session-only"` / `persistenceError` means edited text survives in memory, not
+necessarily reload. The native **Retry saving strategy** button retries saving
+without running; there is no corresponding public retry command. Do not reapply,
+reload or delete storage merely to retry persistence. On reload a durable
+definition restores and may recompute when the visible chart is ready; with
+auto-rerun off it reuses retained evidence. This differs from paper clocks,
+which never automatically resume.
+
+Runtime diagnostics expose bounded allowlisted types, source coordinates and
+fixed remediation, not arbitrary tracebacks, paths or secret-bearing messages.
+Unknown details stay unavailable; never bypass the safe projection with private
+diagnostic execution.
+
 These describe current source contracts, not proof that an older packaged app
 has them. Rediscover the addressed tab's capabilities before sending new fields.
 
 For Python or Pine sweep/holdout/walk-forward use
-[tl-strategy-research](../tl-strategy-research/SKILL.md); for replay and forward
+[tl-strategy-optimization](../tl-strategy-optimization/SKILL.md); for replay and forward
 paper use [tl-paper-trading](../tl-paper-trading/SKILL.md). Publish a saved HTML
 explanation through [tl-research](../tl-research/SKILL.md), not a new backtest.
 
-## Verified end-to-end sequence
+## Operator sequence and verification boundary
 
-Exercised against a running Desktop tab (INFY 1D, default feed). Run from
-`TradingLead-Desktop` with `--tab` and a fresh `--key` for every mutation:
+Historical Desktop exercise used INFY 1D on the default feed; this is not
+installed-app acceptance of every current additive field or the latest lifecycle
+fixes. Rediscover a ready addressed tab. Run from `TradingLead-Desktop` with
+`--tab` and a fresh `--key` for every mutation:
 
 1. `chart.open` → poll `chart.getState` until `ready:true` with the requested interval.
 2. `backtesting.capabilities` (and `pythonIndicators.capabilities` for the
@@ -200,9 +265,12 @@ Exercised against a running Desktop tab (INFY 1D, default feed). Run from
    Python: same command with `{"language":"python","parameters":{...}}`.
 4. Poll `backtesting.get` until `completed`; read `metrics`, `analytics`, then
    page `trades`/`events`/`equity`. Add `risk` only with explicit sampling assumptions.
-5. `backtesting.research` `mode:"sweep"` on the completed run (Pine `grid` uses
-   declared input IDs); read `get` `section:"research"`.
-6. `librarySave` each run, then `compare` same-language, same-sample runs.
+5. `backtesting.optimize` `mode:"sweep"` on the completed run (Pine `grid` uses
+   declared input IDs); read `get` `section:"optimization"`.
+6. `librarySave` each stopped run with current `expectedRevision` and
+   `expectedLibraryRevision:0` for a new saved copy; then `compare` compatible
+   same-sample saved IDs. A later optimization changes the active revision;
+   reread it before saving. Existing copies need their current library revision.
 7. Chart: `studies.apply` (built-in), `indicators.apply` (Pine indicator),
    `pythonIndicators.apply`, `backtesting.applyStrategy`; verify with `chart.snapshot`.
 8. Clean up only what you created: `removeStrategy`, `indicators.remove`,

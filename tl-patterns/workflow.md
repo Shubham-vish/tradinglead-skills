@@ -46,7 +46,8 @@ through Sunday 7. Supported windows are 15-minute aligned within 09:15-15:30 IST
 Monday plus Wednesday over 200 weeks produces 400 separate candidate rows.
 
 `mode:"grouped",weekdays:[5,1],conditionWeekday:5` means Friday followed by
-Monday. Order is meaningful; the group must fit one seven-day cycle. Multi-day
+Monday. Order is meaningful; the group must fit one seven-day cycle, and
+`conditionWeekday` must have a following selected weekday in that order. Multi-day
 groups derive a next-selected-session outcome. They never substitute a holiday
 with another trading day. Separate studies use a first-candle condition and the
 remaining candles as outcome; a one-candle window has no subsequent outcome.
@@ -71,9 +72,13 @@ remaining candles as outcome; a one-candle window has no subsequent outcome.
    account/pane/source changes or loss of agent access can cancel pending work.
    Cancellation cannot undo provider work already submitted.
 
-An unavailable chart blocks analysis. The cloud source batches all selected
-windows in one request; supported local/provider sources use their own paged
-history. Do not switch feeds, exit replay or substitute cloud data to make a run
+An unavailable chart blocks analysis and ticker search. A verified cloud source
+batches eligible selected windows in at most one candle request (zero when all
+are excluded by the source calendar); supported local/provider sources use
+their own paged history. This SQL route is separate from Scanner Custom SQL:
+it uses authenticated chart-history admission, not the Scanner SQL entitlement
+or daily scan allowance. Provider calls can still consume provider quota.
+Do not switch feeds, exit replay or substitute cloud data to make a run
 succeed. A missing backend route requires an updated service, not per-day retries.
 
 ## Filter and navigate without rerunning
@@ -97,8 +102,20 @@ rows, not just the returned page; honor `statistics.valid`.
 `getResults` and its applied-result `runId`. It uses the shared original-pane
 navigator, supports only complete occurrences, retains source verification and
 waits for the dated navigation. It is not an arbitrary date/source override.
+The row's returned `id` is the `occurrenceId` parameter; preserve that exact
+structured string, not a row number, date or newly constructed ID. Navigation
+can restore the study ticker and 15m interval in the original pane, but never
+changes its feed or exits replay. Returned navigation `from/to` are UTC seconds;
+original bars use UTC milliseconds.
 An expanded chart dialog is a visual UI affordance; use bounded original bars
 for numerical inspection rather than scraping a chart image.
+
+There is no `patterns.export`, saved-study library or command for opening an
+individual mini-chart dialog or changing its chart theme. For a requested
+numerical export/report, page `getResults` with `includeBars:true` using the
+same applied-result ID and analysis revision, and preserve coverage, provenance
+and original prices. Do not rerun merely to export. The panel's expanded layout
+is supported by `patterns.show` with `expanded`; it is not that per-card dialog.
 
 These commands change tab-local UI state, not saved cloud rules. They need
 local assistant access but not the cloud-write grant. Studies last only while

@@ -1,6 +1,6 @@
 # tl-tlscript command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -259,7 +259,7 @@ Local indicator/backtesting grant required.
 
 ## `indicators.getSettings`
 
-Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected.
+Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected. Pine includes per-instance annotations: widthCandles (default 1.5), heightScale (default 1), adaptive (default false).
 
 Retry key: **not required**. External local-assistant access is still required.
 
@@ -280,6 +280,6 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `entityId` | Primary applied entity OR instanceId. |
 | `instanceId` | Stable applied ID; mutually exclusive with entityId. |
-| `settings` | Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata. |
+| `settings` | Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata. Optional annotations: widthCandles 0.5–12 (target full badge width in center-to-center candle spacings), heightScale 0.25–4 (colored badge/text scale), adaptive boolean (false fixes sizing at the 9px reference). Defaults 1.5/1/false; long text can widen badges, one-pixel font floor, compact colored badges absent from native image exports. Platform renderer settings, not Pine label.new arguments; boxes/tables unchanged. |
 | `expected` | Unmodified current getSettings snapshot for stale-write protection. |
 | `reset` | Optional array of style and/or visibility. Clear retained appearance overrides for those pages; also copy the corresponding default values into settings. |

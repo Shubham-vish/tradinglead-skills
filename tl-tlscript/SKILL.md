@@ -19,6 +19,11 @@ renderer features. Pine strategy execution belongs to
 compiles both and returns `kind`. Do not load every strategy workflow for a
 chart-indicator task.
 
+For parameter sweeps, holdout and walk-forward, use the inline **Optimize** tab
+and [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md).
+Its `backtesting.optimize*` commands reuse the authoritative frozen Pine engine
+without requiring Python readiness; discover their installed availability first.
+
 ## Discover Pine compatibility, not the retired expression language
 
 Studio offers Python and **TLScript-Pine**, backed by an isolated Pine-compatible
@@ -70,7 +75,9 @@ indicator run. The current authoring prompt discloses broker limitations rather
 than rejecting all strategy requests. Older installed tabs must be rediscovered.
 
 Source IDs, stable `instanceId`s and native chart `entityId`s are different. Saving never replaces a
-chart instance; applying does not imply saving. For an existing instance,
+chart instance; applying does not imply saving. None is a backtest `runId`.
+Pine save derives its title from the declaration; it has no `title` parameter.
+For an existing instance,
 prefer its stable `instanceId`: native IDs can change after recalculation.
 Replacement remains limited to that instance after the new result is ready.
 Preserve other studies/drawings and use returned IDs.
@@ -123,13 +130,17 @@ source and inputs; dirty drafts are preserved.
   Python/Pine source without applying it. Inspect `indicators.editorState.visible`;
   an embedded editor's `open:true` alone is not actual visibility.
   To start the toolbar's guided **New** draft through the same command, send
-  `{source:"",language:"pine"}` (or `"python"`), with a retry key. Omit inputs
+  `{"source":"","language":"pine"}` (or `"python"`), with a retry key. Omit inputs
   and execution settings. It clears saved/update identity and compilation,
   focuses the editor and leaves chart instances unchanged. The draft contains
   only shared language-specific guidance comments: Pine `//@version=6` and
   declaration/input/calculation guidance, or Python `calculate(bars, params)`
   guidance. No actual starter calculation, plot or trade is inserted.
   Dirty/busy drafts are refused; this never discards user edits or compiles.
+  `DRAFT_DIRTY` requires local save/discard; `BUSY` requires waiting or cancelling
+  the current action. There is no external discard override. Cancellation is
+  not write rollback: inspect state before retrying an uncertain mutation with
+  the same key and identical parameters.
   Manually emptied text is never repopulated. Pine's explicit empty draft
   survives local draft recovery; Python's draft is only
   retained while its editor stays mounted.
@@ -140,11 +151,54 @@ an operation failure is not a fabricated source diagnostic. Validation results
 and the current `editorState.compiled` flag remain separate: opening source,
 including a saved strategy, does not imply it was compiled.
 
-Colored directional Pine labels use owned native callout badges; transparent
-up/down labels keep text-only anchors. Box `size.auto` adapts to available
-geometry, unlike an explicitly selected fixed size. These are disclosed native
-rendering approximations, not new Pine APIs or TradingView visual equivalence.
-Use ordinary apply/update/input/style commands; no pixel-click command is needed.
+Opening source exits native chart fullscreen before showing Studio; a
+`STUDIO_NOT_VISIBLE` error requires resolving visibility, not another Apply.
+Read `editorState.dock` for the actual host mode. `workspace.setPanel` can
+request the bottom indicators panel, but there is no command to choose Studio's
+right/window docking mode.
+
+### Candle-relative annotation appearance
+
+Rediscover the addressed tab: only use these controls when its
+`indicators.getSettings` returns `annotations` (the source catalog snapshot is
+not proof that an older packaged tab has them).
+
+Colored Pine labels use compact owned SVG badges. With adaptive shrinking
+enabled, short bodies target **1.5 center-to-center candle spacings** at the
+default width. Below the 9-CSS-pixel reference, their
+width, height, text, padding and directional pointers shrink together.
+Native plain/transparent labels and plotshape/plotchar/arrow glyphs shrink too
+when adaptive is enabled. **Adaptive shrinking is off by default**; explicit
+saved true/false choices are preserved.
+Pine `size` and formatting remain the baseline/max size; long/multiline text is
+preserved and may require a wider badge. A one-pixel font floor prevents exact
+proportions at extreme zoom; no universal readability/no-overlap guarantee.
+
+The existing Style page and `indicators.getSettings`/`setSettings` expose:
+
+| `settings.annotations` field | Default | Allowed / meaning |
+| --- | --- | --- |
+| `widthCandles` | 1.5 | 0.5–12; target full colored badge width in candle spacings |
+| `heightScale` | 1 | 0.25–4; colored badge text, height, padding and pointer multiplier |
+| `adaptive` | false | Boolean; true enables shrinking with zoom, false keeps reference sizing |
+
+Read current settings, keep that snapshot untouched as `expected`, clone it,
+edit `annotations`, preserve all plot IDs/order/metadata, then call
+`indicators.setSettings` with a retry key. For example the edited field can be
+`{"widthCandles":3,"heightScale":0.5,"adaptive":true}`. Re-read after a conflict.
+Style Defaults clears these overrides; calculation/source is not changed.
+They persist with applied-instance appearance, not saved source. Local
+persistence is not account-cloud confirmation; matching server acceptance is
+required. There are **no arbitrary Pine label width/height arguments**.
+
+Directional pointers keep exact script candle/price anchors; other colored
+silhouettes are rectangular approximations. **Native chart image exports omit
+the compact colored SVG badges.** Native text/glyphs remain exportable.
+Unsupported pane/price mapping hides badges with a warning; the non-iframe
+native fallback has an intrinsic padding floor. Box/line/polyline data
+coordinates, box-auto fitting, screen-fixed tables/legends and user drawings
+are unchanged. These are disclosed rendering approximations, not TradingView
+visual parity or a promise to rescale arbitrary future primitives.
 
 ## Execution evidence and persistence
 
@@ -173,3 +227,11 @@ Discover `purchased`, `sales`, `applyPurchased` and `publishPaid` before using
 them. Apply-only access does not authorize source export; changing inputs
 retains private backing and license checks. Publishing changes a commercial
 surface and requires explicit user intent, not a routine authoring check.
+
+Studio also has manual-only free sharing/access/revocation, public-library
+browsing, shared-update installation, workspace/cloud-conflict resolution,
+backup import/export, telemetry controls and clipboard/AI-fix previews.
+The current command surface does not expose those operations; paid publishing
+is not a substitute. Neither source access nor an apply-only license grants
+permission to export private code. Runtime-only manifest capabilities and
+hosted TradingView features are not implicit command support.

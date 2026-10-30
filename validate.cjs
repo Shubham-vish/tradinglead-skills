@@ -65,7 +65,7 @@ function validate(root = __dirname) {
 	for (const filename of documents) {
 		if (!reachable.has(filename)) throw new Error(`Unreachable skill document: ${filename}. Link it from the index or an owning guide.`);
 	}
-	return { verification: "snapshot-only", skills: skillNames.length, commands: catalog.commands.length, canonicalCommands: catalog.commands.filter(command => !command.type.startsWith("simulation.")).length, documents: documents.length, examples };
+	return { verification: "snapshot-only", skills: skillNames.length, commands: catalog.commands.length, canonicalCommands: catalog.commands.filter(command => !command.type.startsWith("simulation.") && !/^backtesting\.research(?:Preview|Measure|Rerun)?$/.test(command.type)).length, documents: documents.length, examples };
 }
 module.exports = { validate };
 if (require.main === module) {

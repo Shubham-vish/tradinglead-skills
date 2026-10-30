@@ -1,6 +1,6 @@
 # tl-desktop command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -30,7 +30,28 @@ Retry key: **not required**. External local-assistant access is still required.
 | Parameter | Contract |
 | --- | --- |
 | `panel` | peers\|watchlists\|futures\|backtesting\|paper-trading\|intelligence\|indicators; simulation is a legacy alias |
-| `expanded` | Optional boolean |
+| `expanded` | Optional boolean, default true. |
+
+## `workspace.openSidebar`
+
+Open/collapse a /charts right-sidebar section incl. More items. Layout only, no write grant. Confirm via workspace.getState sidebar.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `panel` | watchlists\|indices\|heatmap\|scanner\|grid\|patterns\|alerts\|research\|dataWindow\|paperTrading\|contests |
+| `expanded` | Optional boolean, default true |
+
+## `workspace.setTheme`
+
+Set this browser's app light/dark theme (same as Settings > Theme). Local UI preference only.
+
+Retry key: **not required**. External local-assistant access is still required.
+
+| Parameter | Contract |
+| --- | --- |
+| `theme` | light\|dark |
 
 ## Native Desktop controls
 

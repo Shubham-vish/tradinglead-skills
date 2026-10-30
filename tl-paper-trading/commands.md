@@ -1,13 +1,13 @@
 # tl-paper-trading command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
 ## `backtesting.practice`
 
-Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument, fixed interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.
+Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture; multi-stock sessions keep one shared interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
@@ -16,7 +16,7 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `config` | Optional simulation config. Defaults: 100000 virtual units, no automatic brackets, shorting allowed, zero warmup; configured costs still apply. |
 
-Compatibility alias: `simulation.practice`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.practice`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.replay`
 
@@ -31,7 +31,7 @@ Local indicator/backtesting grant required.
 | `autoStrategy` | Optional boolean, default false. |
 | `startIndex` | Optional initial historical candle index. |
 
-Compatibility alias: `simulation.replay`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.replay`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.forward`
 
@@ -46,7 +46,7 @@ Local indicator/backtesting grant required.
 | `autoStrategy` | Optional boolean, default false. |
 | `sessionSchedule` | Optional explicit {timeZone,weekdays:[ISO1-7],open:HH:mm,close:HH:mm,holidays:[YYYY-MM-DD],source:user-assumption,label?}. Omit inherits source-run defaults; null uses strict continuous intervals. Pinned for life of forward run. |
 
-Compatibility alias: `simulation.forward`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.forward`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.pause`
 
@@ -60,7 +60,7 @@ Local indicator/backtesting grant required.
 | `runId` | Forward run ID. |
 | `expectedRevision` | Current revision. |
 
-Compatibility alias: `simulation.pause`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.pause`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.resume`
 
@@ -75,7 +75,7 @@ Local indicator/backtesting grant required.
 | `expectedRevision` | Current revision. |
 | `catchUp` | Optional boolean, default false; account for up to 100 missed contiguous closed candles. |
 
-Compatibility alias: `simulation.resume`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.resume`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.step`
 
@@ -90,7 +90,7 @@ Local indicator/backtesting grant required.
 | `expectedRevision` | Required current run revision. |
 | `count` | 1-100, default 1; automatic sequential mode requires 1. |
 
-Compatibility alias: `simulation.step`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.step`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.back`
 
@@ -104,7 +104,7 @@ Local indicator/backtesting grant required.
 | `runId` | Replay ID. |
 | `expectedRevision` | Required current run revision. |
 
-Compatibility alias: `simulation.back`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.back`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.order`
 
@@ -120,7 +120,7 @@ Local indicator/backtesting grant required.
 | `order` | {side:buy\|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?} |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
-Compatibility alias: `simulation.order`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.order`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.cancelOrder`
 
@@ -136,7 +136,7 @@ Local indicator/backtesting grant required.
 | `orderId` | Pending order ID. |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
-Compatibility alias: `simulation.cancelOrder`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.cancelOrder`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.replaceOrder`
 
@@ -153,7 +153,7 @@ Local indicator/backtesting grant required.
 | `order` | Full replacement order, same fields as simulation.order. |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
-Compatibility alias: `simulation.replaceOrder`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.replaceOrder`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.protect`
 
@@ -169,7 +169,7 @@ Local indicator/backtesting grant required.
 | `protection` | {stopLoss?:positive\|null,takeProfit?:positive\|null,trailingStopPct?:0-99} |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
-Compatibility alias: `simulation.protect`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.protect`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.close`
 
@@ -186,4 +186,4 @@ Local indicator/backtesting grant required.
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 | `all` | Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request. |
 
-Compatibility alias: `simulation.close`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.close`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.

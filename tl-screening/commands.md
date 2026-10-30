@@ -1,13 +1,13 @@
 # tl-screening command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
 ## `screening.getState`
 
-Open Scanner and read draft revision, universe, current view, stages and run status. Explicit development uses real configured data; preview:true is synthetic.
+Open Scanner and read draft revision, universe, current view, stages and run status. Requires real sign-in; the current cloud Scanner does not support preview/sample mode.
 
 Retry key: **not required**. External local-assistant access is still required.
 
@@ -109,7 +109,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `runId` | Current completed run/history ID. |
 | `expectedAnalysisRevision` | Current positive analysis revision. |
 | `search` | Optional search text, at most 500 characters. |
-| `filters` | Replace filters with up to 20 {columnId,operator,value?}; operators eq\|neq\|gt\|gte\|lt\|lte\|contains\|startsWith\|endsWith\|blank\|notBlank; typed values. |
+| `filters` | Replace filters with up to 20 {columnId,operator,value?}; at most two AND conditions per column; operators eq\|neq\|gt\|gte\|lt\|lte\|contains\|startsWith\|endsWith\|blank\|notBlank; typed values. |
 | `sort` | Replace sorting with up to 20 {columnId,direction:asc\|desc}. |
 | `hiddenColumns` | Replace hidden metric columns with up to 200 discovered IDs. |
 | `selectedTickers` | Replace selection with up to 2500 unique canonical returned tickers; hidden selections do not refine. |
@@ -174,7 +174,7 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.deleteHistory`
 
-Delete only this account's immutable scan snapshot, not saved rules. Requires cloud-write grant (local assistant grant in development) and retry key.
+Delete only this account's immutable scan snapshot, not saved rules. Requires real sign-in, cloud-write grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
 
@@ -195,7 +195,7 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.save`
 
-Persist visible rules. Cloud requires cloud-write grant; localhost sample mode saves only on-device under local assistant access. Retry key required. Updates need id and etag; omitted id creates a copy.
+Persist visible rules to this account's cloud storage. Requires real sign-in, cloud-write grant and retry key. Updates need id and etag; omitted id creates a copy.
 
 Retry key: **required**. External local-assistant access is still required.
 
@@ -303,35 +303,3 @@ Retry key: **not required**. External local-assistant access is still required.
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Local provider run ID. |
-
-## `watchlists.list`
-
-List the signed-in user's TradingLead watchlists, not broker watchlists.
-
-Retry key: **not required**. External local-assistant access is still required.
-
-Parameters: `{}`.
-
-## `watchlists.create`
-
-Create a TradingLead watchlist without overwriting an existing different list. Requires sign-in, an idempotencyKey and local write permission for external agents.
-
-Retry key: **required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `name` | Watchlist name |
-| `symbols` | Canonical ticker array; supply symbols OR runId. |
-| `runId` | Completed scan to save; supply runId OR symbols. |
-
-## `watchlists.addSymbols`
-
-Add unique symbols to an existing TradingLead watchlist. Requires sign-in, an idempotencyKey and local write permission for external agents.
-
-Retry key: **required**. External local-assistant access is still required.
-
-| Parameter | Contract |
-| --- | --- |
-| `name` | Existing watchlist name |
-| `symbols` | Canonical ticker array; supply symbols OR runId. |
-| `runId` | Completed scan to save; supply runId OR symbols. |

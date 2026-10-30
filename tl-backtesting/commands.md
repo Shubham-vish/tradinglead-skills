@@ -1,6 +1,6 @@
 # tl-backtesting command reference
 
-Generated from a command-catalog snapshot. Recheck the addressed tab before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -17,7 +17,7 @@ Local indicator/backtesting grant required.
 | `offset` | 0-50, default 0. |
 | `limit` | 1-50, default 20. |
 
-Compatibility alias: `simulation.presetList`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.presetList`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.presetGet`
 
@@ -30,7 +30,7 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `id` | Saved strategy preset ID. |
 
-Compatibility alias: `simulation.presetGet`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.presetGet`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.presetSave`
 
@@ -46,7 +46,7 @@ Local indicator/backtesting grant required.
 | `id` | Omit for a new copy; existing ID to replace. |
 | `expectedRevision` | Required current revision when replacing. |
 
-Compatibility alias: `simulation.presetSave`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.presetSave`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.presetDelete`
 
@@ -60,7 +60,7 @@ Local indicator/backtesting grant required.
 | `id` | Saved strategy preset ID. |
 | `expectedRevision` | Required current revision. |
 
-Compatibility alias: `simulation.presetDelete`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.presetDelete`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.capabilities`
 
@@ -70,7 +70,7 @@ Retry key: **not required**. External local-assistant access is still required.
 
 Parameters: `{}`.
 
-Compatibility alias: `simulation.capabilities`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.capabilities`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.list`
 
@@ -84,7 +84,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `offset` | 0-100. |
 | `limit` | 1-100; follow nextOffset until null. |
 
-Compatibility alias: `simulation.list`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.list`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryList`
 
@@ -99,7 +99,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `offset` | 0-100. |
 | `limit` | 1-100; follow nextOffset until null. |
 
-Compatibility alias: `simulation.libraryList`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryList`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.librarySave`
 
@@ -114,7 +114,7 @@ Local indicator/backtesting grant required.
 | `expectedRevision` | Active run revision. |
 | `expectedLibraryRevision` | 0 for new copy; current saved revision for replacement. |
 
-Compatibility alias: `simulation.librarySave`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.librarySave`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryMigrate`
 
@@ -125,7 +125,7 @@ Local indicator/backtesting grant required.
 
 Parameters: `{}`.
 
-Compatibility alias: `simulation.libraryMigrate`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryMigrate`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryRestore`
 
@@ -139,7 +139,7 @@ Local indicator/backtesting grant required.
 | `runId` | Saved ID. |
 | `expectedLibraryRevision` | Current saved revision. |
 
-Compatibility alias: `simulation.libraryRestore`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryRestore`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryDelete`
 
@@ -153,7 +153,7 @@ Local indicator/backtesting grant required.
 | `runId` | Saved ID. |
 | `expectedLibraryRevision` | Current saved revision. |
 
-Compatibility alias: `simulation.libraryDelete`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryDelete`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryUpdate`
 
@@ -168,7 +168,7 @@ Local indicator/backtesting grant required.
 | `expectedLibraryRevision` | Current saved revision. |
 | `metadata` | {name?:max100,notes?:max2000,tags?:up to10 strings max30}. |
 
-Compatibility alias: `simulation.libraryUpdate`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryUpdate`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryExport`
 
@@ -180,7 +180,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | --- | --- |
 | `runId` | Saved ID. |
 
-Compatibility alias: `simulation.libraryExport`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryExport`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.libraryImport`
 
@@ -195,7 +195,7 @@ Local indicator/backtesting grant required.
 | `summary` | Saved run summary projection from libraryExport. |
 | `detail` | Optional display metadata {name?:max100,notes?:max2000,tags?:up to10 strings max30}. |
 
-Compatibility alias: `simulation.libraryImport`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.libraryImport`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.compare`
 
@@ -209,7 +209,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `offset` | 0-3, default0. |
 | `limit` | 1-4, default4; response byte budget may return fewer. |
 
-Compatibility alias: `simulation.compare`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.compare`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.getChartOptions`
 
@@ -219,7 +219,7 @@ Retry key: **not required**. External local-assistant access is still required.
 
 Parameters: `{}`.
 
-Compatibility alias: `simulation.getChartOptions`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.getChartOptions`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.setChartOptions`
 
@@ -235,11 +235,11 @@ Local indicator/backtesting grant required.
 | `action` | Optional save (default)\|preview\|apply\|cancel. Preview replaces this owner's staged appearance patch. Apply persists that patch; cancel restores saved appearance. Date ranges are save-only. |
 | `previewId` | Required for preview/apply/cancel: 1-80 letters, numbers, underscores or hyphens. Reuse within one preview session, with a fresh retry key for each action. Omit for save. |
 
-Compatibility alias: `simulation.setChartOptions`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.setChartOptions`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.run`
 
-Start a Python or Pine strategy() backtest on captured closed candles. Returns preparing; poll get. Pine preserves its own fills, fees, quantity and equity without re-simulation; Python uses the shared signal engine. Requires research grant/retry key.
+Start a Python or Pine strategy() backtest on captured closed candles. Returns preparing; poll get. Pine preserves its own fills, fees, quantity and equity without re-simulation; Python uses the shared signal engine. Requires local indicator/backtesting grant/retry key.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
@@ -250,7 +250,7 @@ Local indicator/backtesting grant required.
 | `source` | Python calculate source, or Pine strategy() source when language is pine, OR use a saved id. |
 | `id` | Saved Python (py_) or Pine (pine_) source id instead of source. |
 | `expectedRevision` | Optional saved source revision. |
-| `parameters` | Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Research sweep candidates remain scalar. |
+| `parameters` | Python only: validated JSON parameters, including bounded nested objects/arrays; _simulation is reserved. Optimization sweep candidates remain scalar. |
 | `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
 | `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
 | `bars` | 2-20000, default20000; Python sequential max/default250. |
@@ -260,23 +260,23 @@ Local indicator/backtesting grant required.
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
 | `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
 
-Compatibility alias: `simulation.run`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.run`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.get`
 
-Read status, accounting, pending orders, prefix-safe position analytics and paged ledger/equity/research. Analytics details: first 25 rows each with totals/truncation. Optional explicit regular-sampling assumptions enable annualized risk statistics. No source or raw candles.
+Read status, accounting, pending orders, prefix-safe position analytics and paged ledger/equity/optimization. Analytics details: first 25 rows each with totals/truncation. Optional explicit regular-sampling assumptions enable annualized risk statistics. No source or raw candles.
 
 Retry key: **not required**. External local-assistant access is still required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Owned run ID. |
-| `section` | trades\|events\|equity\|research, default trades. |
+| `section` | trades\|events\|equity\|optimization, default trades. Legacy research is accepted; both return section:research and the existing research summary, with top-level paged rows. |
 | `offset` | Nonnegative page offset. |
-| `limit` | 1-100, default 50; research pages use nextOffset until null. |
+| `limit` | 1-100, default 50; optimization pages use nextOffset until null. |
 | `risk` | Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual}; omitted means no annualization. |
 
-Compatibility alias: `simulation.get`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.get`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.export`
 
@@ -291,7 +291,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | `offset` | UTF-16 code-unit offset, default 0. |
 | `chunkSize` | 1-16000 code units, default 16000. |
 
-Compatibility alias: `simulation.export`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.export`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.cancel`
 
@@ -303,7 +303,7 @@ Retry key: **not required**. External local-assistant access is still required.
 | --- | --- |
 | `runId` | Owned running ID. |
 
-Compatibility alias: `simulation.cancel`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.cancel`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.show`
 
@@ -318,7 +318,7 @@ Local indicator/backtesting grant required.
 | `tradeId` | Optional closed trade to focus. |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
 
-Compatibility alias: `simulation.show`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.show`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.removeFromChart`
 
@@ -331,11 +331,11 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `runId` | Currently displayed owned run ID. |
 
-Compatibility alias: `simulation.removeFromChart`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.removeFromChart`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.showSettings`
 
-Open the displayed run's native in-chart settings dialog. Visibility, arrows, lines, labels and risk-level controls do not rerun or delete research.
+Open the displayed run's native in-chart settings dialog. Visibility, arrows, lines, labels and risk-level controls do not rerun or delete optimization.
 
 Retry key: **required**. External local-assistant access is still required.
 Local indicator/backtesting grant required.
@@ -344,7 +344,7 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `runId` | Currently displayed owned run ID. |
 
-Compatibility alias: `simulation.showSettings`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.showSettings`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.delete`
 
@@ -358,7 +358,7 @@ Local indicator/backtesting grant required.
 | `runId` | Owned run ID. |
 | `expectedRevision` | Current run revision. |
 
-Compatibility alias: `simulation.delete`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.delete`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.applyStrategy`
 
@@ -384,7 +384,7 @@ Local indicator/backtesting grant required.
 | `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
 | `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
 
-Compatibility alias: `simulation.applyStrategy`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.applyStrategy`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.removeStrategy`
 
@@ -395,7 +395,7 @@ Local indicator/backtesting grant required.
 
 Parameters: `{}`.
 
-Compatibility alias: `simulation.removeStrategy`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.removeStrategy`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.appliedStrategy`
 
@@ -405,7 +405,7 @@ Retry key: **not required**. External local-assistant access is still required.
 
 Parameters: `{}`.
 
-Compatibility alias: `simulation.appliedStrategy`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.appliedStrategy`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.setStrategyAutoRerun`
 
@@ -418,4 +418,4 @@ Local indicator/backtesting grant required.
 | --- | --- |
 | `enabled` | Boolean; false disables auto-rerun. |
 
-Compatibility alias: `simulation.setStrategyAutoRerun`. Same runtime and retry identity; prefer the canonical name.
+Compatibility alias: `simulation.setStrategyAutoRerun`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
