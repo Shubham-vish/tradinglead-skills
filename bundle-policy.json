@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "requires": {
+    "minDesktop": "0.1.8",
+    "maxDesktopExclusive": "0.2.0",
+    "cliApi": 1,
+    "bridgeProtocol": 2
+  }
+}

@@ -5,6 +5,7 @@ const path = require("node:path");
 const { skillNames, ownerFor, references, validateCatalog, checkReferences } = require("./sync-commands.cjs");
 const { validate } = require("./validate.cjs");
 const { install } = require("./install.cjs");
+const { parseYaml, requiredParams } = require("./suites.cjs");
 
 function withSkillCopy(check) {
 	const directory = fs.mkdtempSync(path.join(__dirname, ".tl-skill-coverage-"));
@@ -125,6 +126,41 @@ test("nested guides must be discoverable and their examples are validated", () =
 	assert.throws(() => validate(root), /Example disagrees.*windows\.md/);
 }));
 
+test("tl-testing suites parse and every step matches the command catalog", () => withSkillCopy(root => {
+	const baseline = validate(root).suites;
+	assert.ok(baseline.suites >= 13 && baseline.tests > 0 && baseline.steps > 0);
+	const generated = references(JSON.parse(fs.readFileSync(path.join(root, "command-catalog.json"), "utf8")));
+	assert.match(generated.get("tl-testing/commands.md"), /owns no commands/);
+	assert.deepEqual(parseYaml('a: 1\nb:\n  - x: "q"\n    y: {"k": [1]}\n  - plain text\nc: |\n  line1\n    line2\n'),
+		{ a: 1, b: [{ x: "q", y: { k: [1] } }, "plain text"], c: "line1\n  line2\n" });
+	assert.throws(() => parseYaml("a: 'single'\n"), /unsupported YAML/);
+	const catalog = JSON.parse(fs.readFileSync(path.join(root, "command-catalog.json"), "utf8"));
+	assert.deepEqual(requiredParams(catalog.commands.find(command => command.type === "screening.getResults")), ["runId"]);
+	assert.deepEqual(requiredParams(catalog.commands.find(command => command.type === "backtesting.optimize")), []);
+	const filename = path.join(root, "tl-testing", "suites", "charts.yaml");
+	const original = fs.readFileSync(filename, "utf8");
+	const broken = [
+		[original.replace("type: drawings.list", "type: drawings.inventedList"), /drawings\.inventedList is not in command-catalog/],
+		[original.replace('{"bars": 5}', '{"bars": 5, "rowsBack": 2}'), /chart\.snapshot has no parameter rowsBack/],
+		[original.replace('      idempotencyKey: "ai-test-{{run.id}}-view-set"\n', ""), /mutating chart\.setView needs an idempotencyKey/],
+		[original.replace("{{steps.snap.data.rows.0.0}}", "{{steps.later.data.x}}"), /unknown or later step/],
+		[original.replace("category: contract", "category: vibes"), /needs unique id, name and category/],
+		[original.replace("  id: charts\n", "  id: chart\n"), /suite\.id equal to the file name/],
+	];
+	for (const [content, error] of broken) {
+		fs.writeFileSync(filename, content);
+		assert.throws(() => validate(root), error);
+	}
+	fs.writeFileSync(filename, original);
+	const smoke = path.join(root, "tl-testing", "suites", "smoke.yaml");
+	fs.appendFileSync(smoke, '\n  - id: smoke.write\n    name: forbidden\n    category: state\n    execute:\n      type: alerts.delete\n      params: {"id": "x"}\n      idempotencyKey: "k"\n');
+	assert.throws(() => validate(root), /read-only suite uses mutating alerts\.delete/);
+	fs.writeFileSync(smoke, fs.readFileSync(path.join(__dirname, "tl-testing", "suites", "smoke.yaml"), "utf8"));
+	const screening = path.join(root, "tl-testing", "suites", "screening.yaml");
+	fs.writeFileSync(screening, fs.readFileSync(screening, "utf8").replace('params: {"expectedRevision": -1}', "params: {}"));
+	assert.throws(() => validate(root), /screening\.run is missing required expectedRevision/);
+}));
+
 test("live parity detects parameter and command drift without rewriting the snapshot", () => {
 	const filename = path.join(__dirname, "command-catalog.json"), before = fs.readFileSync(filename, "utf8");
 	const catalog = JSON.parse(before);
@@ -141,8 +177,10 @@ test("live parity ignores snapshot provenance and JSON object key order, not des
 	const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "command-catalog.json"), "utf8"));
 	const live = {
 		version: catalog.version,
-		commands: catalog.commands.map(({ params, permission, mutates, description, type }) => ({
+		commands: catalog.commands.map(({ params, permission, mutates, description, type, effects, requiresCompactCatalog }) => ({
 			type, description, mutates, ...(permission ? { permission } : {}),
+			...(effects ? { effects } : {}),
+			...(requiresCompactCatalog ? { requiresCompactCatalog } : {}),
 			params: Object.fromEntries(Object.entries(params).reverse()),
 		})),
 		desktopActions: catalog.desktopActions,
@@ -151,6 +189,13 @@ test("live parity ignores snapshot provenance and JSON object key order, not des
 	const write = live.commands.find(command => command.permission === "indicators");
 	delete write.permission;
 	assert.throws(() => checkReferences(live), /Live catalog drift/);
+});
+
+test("effects survive source sync and reject unknown consequences", () => {
+	const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "command-catalog.json"), "utf8"));
+	assert.ok(catalog.commands.every(command => command.effects?.length));
+	assert.match(references(catalog).get("COMMANDS.md"), /Effects/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [{ type: "chart.read", description: "Read", mutates: false, params: {}, effects: ["surprise"] }] }), /Invalid command effects/);
 });
 
 test("sync validates 256 descriptors and exact UTF-8 catalog byte limit", () => {
@@ -171,6 +216,22 @@ test("sync validates 256 descriptors and exact UTF-8 catalog byte limit", () => 
 	assert.doesNotThrow(() => validateCatalog({ ...catalog, commands: boundary }));
 	boundary[0].params.value += "\u20ac";
 	assert.throws(() => validateCatalog({ ...catalog, commands: boundary }), /Invalid or oversized/);
+});
+test("expanded source catalogs retain compact-only commands while enforcing canonical wire limits", () => {
+	const commands = Array.from({ length: 256 }, (_, index) => ({
+		type: `backtesting.command${index}`, description: "Read", mutates: false, params: {},
+	}));
+	const alias = { ...commands[0], type: "simulation.command0", requiresCompactCatalog: true };
+	const catalog = { version: 1, commands: [...commands, alias], desktopActions: [] };
+	assert.doesNotThrow(() => validateCatalog(catalog));
+	assert.throws(() => validateCatalog({ ...catalog, commands: [...catalog.commands, { ...commands[0], type: "backtesting.extra" }] }), /oversized/);
+	assert.throws(() => validateCatalog({ ...catalog, commands: [...commands, { ...alias, type: "simulation.missing" }] }), /Orphan alias/);
+	for (const action of ["optimizeResume", "optimizeChecks", "optimizeValidateSymbols"]) {
+		assert.equal(ownerFor(`backtesting.${action}`), "tl-strategy-optimization");
+	}
+	for (const action of ["paperPreflight", "paperParity"]) assert.equal(ownerFor(`backtesting.${action}`), "tl-paper-trading");
+	const compact = { ...commands[0], type: "backtesting.optimizeResume", requiresCompactCatalog: true };
+	assert.match(references({ version: 1, commands: [compact], desktopActions: [] }).get("tl-strategy-optimization/commands.md"), /catalog\.aliases/);
 });
 
 test("installer is idempotent and verifies links without replacing existing skills", () => {

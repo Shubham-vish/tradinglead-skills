@@ -7,12 +7,15 @@ a stock universe; Chart Grid displays multiple tickers. Neither is a substitute.
 
 ## Configure without running
 
-1. Read `chart.getState` and `patterns.getState`. The latter opens the panel and
+1. Read `chart.getState` and `patterns.getState`. The latter never opens the panel;
+   if unmounted it returns `ready:false,draft:null`. Call `patterns.show` explicitly,
+   then read state again. When mounted it
    returns its draft, normalized query, validation, revision, analysis revision,
    current chart-ticker readiness, current job and separately identified applied
    result. `patterns.show` can set `expanded`; `patterns.hide` cancels pending
    analysis but retains an already applied result.
-2. Search with `patterns.searchSymbols` (`query`, up to 25 results) or explicitly
+2. Search with `patterns.searchSymbols` (`query`, up to 25 results; read-only,
+   does not open the sidebar, returns `opensPanel:false`) or explicitly
    copy the ready native chart ticker with `patterns.useChartTicker` and the
    current `expectedRevision`. Neither action fetches historical candles.
 3. Replace the draft with `patterns.configure`. Use exact canonical tickers.
@@ -71,6 +74,8 @@ remaining candles as outcome; a one-candle window has no subsequent outcome.
 4. Cancel the exact current job with `patterns.cancel`. Hiding the panel,
    account/pane/source changes or loss of agent access can cancel pending work.
    Cancellation cannot undo provider work already submitted.
+   An account switch also clears the previous account's applied results and
+   releases its running-job guard; re-read state before starting a new study.
 
 An unavailable chart blocks analysis and ticker search. A verified cloud source
 batches eligible selected windows in at most one candle request (zero when all

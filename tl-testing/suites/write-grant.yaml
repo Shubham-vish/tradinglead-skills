@@ -1,0 +1,877 @@
+version: 1
+suite:
+  id: "write-grant"
+  name: "Write-grant commands (authored, run once the user enables writes)"
+  description: "Every test is tagged requires-write-grant and SKIPs unless the user enables Allow AI changes. Creates only AI TEST watchlists, compare series, alerts and saved screeners and deletes exactly the captured names/IDs; display changes (Watch selection, view filters, heatmap search, grid page size, compare, symbol details) are restored from setup reads. Named chart layouts are never saved; only error paths are sent for layout.saved, replay and drawing templates."
+  requires:
+    grants: ["allowAgentWrites"]
+    signIn: true
+
+tests:
+  - id: wg.watchlist-add-remove
+    name: "Add and remove symbols on an AI TEST watchlist"
+    category: state
+    tags: ["requires-write-grant", "watchlists"]
+    setup:
+      - id: create
+        type: watchlists.create
+        params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ"]}
+        idempotencyKey: "ai-test-{{run.id}}-wl-create-watchlistaddremove"
+    execute:
+      type: watchlists.addSymbols
+      params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:RELIANCE-EQ"]}
+      idempotencyKey: "ai-test-{{run.id}}-wl-add-watchlistaddremove"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.added
+          exists: true
+      state:
+        - label: "list counts three symbols"
+          type: watchlists.list
+          params: {}
+          assertions:
+          - path: data.watchlists
+            contains: {"name": "AI TEST wg {{run.id}}", "count": 3}
+        - label: "remove the added symbol"
+          type: watchlists.removeSymbols
+          params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:RELIANCE-EQ"]}
+          idempotencyKey: "ai-test-{{run.id}}-wl-remove-watchlistaddremove"
+          assertions:
+          - path: status
+            equals: "ok"
+        - label: "list is back to two symbols"
+          type: watchlists.list
+          params: {}
+          assertions:
+          - path: data.watchlists
+            contains: {"name": "AI TEST wg {{run.id}}", "count": 2}
+    teardown:
+      - id: deleteList
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST wg {{run.id}}", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wl-delete-watchlistaddremove"
+
+  - id: wg.watchlist-remove-unknown
+    name: "Removing symbols from a missing watchlist fails"
+    category: contract
+    tags: ["requires-write-grant", "watchlists", "errors"]
+    execute:
+      type: watchlists.removeSymbols
+      params: {"name": "AI TEST absent {{run.id}}", "symbols": ["NSE:TCS-EQ"]}
+      idempotencyKey: "ai-test-{{run.id}}-wl-remove-missing-watchlistremoveunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["WATCHLIST_NOT_FOUND", "INVALID_PARAMS"]
+
+  - id: wg.watchlist-add-invalid
+    name: "addSymbols with neither symbols nor runId is rejected"
+    category: contract
+    tags: ["requires-write-grant", "watchlists", "errors"]
+    execute:
+      type: watchlists.addSymbols
+      params: {"name": "AI TEST absent {{run.id}}"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-add-bad-watchlistaddinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.watchlist-select
+    name: "Selecting the AI TEST list switches the mounted Watch and the original list is reselected"
+    category: state
+    tags: ["requires-write-grant", "watchlists"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: openWatch
+        type: workspace.openSidebar
+        params: {"panel": "watchlists", "expanded": true}
+      - id: rowsBefore
+        kind: poll
+        type: watchlists.getRows
+        params: {"limit": 1}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 20000
+      - id: create
+        type: watchlists.create
+        params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ"]}
+        idempotencyKey: "ai-test-{{run.id}}-wl-create-watchlistselect"
+    execute:
+      type: watchlists.select
+      params: {"kind": "watchlist", "name": "AI TEST wg {{run.id}}"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-select-watchlistselect"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "Watch shows the AI TEST list"
+          kind: poll
+          type: watchlists.getRows
+          params: {"limit": 5}
+          until: {"path": "data.activeList.name", "equals": "AI TEST wg {{run.id}}"}
+          intervalMs: 1000
+          timeoutMs: 20000
+          assertions:
+          - path: data.total
+            equals: 2
+    teardown:
+      - id: selectBack
+        type: watchlists.select
+        params: {"kind": "{{steps.rowsBefore.data.activeList.kind}}", "name": "{{steps.rowsBefore.data.activeList.name}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wl-select-back-watchlistselect"
+      - id: deleteList
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST wg {{run.id}}", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wl-delete-watchlistselect"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.watchlist-view
+    name: "Sorting and quick search apply to the mounted Watch and are cleared"
+    category: state
+    tags: ["requires-write-grant", "watchlists"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: openWatch
+        type: workspace.openSidebar
+        params: {"panel": "watchlists", "expanded": true}
+      - id: rowsBefore
+        kind: poll
+        type: watchlists.getRows
+        params: {"limit": 1}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 20000
+      - id: create
+        type: watchlists.create
+        params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ"]}
+        idempotencyKey: "ai-test-{{run.id}}-wl-create-watchlistview"
+      - id: select
+        type: watchlists.select
+        params: {"kind": "watchlist", "name": "AI TEST wg {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wl-view-select-watchlistview"
+    execute:
+      type: watchlists.setView
+      params: {"search": "TCS"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-view-watchlistview"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "only the matching row is displayed"
+          kind: poll
+          type: watchlists.getRows
+          params: {"limit": 5}
+          until: {"path": "data.search", "equals": "TCS"}
+          intervalMs: 1000
+          timeoutMs: 15000
+          assertions:
+          - path: data.rows.length
+            equals: 1
+          - path: data.rows.0.symbol
+            equals: "NSE:TCS-EQ"
+    teardown:
+      - id: clearView
+        type: watchlists.setView
+        params: {"search": ""}
+        idempotencyKey: "ai-test-{{run.id}}-wl-view-clear-watchlistview"
+      - id: selectBack
+        type: watchlists.select
+        params: {"kind": "{{steps.rowsBefore.data.activeList.kind}}", "name": "{{steps.rowsBefore.data.activeList.name}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wl-select-back-watchlistview"
+      - id: deleteList
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST wg {{run.id}}", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wl-delete-watchlistview"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.watchlist-multiview
+    name: "Multi Watchlists shows one AI TEST card and closes it"
+    category: state
+    tags: ["requires-write-grant", "watchlists"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: mvBefore
+        type: watchlists.multiView
+        params: {}
+        idempotencyKey: "ai-test-{{run.id}}-wl-multi-read-watchlistmultiview"
+      - id: create
+        type: watchlists.create
+        params: {"name": "AI TEST wg {{run.id}}", "symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ"]}
+        idempotencyKey: "ai-test-{{run.id}}-wl-create-watchlistmultiview"
+    execute:
+      type: watchlists.multiView
+      params: {"panels": [{"type": "watchlist", "name": "AI TEST wg {{run.id}}"}]}
+      idempotencyKey: "ai-test-{{run.id}}-wl-multi-watchlistmultiview"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "one AI TEST card is shown"
+          type: watchlists.multiView
+          params: {}
+          idempotencyKey: "ai-test-{{run.id}}-wl-multi-check-watchlistmultiview"
+          assertions:
+          - path: data.panels.length
+            equals: 1
+          - path: data.panels.0.name
+            equals: "AI TEST wg {{run.id}}"
+    teardown:
+      - id: restoreCards
+        type: watchlists.multiView
+        params: {"panels": "{{steps.mvBefore.data.panels}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wl-multi-restore-watchlistmultiview"
+      - id: deleteList
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST wg {{run.id}}", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wl-delete-watchlistmultiview"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.watchlist-select-unknown
+    name: "Selecting a missing list fails"
+    category: contract
+    tags: ["requires-write-grant", "watchlists", "errors"]
+    execute:
+      type: watchlists.select
+      params: {"kind": "watchlist", "name": "AI TEST absent {{run.id}}"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-select-missing-watchlistselectunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["WATCHLIST_NOT_FOUND", "INVALID_PARAMS", "WATCH_NOT_READY"]
+
+  - id: wg.symbol-details
+    name: "Symbol details expands and collapses back"
+    category: state
+    tags: ["requires-write-grant", "markets"]
+    execute:
+      type: symbol.details
+      params: {"expanded": true}
+      idempotencyKey: "ai-test-{{run.id}}-details-open-symboldetails"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+    teardown:
+      - id: collapse
+        type: symbol.details
+        params: {"expanded": false}
+        idempotencyKey: "ai-test-{{run.id}}-details-close-symboldetails"
+
+  - id: wg.chart-compare
+    name: "An AI TEST compare symbol is added, listed and removed"
+    category: state
+    tags: ["requires-write-grant", "charts"]
+    execute:
+      type: chart.compare
+      params: {"action": "add", "symbol": "NSE:TCS-EQ"}
+      idempotencyKey: "ai-test-{{run.id}}-compare-add-chartcompare"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.id
+          exists: true
+      state:
+        - label: "compare list contains the symbol"
+          type: chart.compare
+          params: {"action": "list"}
+          idempotencyKey: "ai-test-{{run.id}}-compare-list-chartcompare"
+          assertions:
+          - path: data.items
+            contains: {"id": "{{steps.execute.data.id}}"}
+    teardown:
+      - id: removeCompare
+        type: chart.compare
+        params: {"action": "remove", "id": "{{steps.execute.data.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-compare-remove-chartcompare"
+
+  - id: wg.chart-compare-invalid
+    name: "compare add without a symbol is rejected"
+    category: contract
+    tags: ["requires-write-grant", "charts", "errors"]
+    execute:
+      type: chart.compare
+      params: {"action": "add"}
+      idempotencyKey: "ai-test-{{run.id}}-compare-bad-chartcompareinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.drawing-mode
+    name: "Magnet toggles and is restored from chart.viewState"
+    category: state
+    tags: ["requires-write-grant", "charts", "drawings"]
+    setup:
+      - id: view
+        type: chart.viewState
+        params: {}
+    execute:
+      type: drawings.setMode
+      params: {"magnet": "{{steps.view.data.drawingMode.magnet}}"}
+      idempotencyKey: "ai-test-{{run.id}}-mode-same-drawingmode"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "drawing mode unchanged"
+          type: chart.viewState
+          params: {}
+          assertions:
+          - path: data.drawingMode
+            equals: "{{steps.view.data.drawingMode}}"
+
+  - id: wg.drawing-mode-remove-unconfirmed
+    name: "removeAll without confirm is rejected"
+    category: contract
+    tags: ["requires-write-grant", "charts", "drawings", "errors"]
+    execute:
+      type: drawings.setMode
+      params: {"removeAll": true}
+      idempotencyKey: "ai-test-{{run.id}}-mode-removeall-bad-drawingmoderemoveunconfi"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.replay-speed-invalid
+    name: "Replay speed outside 0.1-200 is rejected"
+    category: contract
+    tags: ["requires-write-grant", "charts", "replay", "errors"]
+    execute:
+      type: chart.replayControl
+      params: {"action": "speed", "speed": 0}
+      idempotencyKey: "ai-test-{{run.id}}-replay-bad-replayspeedinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.replay-pause-inactive
+    name: "Pausing when no replay is active fails explicitly"
+    category: contract
+    tags: ["requires-write-grant", "charts", "replay", "errors"]
+    execute:
+      type: chart.replayControl
+      params: {"action": "pause"}
+      idempotencyKey: "ai-test-{{run.id}}-replay-pause-replaypauseinactive"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["REPLAY_NOT_ACTIVE", "REPLAY_UNAVAILABLE", "INVALID_PARAMS"]
+
+  - id: wg.drawing-template-apply-unselected
+    name: "Applying a template without a selected drawing fails"
+    category: contract
+    tags: ["requires-write-grant", "charts", "drawings", "errors"]
+    execute:
+      type: drawingTemplates.apply
+      params: {"entityId": "ai-test-missing", "type": "trend_line", "name": "AI TEST missing"}
+      idempotencyKey: "ai-test-{{run.id}}-tpl-apply-missing-drawingtemplateapplyunse"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["DRAWING_SELECTION_REQUIRED", "TEMPLATE_NOT_FOUND"]
+
+  - id: wg.peers-refresh
+    name: "Peers refresh reloads stored peers"
+    category: state
+    tags: ["requires-write-grant", "markets", "peers"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.setPanel
+        params: {"panel": "peers", "expanded": true}
+      - id: ready
+        kind: poll
+        type: peers.get
+        params: {"limit": 3}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 45000
+    execute:
+      type: peers.configure
+      params: {"refresh": true}
+      idempotencyKey: "ai-test-{{run.id}}-peers-refresh-peersrefresh"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "peers return to ok"
+          kind: poll
+          type: peers.get
+          params: {"limit": 3}
+          until: {"path": "status", "equals": "ok"}
+          intervalMs: 1000
+          timeoutMs: 45000
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.ready.data.symbol}}"
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.peers-refresh-required
+    name: "peers.configure with refresh:false is rejected"
+    category: contract
+    tags: ["requires-write-grant", "markets", "peers", "errors"]
+    execute:
+      type: peers.configure
+      params: {"refresh": false}
+      idempotencyKey: "ai-test-{{run.id}}-peers-bad-peersrefreshrequired"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.indices
+    name: "Indices list published categories with bounded rows"
+    category: state
+    tags: ["requires-write-grant", "markets", "indices"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      kind: poll
+      type: indices.getState
+      params: {"limit": 5}
+      idempotencyKey: "ai-test-{{run.id}}-indices"
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.rows
+          type: "array"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.heatmap-configure
+    name: "Heatmap color scale changes and is restored"
+    category: state
+    tags: ["requires-write-grant", "markets", "heatmap"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.openSidebar
+        params: {"panel": "heatmap", "expanded": true}
+      - id: ready
+        kind: poll
+        type: heatmap.getState
+        params: {}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 45000
+    execute:
+      type: heatmap.configure
+      params: {"colorScale": "{{steps.ready.data.settings.colorScale}}", "search": "AI TEST"}
+      idempotencyKey: "ai-test-{{run.id}}-heatmap-cfg-heatmapconfigure"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "settings unchanged except search"
+          type: heatmap.getState
+          params: {}
+          assertions:
+          - path: data.settings.universe
+            equals: "{{steps.ready.data.settings.universe}}"
+          - path: data.settings.colorScale
+            equals: "{{steps.ready.data.settings.colorScale}}"
+    teardown:
+      - id: clearSearch
+        type: heatmap.configure
+        params: {"search": ""}
+        idempotencyKey: "ai-test-{{run.id}}-heatmap-clear-heatmapconfigure"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.heatmap-invalid
+    name: "Heatmap rejects an unsupported size mode"
+    category: contract
+    tags: ["requires-write-grant", "markets", "heatmap", "errors"]
+    execute:
+      type: heatmap.configure
+      params: {"sizeMode": "bogus"}
+      idempotencyKey: "ai-test-{{run.id}}-heatmap-bad-heatmapinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.grid-configure
+    name: "Chart Grid page size changes and is restored"
+    category: state
+    tags: ["requires-write-grant", "grid"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.openSidebar
+        params: {"panel": "grid", "expanded": true}
+      - id: ready
+        kind: poll
+        type: grid.getState
+        params: {"limit": 1}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 45000
+    execute:
+      type: grid.configure
+      params: {"pageSize": 6}
+      idempotencyKey: "ai-test-{{run.id}}-grid-cfg-gridconfigure"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: status
+          equals: "ok"
+      state:
+        - label: "grid reports page size 6"
+          kind: poll
+          type: grid.getState
+          params: {"limit": 1}
+          until: {"path": "data.settings.pageSize", "equals": 6}
+          intervalMs: 1000
+          timeoutMs: 15000
+          assertions:
+          - path: data.active
+            equals: true
+    teardown:
+      - id: restoreGrid
+        type: grid.configure
+        params: {"pageSize": "{{steps.ready.data.settings.pageSize}}"}
+        idempotencyKey: "ai-test-{{run.id}}-grid-restore-gridconfigure"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.grid-configure-invalid
+    name: "Grid rejects an unsupported page size"
+    category: contract
+    tags: ["requires-write-grant", "grid", "errors"]
+    execute:
+      type: grid.configure
+      params: {"pageSize": 7}
+      idempotencyKey: "ai-test-{{run.id}}-grid-bad-gridconfigureinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.layout-saved-load-unknown
+    name: "Loading an unknown saved layout fails without changing the chart"
+    category: contract
+    tags: ["requires-write-grant", "layouts", "errors"]
+    setup:
+      - id: chart
+        type: chart.getState
+        params: {}
+    execute:
+      type: layout.saved
+      params: {"action": "load", "id": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-layout-load-missing-layoutsavedloadunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["LAYOUT_NOT_FOUND", "INVALID_PARAMS"]
+      state:
+        - label: "chart unchanged"
+          type: chart.getState
+          params: {}
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.chart.data.symbol}}"
+
+  - id: wg.layout-saved-invalid
+    name: "Saving a layout with an empty name is rejected (named layouts are never saved by tests)"
+    category: contract
+    tags: ["requires-write-grant", "layouts", "errors"]
+    execute:
+      type: layout.saved
+      params: {"action": "save", "name": ""}
+      idempotencyKey: "ai-test-{{run.id}}-layout-save-bad-layoutsavedinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: wg.screening-delete-history-unknown
+    name: "Deleting an unknown scan history entry fails"
+    category: contract
+    tags: ["requires-write-grant", "screening", "errors"]
+    execute:
+      type: screening.deleteHistory
+      params: {"id": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-scan-delhist-missing-screeningdeletehistoryun"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["HISTORY_NOT_FOUND", "INVALID_PARAMS"]
+
+  - id: wg.screening-save-stale
+    name: "Saving screener rules with a stale revision is rejected"
+    category: contract
+    tags: ["requires-write-grant", "screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.save
+      params: {"name": "AI TEST {{run.id}}", "expectedRevision": -1}
+      idempotencyKey: "ai-test-{{run.id}}-scan-save-stale-screeningsavestale"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.screening-delete-unknown
+    name: "Deleting an unknown saved screener fails"
+    category: contract
+    tags: ["requires-write-grant", "screening", "errors"]
+    execute:
+      type: screening.delete
+      params: {"id": "ai-test-missing", "etag": "x"}
+      idempotencyKey: "ai-test-{{run.id}}-scan-del-missing-screeningdeleteunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["SAVED_SCREENER_NOT_FOUND", "NOT_FOUND", "INVALID_PARAMS", "ETAG_MISMATCH"]
+
+  - id: wg.screening-save-delete
+    name: "AI TEST screener rules are saved from the current draft and deleted by etag"
+    category: workflow
+    tags: ["requires-write-grant", "screening"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.save
+      params: {"name": "AI TEST {{run.id}}", "description": "automated - safe to delete", "expectedRevision": "{{steps.draft.data.revision}}"}
+      idempotencyKey: "ai-test-{{run.id}}-scan-save-screeningsavedelete"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.id
+          exists: true
+        - path: data.etag
+          exists: true
+      state:
+        - label: "saved list contains it"
+          type: screening.listSaved
+          params: {"limit": 25}
+          assertions:
+          - path: data.items
+            contains: {"id": "{{steps.execute.data.id}}"}
+    teardown:
+      - id: deleteSaved
+        type: screening.delete
+        params: {"id": "{{steps.execute.data.id}}", "etag": "{{steps.execute.data.etag}}"}
+        idempotencyKey: "ai-test-{{run.id}}-scan-delete-screeningsavedelete"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: wg.alert-update
+    name: "An AI TEST alert's name and price are updated"
+    category: state
+    tags: ["requires-write-grant", "alerts"]
+    setup:
+      - id: create
+        type: alerts.create
+        params: {"ticker": "NSE:TCS-EQ", "price": 999999, "direction": "above", "timeframe": "1D", "frequency": "once", "name": "AI TEST upd {{run.id}}", "message": "AI TEST automated alert - safe to delete", "expiresAt": "{{run.expiresIso}}"}
+        idempotencyKey: "ai-test-{{run.id}}-alert-upd-create-alertupdate"
+    execute:
+      type: alerts.update
+      params: {"id": "{{steps.create.data.rule.id}}", "name": "AI TEST updated {{run.id}}", "price": 999997}
+      idempotencyKey: "ai-test-{{run.id}}-alert-update-alertupdate"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.rule.name
+          equals: "AI TEST updated {{run.id}}"
+        - path: data.rule.price
+          equals: 999997
+    teardown:
+      - id: delete
+        type: alerts.delete
+        params: {"id": "{{steps.create.data.rule.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-alert-upd-delete-alertupdate"
+
+  - id: wg.alert-update-unknown
+    name: "Updating an unknown alert fails"
+    category: contract
+    tags: ["requires-write-grant", "alerts", "errors"]
+    execute:
+      type: alerts.update
+      params: {"id": "ai-test-missing", "name": "x"}
+      idempotencyKey: "ai-test-{{run.id}}-alert-upd-missing-alertupdateunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["ALERT_NOT_FOUND", "NOT_FOUND", "INVALID_PARAMS"]

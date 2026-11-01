@@ -1,0 +1,223 @@
+version: 1
+suite:
+  id: "ui-state"
+  name: "Reversible UI preferences and chart navigation"
+  description: "Exercises local UI commands that need no grant: theme round-trip (restored from the returned previous value), latest-history navigation and reload on the current chart (symbol/interval/live verified unchanged), research sidebar reopen (restored from setup), plus invalid-parameter paths. chart.setLive true is not sent (it starts a stream)."
+  requires:
+    grants: []
+    signIn: true
+
+tests:
+  - id: ui.theme-roundtrip
+    name: "Theme switches and returns the previous theme for restoration"
+    category: state
+    tags: ["workspace", "ui"]
+    execute:
+      type: workspace.setTheme
+      params: {"theme": "light"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.theme
+          equals: "light"
+        - path: data.previous
+          oneOf: ["light", "dark"]
+    teardown:
+      - id: restoreTheme
+        type: workspace.setTheme
+        params: {"theme": "{{steps.execute.data.previous}}"}
+
+  - id: ui.theme-invalid
+    name: "Unknown theme is rejected"
+    category: contract
+    tags: ["workspace", "errors"]
+    execute:
+      type: workspace.setTheme
+      params: {"theme": "blue"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: ui.history-latest
+    name: "Latest-history navigation is accepted and settles without enabling live"
+    category: state
+    tags: ["charts"]
+    setup:
+      - id: before
+        type: chart.getState
+        params: {}
+    execute:
+      type: chart.navigateHistory
+      params: {"action": "latest"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.requested
+          equals: true
+        - path: data.request.action
+          equals: "latest"
+      state:
+        - label: "navigation settles on the same chart with live unchanged"
+          kind: poll
+          type: chart.getState
+          params: {}
+          until: {"path": "data.navigation.loading", "equals": false}
+          intervalMs: 1000
+          timeoutMs: 30000
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.before.data.symbol}}"
+          - path: data.liveEnabled
+            equals: "{{steps.before.data.liveEnabled}}"
+          - path: data.navigation.historical
+            equals: false
+
+  - id: ui.history-no-previous
+    name: "Restoring a previous view when none exists fails with a coded error"
+    category: contract
+    tags: ["charts", "errors"]
+    setup:
+      - id: latest
+        type: chart.navigateHistory
+        params: {"action": "latest"}
+      - id: settled
+        kind: poll
+        type: chart.getState
+        params: {}
+        until: {"path": "data.navigation.loading", "equals": false}
+        intervalMs: 1000
+        timeoutMs: 30000
+    execute:
+      type: chart.navigateHistory
+      params: {"action": "previous"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "NO_PREVIOUS_VIEW"
+
+  - id: ui.history-invalid
+    name: "Unknown history action is rejected"
+    category: contract
+    tags: ["charts", "errors"]
+    execute:
+      type: chart.navigateHistory
+      params: {"action": "bogus"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: ui.history-date-missing
+    name: "Date navigation without a date is rejected"
+    category: contract
+    tags: ["charts", "errors"]
+    execute:
+      type: chart.navigateHistory
+      params: {"action": "date"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: ui.set-live-invalid
+    name: "setLive rejects a non-boolean"
+    category: contract
+    tags: ["charts", "errors"]
+    execute:
+      type: chart.setLive
+      params: {"enabled": "x"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: ui.reload
+    name: "Reloading the chart keeps symbol, interval and live setting"
+    category: state
+    tags: ["charts"]
+    setup:
+      - id: before
+        type: chart.getState
+        params: {}
+    execute:
+      type: chart.reload
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.requested
+          equals: true
+      state:
+        - label: "chart returns ready on the same context"
+          kind: poll
+          type: chart.getState
+          params: {}
+          until: {"path": "data.history.state", "equals": "ready"}
+          intervalMs: 1000
+          timeoutMs: 45000
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.before.data.symbol}}"
+          - path: data.interval
+            equals: "{{steps.before.data.interval}}"
+          - path: data.liveEnabled
+            equals: "{{steps.before.data.liveEnabled}}"
+
+  - id: ui.research-show
+    name: "research.show reopens the Research sidebar without selecting anything new"
+    category: state
+    tags: ["research", "ui"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: reports
+        type: research.list
+        params: {}
+    execute:
+      type: research.show
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.requested
+          equals: true
+        - path: data.panel
+          equals: "research"
+      state:
+        - label: "sidebar shows research"
+          kind: poll
+          type: workspace.getState
+          params: {}
+          until: {"path": "data.sidebar.panel", "equals": "research"}
+          intervalMs: 500
+          timeoutMs: 10000
+          assertions:
+          - path: data.sidebar.expanded
+            equals: true
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000

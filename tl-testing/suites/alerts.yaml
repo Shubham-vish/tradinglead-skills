@@ -1,0 +1,107 @@
+version: 1
+suite:
+  id: alerts
+  name: Price alerts lifecycle
+  description: Creates one AI TEST price alert far from market with a message and a 1-day expiry, pauses it, deletes it and verifies it is gone. Requires sign-in and the write grant; touches only rules it created.
+  requires:
+    grants: ["allowAgentWrites"]
+    signIn: true
+  defaults:
+    ticker: NSE:TCS-EQ
+
+tests:
+  - id: alerts.list
+    name: alerts.list returns a counted rule list
+    category: contract
+    tags: ["alerts"]
+    execute:
+      type: alerts.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.count
+          type: number
+        - path: data.rules
+          type: array
+
+  - id: alerts.lifecycle
+    name: Create with message and expiry, pause, delete
+    category: workflow
+    tags: ["alerts", "cloud-write"]
+    execute:
+      type: alerts.create
+      params: {"ticker": "{{suite.defaults.ticker}}", "price": 999999, "direction": "above", "timeframe": "1D", "frequency": "once", "name": "AI TEST alert {{run.id}}", "message": "AI TEST automated alert - safe to delete", "expiresAt": "{{run.expiresIso}}"}
+      idempotencyKey: "ai-test-{{run.id}}-alert-create"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.rule.id
+          exists: true
+        - path: data.rule.ticker
+          equals: "{{suite.defaults.ticker}}"
+        - path: data.rule.message
+          equals: AI TEST automated alert - safe to delete
+        - path: data.rule.status
+          equals: active
+      state:
+        - label: rule is listed
+          type: alerts.list
+          params: {}
+          assertions:
+            - path: data.rules
+              contains: {"id": "{{steps.execute.data.rule.id}}", "name": "AI TEST alert {{run.id}}"}
+    teardown:
+      - id: pause
+        type: alerts.setEnabled
+        params: {"id": "{{steps.execute.data.rule.id}}", "enabled": false}
+        idempotencyKey: "ai-test-{{run.id}}-alert-pause"
+      - id: delete
+        type: alerts.delete
+        params: {"id": "{{steps.execute.data.rule.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-alert-delete"
+      - id: afterDelete
+        type: alerts.list
+        params: {}
+
+  - id: alerts.past-expiry-rejected
+    name: An expiry in the past is rejected
+    category: contract
+    tags: ["alerts", "errors"]
+    execute:
+      type: alerts.create
+      params: {"ticker": "{{suite.defaults.ticker}}", "price": 999999, "name": "AI TEST expired {{run.id}}", "expiresAt": "2000-01-01T00:00:00Z"}
+      idempotencyKey: "ai-test-{{run.id}}-alert-expired"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: alerts.idempotent-replay
+    name: Replaying the same retry key and params does not create a duplicate
+    category: contract
+    tags: ["alerts", "idempotency", "cloud-write"]
+    setup:
+      - id: first
+        type: alerts.create
+        params: {"ticker": "{{suite.defaults.ticker}}", "price": 999998, "name": "AI TEST replay {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-alert-replay"
+    execute:
+      type: alerts.create
+      params: {"ticker": "{{suite.defaults.ticker}}", "price": 999998, "name": "AI TEST replay {{run.id}}"}
+      idempotencyKey: "ai-test-{{run.id}}-alert-replay"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.rule.id
+          equals: "{{steps.first.data.rule.id}}"
+    teardown:
+      - id: cleanup
+        type: alerts.delete
+        params: {"id": "{{steps.first.data.rule.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-alert-replay-delete"

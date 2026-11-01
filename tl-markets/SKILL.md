@@ -26,9 +26,10 @@ account; `MARKET_LOADING` means wait and reread.
 | Futures (bottom tab) | `workspace.setPanel {"panel":"futures","expanded":true}` | `futures.getReport` |
 | No panel | — | `watchlists.list/create/addSymbols`, `universe.list`, `marketData.getBars` |
 
-**Grants.** Several reads are consolidated with their writes and are therefore
-`mutates:true`: `symbol.details`, `indices.getState`, `watchlists.multiView`
-need the general write grant, sign-in and a retry key even when only reading;
+**Grants.** `symbol.details`, `indices.getState`, `watchlists.multiView` are
+grant-free reads when their change parameter is omitted; pagination is read-only.
+Supplying `expanded`, `category` or `panels`, respectively (including false/empty),
+requires the general write grant, sign-in and a retry key;
 `peers.configure` is a separate mutating refresh so `peers.get` stays a plain read.
 Read-only (no key): `watchlists.getRows`, `watchlists.list`, `peers.get`,
 `heatmap.getState`, `intelligence.*`, `futures.getReport`, `universe.list`,

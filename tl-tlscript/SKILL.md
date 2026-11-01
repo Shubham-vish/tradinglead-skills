@@ -8,6 +8,11 @@ description: Author and manage TradingLead TLScript-Pine indicators and strategy
 Start with [tl-desktop](../tl-desktop/SKILL.md), then read
 `indicators.listCapabilities`. [commands.md](commands.md) is the command reference.
 
+`indicators.closeSettings` closes Pine/Python settings or inputs without
+applying. Requires the indicator grant and a retry key. Busy/dirty dialogs fail
+with `INPUT_EDITOR_BUSY` / `INPUT_EDITOR_DIRTY`; `discard:true` explicitly
+discards unsaved dialog changes. Removing the indicator also dismisses it.
+
 Guided synthetic Practice Labs are intentionally for humans, without AI lesson
 commands. Normal-account indicator commands do not address their isolated
 training library or complete lesson tasks.

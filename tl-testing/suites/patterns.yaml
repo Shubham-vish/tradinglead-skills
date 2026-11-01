@@ -1,0 +1,121 @@
+version: 1
+suite:
+  id: patterns
+  name: Historical Patterns study
+  description: Reads Patterns state, searches a symbol, configures a small Monday-open study on NSE 15m, runs it once and polls to completion. May consume provider quota; run only when explicitly requested.
+  requires:
+    grants: []
+    signIn: true
+  cost: consumes-provider-quota
+
+tests:
+  - id: patterns.state
+    name: patterns.getState exposes revisions and job state
+    category: contract
+    tags: ["patterns"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: patterns.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.revision
+          type: number
+        - path: data.job
+          exists: true
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+
+  - id: patterns.search
+    name: patterns.searchSymbols finds TCS
+    category: contract
+    tags: ["patterns"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: patterns.searchSymbols
+      params: {"query": "TCS"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.symbols
+          contains: {"ticker": "NSE:TCS-EQ"}
+      state:
+        - label: the read left the sidebar unchanged
+          type: workspace.getState
+          params: {}
+          assertions:
+            - path: data.sidebar
+              equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: patterns.monday-open
+    name: Configure, run and poll a 20-week Monday 09:15-10:30 study
+    category: workflow
+    tags: ["patterns", "costly", "slow"]
+    setup:
+      - id: state
+        type: patterns.getState
+        params: {}
+      - id: configure
+        type: patterns.configure
+        params: {"expectedRevision": "{{steps.state.data.revision}}", "query": {"symbol": "NSE:TCS-EQ", "resolution": "15", "weekdays": [1], "startMinute": 555, "endMinute": 630, "count": 20, "mode": "separate"}}
+      - id: configured
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.run
+      params: {"expectedRevision": "{{steps.configured.data.revision}}"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.runId
+          exists: true
+      state:
+        - label: job reaches a terminal state with the applied query
+          kind: poll
+          type: patterns.getResults
+          params: {"runId": "{{steps.execute.data.runId}}", "offset": 0, "limit": 6}
+          until:
+            path: data.status
+            oneOf: ["completed", "failed", "cancelled"]
+          intervalMs: 2000
+          timeoutMs: 120000
+          assertions:
+            - path: data.status
+              equals: completed
+            - path: data.rows
+              type: array
+
+  - id: patterns.invalid-window
+    name: A window outside 09:15-15:30 IST is rejected
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: state
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.configure
+      params: {"expectedRevision": "{{steps.state.data.revision}}", "query": {"symbol": "NSE:TCS-EQ", "weekdays": [1], "startMinute": 0, "endMinute": 60, "count": 5, "mode": "separate"}}
+    assert:
+      response:
+        - path: status
+          equals: error
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}

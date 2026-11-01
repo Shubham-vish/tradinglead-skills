@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { skillNames, ownerFor, references } = require("./sync-commands.cjs");
+const { checkSuites } = require("./suites.cjs");
 
 function markdownFiles(root, directory) {
 	return fs.readdirSync(path.join(root, directory), { withFileTypes: true }).flatMap(entry => {
@@ -65,7 +66,8 @@ function validate(root = __dirname) {
 	for (const filename of documents) {
 		if (!reachable.has(filename)) throw new Error(`Unreachable skill document: ${filename}. Link it from the index or an owning guide.`);
 	}
-	return { verification: "snapshot-only", skills: skillNames.length, commands: catalog.commands.length, canonicalCommands: catalog.commands.filter(command => !command.type.startsWith("simulation.") && !/^backtesting\.research(?:Preview|Measure|Rerun)?$/.test(command.type)).length, documents: documents.length, examples };
+	const suites = checkSuites(root, catalog);
+	return { verification: "snapshot-only", skills: skillNames.length, commands: catalog.commands.length, canonicalCommands: catalog.commands.filter(command => !command.type.startsWith("simulation.") && !/^backtesting\.research(?:Preview|Measure|Rerun)?$/.test(command.type)).length, documents: documents.length, examples, suites };
 }
 module.exports = { validate };
 if (require.main === module) {

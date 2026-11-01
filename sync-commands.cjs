@@ -5,18 +5,25 @@ const { execFileSync } = require("node:child_process");
 const skillNames = [
 	"tl-desktop", "tl-charts", "tl-markets", "tl-alerts", "tl-screening", "tl-patterns", "tl-research",
 	"tl-tlscript", "tl-python", "tl-backtesting", "tl-strategy-optimization", "tl-strategy-research", "tl-paper-trading",
+	"tl-testing",
 ];
 const MAX_CATALOG_ENTRIES = 256;
+const MAX_CATALOG_ALIASES = 128;
 const MAX_CATALOG_BYTES = 128 * 1024;
-const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "back", "order", "cancelOrder", "replaceOrder", "protect", "close"]);
-const optimization = new Set(["optimize", "optimizePreview", "optimizeMeasure", "optimizeRerun", "research", "researchPreview", "researchMeasure", "researchRerun"]);
+const EFFECTS = new Set(["navigate", "panel", "quota", "code", "write", "network", "ui", "none"]);
+const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "back", "order", "cancelOrder", "replaceOrder", "protect", "close", "paperPreflight", "paperParity"]);
+const optimization = new Set(["optimize", "optimizePreview", "optimizeMeasure", "optimizeRerun", "optimizeReport", "optimizeReportGet", "optimizeResume", "optimizeChecks", "optimizeValidateSymbols", "research", "researchPreview", "researchMeasure", "researchRerun"]);
 const legacyOptimization = /^backtesting\.research(?:Preview|Measure|Rerun)?$/;
+const canonicalType = type => {
+	const normalized = type.replace(/^simulation\./, "backtesting.");
+	return legacyOptimization.test(normalized) ? normalized.replace(".research", ".optimize") : normalized;
+};
 function ownerFor(type) {
 	const canonical = type.replace(/^simulation\./, "backtesting.");
 	const [family, action] = canonical.split(".");
 	if (family === "backtesting") return optimization.has(action) ? "tl-strategy-optimization" : paper.has(action) ? "tl-paper-trading" : "tl-backtesting";
 	const owner = {
-		workspace: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts", studyTemplates: "tl-charts",
+		workspace: "tl-desktop", ui: "tl-desktop", demo: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts", studyTemplates: "tl-charts",
 		drawings: "tl-charts", layout: "tl-charts", grid: "tl-charts", feeds: "tl-charts",
 		watchlists: "tl-markets", symbol: "tl-markets", peers: "tl-markets", indices: "tl-markets",
 		heatmap: "tl-markets", intelligence: "tl-markets", futures: "tl-markets", universe: "tl-markets",
@@ -28,8 +35,8 @@ function ownerFor(type) {
 	return owner;
 }
 function validateCatalog(catalog) {
-	if (catalog?.version !== 1 || !Array.isArray(catalog.commands) || !catalog.commands.length || catalog.commands.length > MAX_CATALOG_ENTRIES ||
-		Buffer.byteLength(JSON.stringify(catalog.commands)) > MAX_CATALOG_BYTES || !Array.isArray(catalog.desktopActions)) {
+	if (catalog?.version !== 1 || !Array.isArray(catalog.commands) || !catalog.commands.length ||
+		catalog.commands.length > MAX_CATALOG_ENTRIES + MAX_CATALOG_ALIASES || !Array.isArray(catalog.desktopActions)) {
 		throw new Error("Invalid or oversized command catalog.");
 	}
 	const names = new Set();
@@ -40,13 +47,25 @@ function validateCatalog(catalog) {
 			!command.params || typeof command.params !== "object" || Array.isArray(command.params) ||
 			Object.values(command.params).some(value => typeof value !== "string")) throw new Error("Invalid command descriptor.");
 		names.add(command.type);
+		if (command.effects !== undefined && (!Array.isArray(command.effects) || !command.effects.length ||
+			command.effects.some(effect => !EFFECTS.has(effect)) ||
+			(command.effects.includes("none") && command.effects.length !== 1))) throw new Error("Invalid command effects.");
+		if (command.requiresCompactCatalog !== undefined && typeof command.requiresCompactCatalog !== "boolean") throw new Error("Invalid compact catalog requirement.");
 		ownerFor(command.type);
 	}
+	const canonical = catalog.commands.filter(command => canonicalType(command.type) === command.type);
+	const aliases = Object.fromEntries(catalog.commands.filter(command => canonicalType(command.type) !== command.type)
+		.map(command => [command.type, canonicalType(command.type)]));
+	if (canonical.length > MAX_CATALOG_ENTRIES || Object.keys(aliases).length > MAX_CATALOG_ALIASES ||
+		Buffer.byteLength(JSON.stringify(canonical)) > MAX_CATALOG_BYTES) {
+		throw new Error("Invalid or oversized command catalog.");
+	}
+	for (const [alias, target] of Object.entries(aliases)) if (!names.has(target)) throw new Error(`Orphan alias: ${alias}`);
 	for (const type of names) {
 		if (type.startsWith("simulation.") && !names.has(type.replace(/^simulation\./, "backtesting."))) throw new Error(`Orphan alias: ${type}`);
 	}
 	for (const action of catalog.desktopActions) {
-		if (!["status", "activate", "open-access", "reconnect"].includes(action.action) || typeof action.description !== "string") {
+		if (!["status", "activate", "open-access", "reconnect", "getOrigin", "setOrigin", "screenshot", "logs", "services", "appInfo"].includes(action.action) || typeof action.description !== "string") {
 			throw new Error("Unknown Desktop control; update the connection skill before refreshing.");
 		}
 	}
@@ -56,7 +75,7 @@ function references(catalog) {
 	validateCatalog(catalog);
 	const output = new Map();
 	const provenance = catalog.source === "isolated-source"
-		? "Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use."
+		? "Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use."
 		: "Command-catalog snapshot; recheck the addressed tab before use.";
 	const canonical = catalog.commands.filter(command => !command.type.startsWith("simulation.") && !legacyOptimization.test(command.type));
 	output.set("command-catalog.json", `${JSON.stringify(catalog, null, 2)}\n`);
@@ -66,15 +85,19 @@ function references(catalog) {
 		provenance,
 		"Read each skill's workflow and rediscover live capabilities before execution.", "",
 		`${canonical.length} canonical commands; ${catalog.commands.length - canonical.length} compatibility aliases; ${catalog.desktopActions.length} native Desktop controls.`, "",
-		"| Registered command | Skill | Retry key |",
-		"| --- | --- | --- |",
-		...catalog.commands.map(command => `| \`${command.type}\` | [${ownerFor(command.type)}](${ownerFor(command.type)}/SKILL.md) | ${command.mutates ? "Required" : "Not required"} |`),
+		"| Registered command | Skill | Retry key | Effects |",
+		"| --- | --- | --- | --- |",
+		...catalog.commands.map(command => `| \`${command.type}\` | [${ownerFor(command.type)}](${ownerFor(command.type)}/SKILL.md) | ${command.mutates ? "Required" : "Not required (parameterized writes still require it)"} | ${(command.effects || ["unknown"]).join(", ")} |`),
 		"", "Native Desktop controls belong to **tl-desktop**: " + catalog.desktopActions.map(action => `\`${action.action}\``).join(", ") + ".", "",
 		"Non-mutating in the catalog does not mean cost-free or invisible: scans, navigation, reloads and live-feed requests can still have effects.", "",
 	].join("\n"));
 	for (const skill of skillNames) {
 		if (skill === "tl-strategy-research") {
 			output.set(`${skill}/commands.md`, "# Deprecated command reference\n\nSee [tl-strategy-optimization](../tl-strategy-optimization/commands.md) for canonical Optimize commands and compatibility aliases. This router owns no commands.\n");
+			continue;
+		}
+		if (skill === "tl-testing") {
+			output.set(`${skill}/commands.md`, "# tl-testing command reference\n\nThis testing skill owns no commands. Suites may only call commands owned by other skills; see the generated [command index](../COMMANDS.md). `node validate.cjs` rejects any suite step whose type or parameters are absent from the catalog snapshot.\n");
 			continue;
 		}
 		const owned = canonical.filter(command => ownerFor(command.type) === skill);
@@ -86,20 +109,23 @@ function references(catalog) {
 		for (const command of owned) {
 			lines.push(`## \`${command.type}\``, "", command.description, "",
 				`Retry key: **${command.mutates ? "required" : "not required"}**. External local-assistant access is still required.`,
+				`Effects: **${(command.effects || ["unknown"]).join(", ")}**. These are possible consequences, not grants; optional write variants still require approval and a retry key.`,
 				...(command.permission === "indicators" ? ["Local indicator/backtesting grant required."] : []), "");
+			if (command.requiresCompactCatalog) lines.push("Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.", "");
 			if (Object.keys(command.params).length) {
 				lines.push("| Parameter | Contract |", "| --- | --- |",
 					...Object.entries(command.params).map(([key, description]) => `| \`${key}\` | ${cell(description)} |`), "");
 			} else lines.push("Parameters: `{}`.", "");
 			if (command.type.startsWith("backtesting.")) {
-				const legacy = command.type.replace(".optimize", ".research");
+				const legacy = /^backtesting\.optimize(?:Preview|Measure|Rerun)?$/.test(command.type)
+					? command.type.replace(".optimize", ".research") : command.type;
 				const aliases = legacy === command.type ? [legacy.replace(/^backtesting\./, "simulation.")]
 					: [legacy, legacy.replace(/^backtesting\./, "simulation.")];
 				lines.push(`Compatibility ${aliases.length === 1 ? "alias" : "aliases"}: ${aliases.map(alias => `\`${alias}\``).join(", ")}. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.`, "");
 			}
 		}
 		if (skill === "tl-desktop") {
-			lines.push("## Native Desktop controls", "", "Run `node cli.cjs desktop ACTION --tab ACTUAL_TAB_ID` from the Desktop repository.", "");
+			lines.push("## Native Desktop controls", "", "Run `node cli.cjs desktop ACTION --tab ACTUAL_TAB_ID` from the Desktop repository. App-level `getOrigin`, `setOrigin`, `logs`, `services` and `appInfo` take no `--tab`; `screenshot` takes an optional `--tab` (default: active tab); `setOrigin`, `logs` and `screenshot` take `--params JSON`.", "");
 			for (const action of catalog.desktopActions) lines.push(`- \`${action.action}\`: ${action.description}`);
 			lines.push("", "These controls cannot grant access. Discover them using `node cli.cjs desktop capabilities`.", "");
 		}
@@ -128,7 +154,7 @@ function main(argv) {
 			(flag !== "--check" && (!argv[index + 1] || argv[index + 1].startsWith("--")))) throw new Error(usage);
 		options[flag] = flag === "--check" ? true : argv[++index];
 	}
-	const project = ({ type, description, mutates, permission, params }) => ({ type, description, mutates, ...(permission ? { permission } : {}), params });
+	const project = ({ type, description, mutates, permission, params, effects, requiresCompactCatalog }) => ({ type, description, mutates, ...(permission ? { permission } : {}), params, ...(effects ? { effects } : {}), ...(requiresCompactCatalog ? { requiresCompactCatalog: true } : {}) });
 	let catalog;
 	if (options["--catalog"]) {
 		// Isolated-source refresh: an array of descriptors exported from the frontend registry; Desktop controls come from the saved snapshot.

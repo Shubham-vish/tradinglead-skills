@@ -1,0 +1,132 @@
+version: 1
+suite:
+  id: watchlists-markets
+  name: Watchlists and market data
+  description: Reads feeds, universes and bars, then creates, renames and deletes one throwaway AI TEST watchlist. Never edits an existing user list.
+  requires:
+    grants: ["allowAgentWrites"]
+    signIn: true
+  defaults:
+    symbols: ["NSE:TCS-EQ", "NSE:INFY-EQ"]
+
+tests:
+  - id: markets.feeds
+    name: feeds.list advertises the default feed
+    category: contract
+    tags: ["markets"]
+    execute:
+      type: feeds.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.providers
+          contains: {"id": "default", "available": true}
+        - path: data.discovery.status
+          type: string
+
+  - id: markets.bars
+    name: marketData.getBars returns bounded OHLCV for an explicit window
+    category: contract
+    tags: ["markets", "data"]
+    execute:
+      type: marketData.getBars
+      params: {"feed": "default", "symbol": "NSE:TCS-EQ", "resolution": "1D", "countBack": 30}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.symbol
+          equals: NSE:TCS-EQ
+        - path: data.noData
+          equals: false
+        - path: data.count
+          gte: 1
+          lte: 30
+        - path: data.bars
+          minLength: 1
+        - path: data.bars.0.close
+          finite: true
+        - path: data.bars.0.time
+          finite: true
+
+  - id: markets.universe
+    name: universe.list returns categories without mutation
+    category: contract
+    tags: ["markets"]
+    execute:
+      type: universe.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.categories
+          contains: "nifty_50_stocks"
+
+  - id: markets.bad-symbol
+    name: An unknown symbol fails explicitly instead of returning empty success
+    category: contract
+    tags: ["markets", "errors"]
+    execute:
+      type: marketData.getBars
+      params: {"feed": "default", "symbol": "NSE:AITESTNOPE-EQ", "resolution": "1D", "countBack": 5}
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          oneOf: ["UNSUPPORTED_SYMBOL", "INVALID_PARAMS", "NO_DATA"]
+
+  - id: watchlists.lifecycle
+    name: Create, rename and delete an AI TEST watchlist
+    category: workflow
+    tags: ["watchlists", "cloud-write"]
+    setup:
+      - id: before
+        type: watchlists.list
+        params: {}
+    execute:
+      type: watchlists.create
+      params: {"name": "AI TEST {{run.id}}", "symbols": "{{suite.defaults.symbols}}"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-create"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: list contains the new watchlist with both symbols
+          type: watchlists.list
+          params: {}
+          assertions:
+            - path: data.watchlists
+              contains: {"name": "AI TEST {{run.id}}", "count": 2}
+    teardown:
+      - id: rename
+        type: watchlists.manage
+        params: {"action": "rename", "name": "AI TEST {{run.id}}", "newName": "AI TEST {{run.id}} renamed"}
+        idempotencyKey: "ai-test-{{run.id}}-wl-rename"
+      - id: afterRename
+        type: watchlists.list
+        params: {}
+      - id: delete
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST {{run.id}} renamed", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wl-delete"
+      - id: afterDelete
+        type: watchlists.list
+        params: {}
+
+  - id: watchlists.delete-requires-confirm
+    name: Deleting without confirm:true is refused
+    category: contract
+    tags: ["watchlists", "errors"]
+    execute:
+      type: watchlists.manage
+      params: {"action": "delete", "name": "AI TEST {{run.id}} absent"}
+      idempotencyKey: "ai-test-{{run.id}}-wl-noconfirm"
+    assert:
+      response:
+        - path: status
+          equals: error

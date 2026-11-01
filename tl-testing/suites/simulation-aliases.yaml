@@ -1,0 +1,683 @@
+version: 1
+suite:
+  id: "simulation-aliases"
+  name: "simulation.* compatibility aliases"
+  description: "Every simulation.* compatibility alias is exercised with the same read or error-path contract as its canonical backtesting.* command (cloned from reads-contract and indicator-lifecycle), proving the alias routes to the same handler and error codes. Only unknown IDs, invalid params and reads are sent; no run, preset or library item is created and the user's runs are never touched."
+  requires:
+    grants: ["allowAgentIndicators"]
+    signIn: true
+
+tests:
+  - id: alias.capabilities
+    name: "Alias simulation.capabilities: Capabilities describe simulation-only execution"
+    category: contract
+    tags: ["backtesting", "alias"]
+    execute:
+      type: simulation.capabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.liveBrokerOrders
+          equals: false
+        - path: data.modes
+          contains: "backtest"
+
+  - id: alias.python-config-rejected-for-pine
+    name: "Alias simulation.run: Generic Python config is rejected for a Pine run"
+    category: contract
+    tags: ["backtesting", "alias", "pine", "errors"]
+    execute:
+      type: simulation.run
+      params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST SMA cross\", overlay=true, initial_capital=100000)\nfastLen = input.int(10, \"Fast\", minval=2)\nslowLen = input.int(30, \"Slow\", minval=3)\nfast = ta.sma(close, fastLen)\nslow = ta.sma(close, slowLen)\nif ta.crossover(fast, slow)\n    strategy.entry(\"Long\", strategy.long)\nif ta.crossunder(fast, slow)\n    strategy.close(\"Long\")\n", "config": {"initialCapital": 5000}, "bars": 200}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-badconfig-pythonconfigrejectedforp"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          exists: true
+
+  - id: alias.unknown-run
+    name: "Alias simulation.get: Reading an unknown run ID fails explicitly"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.get
+      params: {"runId": "sim-ai-test-does-not-exist"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          exists: true
+
+  - id: alias.chart-options-invalid
+    name: "Alias simulation.setChartOptions: Chart options reject a non-boolean markers value"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.setChartOptions
+      params: {"options": {"markers": "x"}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-options-bad-chartoptionsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-practice-invalid
+    name: "Alias simulation.practice: backtesting.practice with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.practice
+      params: {"config": "ai-test-invalid"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-practice-bad-btpracticeinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_SIMULATION"
+
+  - id: alias.bt-replay-invalid
+    name: "Alias simulation.replay: backtesting.replay with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.replay
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-replay-bad-btreplayinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-forward-invalid
+    name: "Alias simulation.forward: backtesting.forward with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.forward
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-forward-bad-btforwardinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-pause-invalid
+    name: "Alias simulation.pause: backtesting.pause with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.pause
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-pause-bad-btpauseinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-resume-invalid
+    name: "Alias simulation.resume: backtesting.resume with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.resume
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-resume-bad-btresumeinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-step-invalid
+    name: "Alias simulation.step: backtesting.step with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.step
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-step-bad-btstepinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-back-invalid
+    name: "Alias simulation.back: backtesting.back with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.back
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-back-bad-btbackinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-order-invalid
+    name: "Alias simulation.order: backtesting.order with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.order
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "order": {"side": "buy", "type": "market", "quantity": 1}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-order-bad-btorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-cancelorder-invalid
+    name: "Alias simulation.cancelOrder: backtesting.cancelOrder with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.cancelOrder
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-cancelorder-bad-btcancelorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-replaceorder-invalid
+    name: "Alias simulation.replaceOrder: backtesting.replaceOrder with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.replaceOrder
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-replaceorder-bad-btreplaceorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-protect-invalid
+    name: "Alias simulation.protect: backtesting.protect with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.protect
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "protection": {"stopLoss": 1}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-protect-bad-btprotectinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-close-invalid
+    name: "Alias simulation.close: backtesting.close with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.close
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-close-bad-btcloseinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-showsettings-invalid
+    name: "Alias simulation.showSettings: backtesting.showSettings with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.showSettings
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-showsettings-bad-btshowsettingsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-research-invalid
+    name: "Alias simulation.research: backtesting.research with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.research
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "sweep", "grid": {"fastLen": [5, 10]}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-research-bad-btresearchinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-researchrerun-invalid
+    name: "Alias simulation.researchRerun: backtesting.researchRerun with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.researchRerun
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "researchId": "x", "candidate": 1, "confirmed": true}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-researchrerun-bad-btresearchreruninvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-librarysave-invalid
+    name: "Alias simulation.librarySave: backtesting.librarySave with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.librarySave
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "expectedLibraryRevision": 0}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-librarysave-bad-btlibrarysaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.bt-libraryupdate-invalid
+    name: "Alias simulation.libraryUpdate: backtesting.libraryUpdate with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.libraryUpdate
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1, "metadata": {"name": "x"}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-libraryupdate-bad-btlibraryupdateinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: alias.bt-librarydelete-invalid
+    name: "Alias simulation.libraryDelete: backtesting.libraryDelete with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.libraryDelete
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-librarydelete-bad-btlibrarydeleteinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: alias.bt-libraryrestore-invalid
+    name: "Alias simulation.libraryRestore: backtesting.libraryRestore with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.libraryRestore
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-libraryrestore-bad-btlibraryrestoreinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: alias.bt-libraryimport-invalid
+    name: "Alias simulation.libraryImport: backtesting.libraryImport with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.libraryImport
+      params: {"run": {}, "summary": {}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-libraryimport-bad-btlibraryimportinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-presetdelete-invalid
+    name: "Alias simulation.presetDelete: backtesting.presetDelete with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.presetDelete
+      params: {"id": "ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-presetdelete-bad-btpresetdeleteinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-presetsave-invalid
+    name: "Alias simulation.presetSave: backtesting.presetSave with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.presetSave
+      params: {"name": ""}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-presetsave-bad-btpresetsaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-applystrategy-invalid
+    name: "Alias simulation.applyStrategy: backtesting.applyStrategy with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.applyStrategy
+      params: {"language": "pine", "source": ""}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-applystrategy-bad-btapplystrategyinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.bt-setstrategyautorerun-invalid
+    name: "Alias simulation.setStrategyAutoRerun: backtesting.setStrategyAutoRerun with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.setStrategyAutoRerun
+      params: {"enabled": "x"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-bt-setstrategyautorerun-bad-btsetstrategyautorerunin"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.runs
+    name: "Alias simulation.list: Run list is pageable and every row carries status and mode"
+    category: contract
+    tags: ["backtesting", "alias", "paper-trading"]
+    execute:
+      type: simulation.list
+      params: {"offset": 0, "limit": 10}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.runs
+          type: "array"
+
+  - id: alias.applied-strategy
+    name: "Alias simulation.appliedStrategy: Applied strategy state is readable"
+    category: contract
+    tags: ["backtesting", "alias", "paper-trading"]
+    execute:
+      type: simulation.appliedStrategy
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+
+  - id: alias.library-list
+    name: "Alias simulation.libraryList: Saved backtest library pages with quota"
+    category: contract
+    tags: ["backtesting", "alias"]
+    execute:
+      type: simulation.libraryList
+      params: {"offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.rows
+          type: "array"
+        - path: data.limits.runs
+          equals: 100
+        - path: data.usage.runs
+          gte: 0
+        - path: data.limit
+          equals: 5
+
+  - id: alias.library-export-unknown
+    name: "Alias simulation.libraryExport: Exporting an unknown saved run fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.libraryExport
+      params: {"runId": "sim-ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: alias.compare-too-few
+    name: "Alias simulation.compare: Compare needs two to four saved runs"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.compare
+      params: {"runIds": ["sim-ai-test-missing"]}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.chart-options
+    name: "Alias simulation.getChartOptions: Backtest chart options expose saved and effective options"
+    category: contract
+    tags: ["backtesting", "alias"]
+    execute:
+      type: simulation.getChartOptions
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.options.visible
+          type: "boolean"
+        - path: data.options.styles.profit
+          exists: true
+        - path: data.effectiveOptions
+          exists: true
+        - path: data.context.symbol
+          type: "string"
+
+  - id: alias.export-unknown
+    name: "Alias simulation.export: Exporting an unknown run fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.export
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.cancel-unknown
+    name: "Alias simulation.cancel: Cancelling an unknown run fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.cancel
+      params: {"runId": "sim-ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.research-preview-unknown
+    name: "Alias simulation.researchPreview: Optimization preview for an unknown run fails (compatibility alias)"
+    category: contract
+    tags: ["backtesting", "alias", "optimization", "errors"]
+    execute:
+      type: simulation.researchPreview
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "sweep", "grid": {"fastLen": [5, 10]}}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.preset-get-unknown
+    name: "Alias simulation.presetGet: Reading an unknown strategy preset fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.presetGet
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: alias.preset-list
+    name: "Alias simulation.presetList returns a bounded preset page"
+    category: contract
+    tags: ["backtesting", "alias"]
+    execute:
+      type: simulation.presetList
+      params: {"limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.presets
+          type: "array"
+        - path: data.presets.length
+          lte: 5
+        - path: data.total
+          gte: 0
+
+  - id: alias.show-unknown
+    name: "Alias simulation.show on an unknown run fails without opening panels"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: simulation.show
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-show-missing-showunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+      state:
+        - label: "panels unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.panels.bottom
+            equals: "{{steps.sidebarBefore.data.panels.bottom}}"
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: alias.remove-from-chart-unknown
+    name: "Alias simulation.removeFromChart on an unknown run fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: simulation.removeFromChart
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-alias-rfc-missing-removefromchartunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+      state:
+        - label: "panels unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.panels.bottom
+            equals: "{{steps.sidebarBefore.data.panels.bottom}}"
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: alias.delete-unknown
+    name: "Alias simulation.delete on an unknown run fails"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.delete
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-alias-delete-missing-deleteunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: alias.research-measure-invalid
+    name: "Alias simulation.researchMeasure rejects an unknown optimization mode"
+    category: contract
+    tags: ["backtesting", "alias", "errors"]
+    execute:
+      type: simulation.researchMeasure
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "grid", "grid": {}}
+      idempotencyKey: "ai-test-{{run.id}}-alias-measure-bad-researchmeasureinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"

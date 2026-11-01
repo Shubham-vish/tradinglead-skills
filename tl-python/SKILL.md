@@ -9,6 +9,15 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read
 `pythonIndicators.capabilities` before execution; exact commands are in
 [commands.md](commands.md).
 
+Close an opened Pine/Python Inputs or Style dialog with
+`indicators.closeSettings {"discard":false}` and a unique retry key. This needs
+the indicator grant, never applies edits, and refuses busy or dirty dialogs.
+Use `discard:true` only when explicitly discarding unsaved dialog changes.
+Removing its indicator also closes the associated dialog.
+Python errors expose stable codes and safe bounded guidance/diagnostics.
+Installed Desktop 0.1.7 still replaces top-level `PYTHON_*` messages with
+`Command failed.`; actionable top-level messages need the newer Desktop bridge.
+
 **Owns:** Writing/revising Python source and using the existing source-library
 and indicator commands. Strategy execution and result evidence belong to
 [tl-backtesting](../tl-backtesting/SKILL.md); parameter experiments belong to

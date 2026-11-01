@@ -48,8 +48,11 @@ Do not change pane, account or chart context while an operation is pending.
 ```
 
 3. An acknowledgement such as `navigationRequested:true,dataReady:false` is not
-   loaded data. Poll `chart.getState` until the intended context and history
-   state are ready or an explicit error occurs. Do not switch provider to hide
+   loaded data. Poll `chart.getState` until the intended context matches and
+   `data.dataReady` is `true` (or an explicit error occurs). `data.ready` only
+   means the chart widget is ready and turns true before candles arrive;
+   `dataReady` additionally requires `history.state:"ready"`, settled feed
+   discovery/source switching and no replay load. Do not switch provider to hide
    a failure. `history.state === "exhausted"` means the loader found no earlier
    history in that window, not a certified provider boundary.
 4. Read `chart.snapshot` with `bars` from 1 to 25. Check actual timestamps,

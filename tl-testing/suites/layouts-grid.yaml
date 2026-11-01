@@ -1,0 +1,148 @@
+version: 1
+suite:
+  id: layouts-grid
+  name: Split layouts and Chart Grid
+  description: Changes the split layout and restores it, opens an AI TEST Chart Grid with explicit symbols, and checks sidebar state. Never saves or loads named layouts (there is no delete command, so saving would leave user-visible residue).
+  requires:
+    grants: ["allowAgentWrites"]
+    signIn: false
+  defaults:
+    symbols: ["NSE:TCS-EQ", "NSE:INFY-EQ", "NSE:RELIANCE-EQ"]
+
+tests:
+  - id: layouts.read
+    name: layout.getState returns the current panes
+    category: contract
+    tags: ["layouts"]
+    execute:
+      type: layout.getState
+      params: {"saved": false}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.layout
+          oneOf: ["single", "columns", "rows", "grid"]
+        - path: data.activePane
+          exists: true
+        - path: data.panes
+          minLength: 1
+
+  - id: layouts.columns-and-restore
+    name: layout.set switches to columns and the original layout is restored
+    category: state
+    tags: ["layouts"]
+    setup:
+      - id: before
+        type: layout.getState
+        params: {}
+    execute:
+      type: layout.set
+      params: {"layout": "columns"}
+      idempotencyKey: "ai-test-{{run.id}}-layout-columns"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: layout reports columns
+          type: layout.getState
+          params: {}
+          assertions:
+            - path: data.layout
+              equals: columns
+    teardown:
+      - id: restore
+        type: layout.set
+        params: {"layout": "{{steps.before.data.layout}}", "activePane": "{{steps.before.data.activePane}}"}
+        idempotencyKey: "ai-test-{{run.id}}-layout-restore"
+      - id: verifyRestore
+        type: layout.getState
+        params: {}
+
+  - id: layouts.invalid-value
+    name: An unknown layout value is rejected
+    category: contract
+    tags: ["layouts", "errors"]
+    execute:
+      type: layout.set
+      params: {"layout": "hexagon"}
+      idempotencyKey: "ai-test-{{run.id}}-layout-invalid"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: grid.open-explicit
+    name: grid.open shows an AI TEST grid with explicit symbols
+    category: state
+    tags: ["grid"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: grid.open
+      params: {"symbols": "{{suite.defaults.symbols}}", "label": "AI TEST grid {{run.id}}", "timeframe": "1D"}
+      idempotencyKey: "ai-test-{{run.id}}-grid-open"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: grid lists the requested cards
+          kind: poll
+          type: grid.getState
+          params: {"offset": 0, "limit": 10}
+          until:
+            path: status
+            equals: ok
+          intervalMs: 1000
+          timeoutMs: 20000
+          assertions:
+            - path: data
+              exists: true
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+
+  - id: grid.visual
+    name: Grid cards render for the requested symbols
+    category: visual
+    tags: ["grid", "visual"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: grid.open
+        params: {"symbols": "{{suite.defaults.symbols}}", "label": "AI TEST grid visual {{run.id}}", "timeframe": "1D"}
+        idempotencyKey: "ai-test-{{run.id}}-grid-visual"
+      - id: loaded
+        kind: poll
+        type: grid.getState
+        params: {"offset": 0, "limit": 10}
+        until:
+          path: status
+          equals: ok
+        intervalMs: 1000
+        timeoutMs: 20000
+    execute:
+      type: grid.getState
+      params: {"offset": 0, "limit": 10}
+    assert:
+      response:
+        - path: status
+          equals: ok
+      visual:
+        screenshot: grid-cards
+        criteria:
+          - The Chart Grid sidebar is open and labelled with the AI TEST grid label.
+          - Cards for TCS, INFY and RELIANCE are visible with mini charts, not error placeholders.
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}

@@ -1,15 +1,16 @@
 # tl-patterns command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
 ## `patterns.getState`
 
-Open Historical Patterns and read the visible draft/revisions, chart ticker, analysis controls and job state. Does not fetch candles.
+Read mounted Historical Patterns draft/revisions and job state without opening it. Unmounted: ready:false, draft:null. Use patterns.show to open.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -18,6 +19,7 @@ Parameters: `{}`.
 Open the existing Historical Patterns sidebar, optionally expanded. Keeps the current study and chart unchanged.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -28,14 +30,16 @@ Retry key: **not required**. External local-assistant access is still required.
 Close Historical Patterns and cancel pending study work. Applied results remain in this account's mounted workspace.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
 ## `patterns.searchSymbols`
 
-Search the active chart feed's NSE catalog. Does not select a ticker, run analysis or switch feeds.
+Search the active chart feed's NSE catalog (max 25). Read-only: does not open the sidebar, select a ticker, run analysis or switch feeds.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -46,6 +50,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Replace the visible study draft without executing. NSE regular-session 15m only; no provider fallback.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -57,6 +62,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Copy the ready active chart's NSE ticker into the visible draft, without executing or changing the chart.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -67,6 +73,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Start one visible historical study. Poll getResults; may consume provider quota. SQL-backed panes batch selected windows; never silently change sources.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -77,6 +84,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Cancel this study job. Previous applied results remain labelled separately; provider work already sent is not undone.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -87,6 +95,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read job state and bounded occurrences from the actual filtered study, including all-page statistics and provenance. Does not rerun or open a hidden panel.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -100,6 +109,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Change the same visible result filters, ordering, rebasing, card size, page or view as the UI. No data request.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -112,6 +122,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Open an exact complete occurrence in the original chart pane through the shared navigator. Preserves source guards; no feed fallback or replay exit.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **navigate, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |

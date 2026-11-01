@@ -1,0 +1,200 @@
+version: 1
+suite:
+  id: charts
+  name: Chart navigation, view and drawings
+  description: Opens an explicit symbol/interval, changes the native view, creates and removes one AI TEST drawing, and captures chart evidence.
+  requires:
+    grants: ["allowAgentWrites"]
+    signIn: false
+  defaults:
+    symbol: NSE:TCS-EQ
+    feed: default
+    interval: 1D
+
+tests:
+  - id: charts.open-symbol
+    name: chart.open navigates to an explicit symbol, feed and interval
+    category: state
+    tags: ["charts", "navigation"]
+    setup:
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+    execute:
+      type: chart.open
+      params: {"symbol": "{{suite.defaults.symbol}}", "feed": "{{suite.defaults.feed}}", "interval": "{{suite.defaults.interval}}"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: chart reaches ready with the requested context
+          kind: poll
+          type: chart.getState
+          params: {}
+          until:
+            path: data.history.state
+            equals: ready
+          intervalMs: 1000
+          timeoutMs: 30000
+          assertions:
+            - path: data.available
+              equals: true
+            - path: data.ready
+              equals: true
+            - path: data.symbol
+              equals: "{{suite.defaults.symbol}}"
+            - path: data.interval
+              equals: "{{suite.defaults.interval}}"
+            - path: data.history.state
+              equals: ready
+    teardown:
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: charts.snapshot
+    name: chart.snapshot returns bounded rows with explicit provenance labels
+    category: contract
+    tags: ["charts", "data"]
+    execute:
+      type: chart.snapshot
+      params: {"bars": 5}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.timeUnit
+          equals: unix_seconds
+        - path: data.freshness
+          equals: not_verified
+        - path: data.returnedRows
+          gte: 1
+          lte: 5
+        - path: data.rows
+          minLength: 1
+
+  - id: charts.set-view
+    name: chart.setView applies a preset range and percent price scale
+    category: state
+    tags: ["charts", "view"]
+    setup:
+      - id: before
+        type: chart.viewState
+        params: {}
+    execute:
+      type: chart.setView
+      params: {"visibleRange": {"preset": "6m"}, "priceScale": {"mode": "percent"}}
+      idempotencyKey: "ai-test-{{run.id}}-view-set"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: view reflects percent scale
+          type: chart.viewState
+          params: {}
+          assertions:
+            - path: status
+              equals: ok
+    teardown:
+      - id: restoreScale
+        type: chart.setView
+        params: {"priceScale": {"mode": "normal", "autoScale": true}}
+        idempotencyKey: "ai-test-{{run.id}}-view-restore"
+
+  - id: charts.drawing-lifecycle
+    name: Create, list and remove one horizontal line drawing
+    category: state
+    tags: ["charts", "drawings"]
+    setup:
+      - id: snap
+        type: chart.snapshot
+        params: {"bars": 1}
+    execute:
+      type: drawings.create
+      params: {"tool": "horizontal_line", "points": [{"time": "{{steps.snap.data.rows.0.0}}", "price": "{{steps.snap.data.rows.0.4}}"}], "locked": false}
+      idempotencyKey: "ai-test-{{run.id}}-draw-hline"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.id
+          exists: true
+        - path: data.tool
+          equals: horizontal_line
+      state:
+        - label: drawing is listed
+          type: drawings.list
+          params: {"offset": 0, "limit": 100}
+          assertions:
+            - path: data.items
+              contains: {"id": "{{steps.execute.data.id}}"}
+    teardown:
+      - id: removeDrawing
+        type: drawings.update
+        params: {"ids": ["{{steps.execute.data.id}}"], "remove": true}
+        idempotencyKey: "ai-test-{{run.id}}-draw-remove"
+      - id: verifyRemoved
+        type: drawings.list
+        params: {"offset": 0, "limit": 100}
+
+  - id: charts.text-drawing-visual
+    name: A text drawing renders legibly on the chart
+    category: visual
+    tags: ["charts", "drawings", "visual"]
+    setup:
+      - id: snap
+        type: chart.snapshot
+        params: {"bars": 1}
+    execute:
+      type: drawings.create
+      params: {"tool": "text", "points": [{"time": "{{steps.snap.data.rows.0.0}}", "price": "{{steps.snap.data.rows.0.4}}"}], "text": "AI TEST label"}
+      idempotencyKey: "ai-test-{{run.id}}-draw-text"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      visual:
+        screenshot: charts-text-drawing
+        criteria:
+          - The text "AI TEST label" is visible on the chart near the latest candle.
+          - The label does not cover the price scale or toolbar.
+    teardown:
+      - id: removeText
+        type: drawings.update
+        params: {"ids": ["{{steps.execute.data.id}}"], "remove": true}
+        idempotencyKey: "ai-test-{{run.id}}-draw-text-remove"
+
+  - id: charts.invalid-drawing
+    name: A drawing with the wrong point count is rejected without side effects
+    category: contract
+    tags: ["charts", "drawings", "errors"]
+    execute:
+      type: drawings.create
+      params: {"tool": "trend_line", "points": [{"time": 1717200000, "price": 100}]}
+      idempotencyKey: "ai-test-{{run.id}}-draw-invalid"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: charts.native-screenshot
+    name: chart.action screenshot returns a bounded PNG
+    category: visual
+    tags: ["charts", "visual"]
+    execute:
+      type: chart.action
+      params: {"action": "screenshot"}
+      idempotencyKey: "ai-test-{{run.id}}-chart-shot"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      visual:
+        screenshot: charts-native
+        criteria:
+          - The image shows NSE:TCS-EQ daily candles with a readable price axis and time axis.
+          - No loading spinner, empty pane or error overlay is visible.

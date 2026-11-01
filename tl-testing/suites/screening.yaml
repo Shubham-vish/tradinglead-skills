@@ -1,0 +1,122 @@
+version: 1
+suite:
+  id: screening
+  name: Cloud Scanner configure, run and read
+  description: Reads Scanner state and catalog, configures a two-symbol custom definition, runs once, polls results and checks pagination. Consumes scan allowance; run only when explicitly requested.
+  requires:
+    grants: []
+    signIn: true
+  cost: consumes-scan-allowance
+
+tests:
+  - id: screening.read
+    name: State, catalog and universes are readable
+    category: contract
+    tags: ["screening"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: catalog
+        type: screening.catalog
+        params: {}
+      - id: universes
+        type: screening.listUniverses
+        params: {}
+    execute:
+      type: screening.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.revision
+          type: number
+        - path: data.storage
+          type: string
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+
+  - id: screening.custom-run
+    name: Configure a custom two-symbol scan, run once, poll results
+    category: workflow
+    tags: ["screening", "costly", "slow"]
+    setup:
+      - id: state
+        type: screening.getState
+        params: {}
+      - id: configure
+        type: screening.configure
+        params: {"expectedRevision": "{{steps.state.data.revision}}", "definition": {"mode": "custom", "timeframe": "1D", "lookback_days": 180, "limit": 10, "match": "all", "conditions": [{"field": "close", "op": "gt", "value": 0}]}, "universe": {"kind": "symbols", "tickers": ["NSE:TCS-EQ", "NSE:INFY-EQ"]}}
+      - id: configured
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.run
+      params: {"expectedRevision": "{{steps.configured.data.revision}}"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.runId
+          exists: true
+      state:
+        - label: results reach a terminal state with at most two rows
+          kind: poll
+          type: screening.getResults
+          params: {"runId": "{{steps.execute.data.runId}}", "offset": 0, "limit": 10}
+          until:
+            path: data.status
+            oneOf: ["completed", "failed", "cancelled"]
+          intervalMs: 2000
+          timeoutMs: 120000
+          assertions:
+            - path: data.status
+              equals: completed
+            - path: data.rows
+              type: array
+
+  - id: screening.stale-revision
+    name: A stale draft revision is rejected and nothing runs
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screening.run
+      params: {"expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: screening.history
+    name: Scan history pages are readable
+    category: contract
+    tags: ["screening"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.listHistory
+      params: {"offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.items
+          type: array
+        - path: data.pagination.total
+          gte: 0
+        - path: data.opensPanel
+          equals: false
+      state:
+        - label: the read left the sidebar unchanged
+          type: workspace.getState
+          params: {}
+          assertions:
+            - path: data.sidebar
+              equals: "{{steps.sidebarBefore.data.sidebar}}"

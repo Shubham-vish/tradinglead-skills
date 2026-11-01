@@ -16,9 +16,10 @@ TradingLead Desktop command surface**, not arbitrary UI automation.
 | Authoring | [tl-tlscript](tl-tlscript/SKILL.md) | TLScript-Pine indicator authoring, isolated validation, current saved revisions and named chart settings |
 | Authoring | [tl-python](tl-python/SKILL.md) | Isolated Python authoring, syntax validation, source history and named chart settings |
 | Strategy | [tl-backtesting](tl-backtesting/SKILL.md) | Python/Pine strategy backtests, applied strategies, saved runs, presets and chart overlays |
-| Strategy | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Strategy Optimizer: Optimize tab, parameter sweeps, holdout and walk-forward |
+| Strategy | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Strategy Optimizer: parameter sweeps, holdout, walk-forward and detailed offline HTML reports |
 | Strategy | [tl-paper-trading](tl-paper-trading/SKILL.md) | Direct replay-to-trade practice, backtest-derived replay, forward paper and simulated orders |
 | Strategy | [tl-strategy-research](tl-strategy-research/SKILL.md) | Deprecated compatibility router to tl-strategy-optimization (no procedure ownership) |
+| Quality | [tl-testing](tl-testing/SKILL.md) | Agent-run testing of TradingLead Desktop: YAML suites of real bridge commands with response/state/visual assertions, isolation and cleanup, reporting, plus the local unit-test commands (owns no commands) |
 
 ## Choose one workflow owner
 
@@ -45,6 +46,7 @@ outcome. Load a companion only when that part of the task is needed.
 | Sweep parameters or evaluate holdout/walk-forward | `tl-strategy-optimization` | `tl-backtesting` to create/restore the prerequisite completed run |
 | Trade a replay cursor or manage forward paper | `tl-paper-trading` | `tl-backtesting` for a backtest-derived branch or saved-run management; direct practice needs no strategy run |
 | Publish an HTML explanation of existing results | `tl-research` | The result's workflow owner for evidence; reporting does not rerun or optimize a strategy |
+| Test TradingLead itself (run smoke/domain suites, judge results, run unit tests) | `tl-testing` | The domain owner's guide when a failure needs diagnosis |
 
 Authoring source, running a backtest, evaluating robustness and trading paper
 are separate outcomes. A valid indicator is not a tested strategy; a completed
@@ -54,6 +56,51 @@ language before promising support. Repository maintenance is not required to
 use an already-supported command.
 
 ## Install and discover
+
+Desktop builds containing managed AI integration bundle these public skills and
+the `tradinglead` CLI. Enable setup on first launch or through **Help > AI
+integrations**; then open a new terminal and run `tradinglead agent-guide`.
+No MCP, repository checkout or separate Node.js is required. Copilot registrations
+are small app-owned loaders which read the currently selected compatible bundle,
+not stale copies of the workflow. Conflicting user-owned registrations are
+preserved and reported, not overwritten.
+
+### Compatible app-managed releases
+
+`bundle-policy.json` declares the monotonically increasing documentation revision,
+inclusive minimum Desktop version, exclusive maximum version, CLI API and bridge
+protocol. Change those requirements when instructions need new native behavior.
+Keep the old compatible releases in the index: older apps select the newest
+matching release, not simply the newest GitHub commit. Source changes alone are
+not distributed until a bundle release is prepared and published.
+
+After updating the public guides and validating their command references:
+
+```bash
+node validate.cjs
+node --test tools.test.cjs bundle.test.cjs
+node bundle.cjs --release
+```
+
+The last command generates immutable `bundle-N.json` and updates
+`distribution.json` locally. Review and explicitly commit/publish both together
+when authorized. Increase `revision` before changing a previously released bundle.
+Do not add private guides or executable files. No GitHub Actions are required.
+
+Desktop reads only this repository's fixed HTTPS distribution endpoint, verifies
+the SHA-256 from the index, validates the document-only bundle and compatibility
+requirements, then atomically switches its active pointer. Failed/offline updates
+retain the last working version; damaged/incompatible caches fall back to the
+packaged bundle with a visible warning. Hashes provide integrity, not a separate
+publisher signature: repository access and GitHub HTTPS are the trust boundary.
+Automatic checks are at most daily on app launch while integration is enabled.
+
+The cloud frontend can change independently. A compatible bundle is **not**
+certification of every command on every tab: discover live capabilities and
+domain readiness before execution. Never use a missing command/parameter,
+substitute another tab/feed or bypass permissions to follow an example.
+
+### Manual developer installation
 
 Clone the public collection, then install with Node.js 18+:
 
@@ -88,11 +135,11 @@ Each skill's `commands.md` contains exact descriptions, parameter names and
 retry requirements generated from the checked frontend source catalog. `command-catalog.json`
 is a documentation snapshot, **not** a substitute for fresh app capabilities.
 
-The current snapshot has **241 frontend descriptors** (192 canonical commands
-plus 49 compatibility aliases) and 4 native Desktop controls, about 104 KiB of
+The current snapshot has **242 frontend descriptors** (193 canonical commands
+plus 49 compatibility aliases) and 6 native Desktop controls, about 110 KiB of
 catalog JSON. Owned descriptors per skill, including aliases: tl-desktop 5,
 tl-charts 32, tl-markets 20, tl-alerts 6, tl-screening 27, tl-patterns 11,
-tl-research 7, tl-tlscript 23, tl-python 16, tl-backtesting 58,
+tl-research 7, tl-tlscript 24, tl-python 16, tl-backtesting 58,
 tl-strategy-optimization 12, tl-paper-trading 24, tl-strategy-research 0
 (the backtesting, optimization and paper totals include `simulation.*` and
 legacy optimization aliases). Exact ownership is generated in
@@ -125,6 +172,10 @@ Markdown guides, including nested guides: example command ownership, parameter
 names, retry keys, local links and reachability from this index. It does not
 execute examples or validate runtime-specific parameter values. Run
 `node sync-commands.cjs --tab ACTUAL_TAB_ID --check` separately for live parity.
+It also parses every `tl-testing/suites/*.yaml` (dependency-free YAML subset in
+`suites.cjs`) and rejects steps with unknown command types, unknown or missing
+required parameters, missing retry keys on mutating steps, mutations in
+read-only suites, and references to undefined earlier steps.
 
 ### Real boundaries
 
@@ -151,8 +202,9 @@ execute examples or validate runtime-specific parameter values. Run
 | Guided Practice Labs, account sign-in, membership/purchases, broker connect, Feedback send, product Tour, permission approval, administration and data-repair operations | Intentionally human/admin/operational surfaces, not missing public command namespaces |
 | Broker credentials, arbitrary JavaScript, real broker orders | Not exposed by these product commands |
 
-Do not use the private diagnostic `/js` bridge as a substitute for missing
-product commands. Explain unsupported automation honestly.
+Do not look for a diagnostic script bridge as a substitute for missing
+product commands: the dev-only diag bridge no longer has `/js` or `/devtools`.
+Use `desktop screenshot`, `desktop logs`, `desktop services` and `desktop appInfo`. Explain unsupported automation honestly.
 
 Local source implementation, the currently loaded frontend, and a released
 cloud/packaged app are different states. Check the addressed tab's catalog

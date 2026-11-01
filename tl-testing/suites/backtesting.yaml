@@ -1,0 +1,197 @@
+version: 1
+suite:
+  id: backtesting
+  name: Pine strategy backtest end to end
+  description: Runs a tiny Pine SMA-cross strategy on an explicit chart, polls to a terminal status, checks metrics are finite and internally consistent, pages trades and equity, then removes and deletes only the AI TEST run.
+  activeHistoryPolicy: |
+    Before each creating test, inspect the history setup response (all active runs, not libraryList).
+    There are at most three active slots. If data.runs has three entries, reclaim a slot ONLY
+    from a stopped run whose ID this invocation recorded after a successful creation and whose
+    recorded name starts with AI TEST. A matching prefix alone is never proof of ownership.
+    Re-read that run with backtesting.get, then backtesting.delete with its current revision
+    and a fresh ai-test retry key; verify absence with backtesting.list before continuing.
+    Never cancel or delete pre-existing user runs, even AI TEST residue from other invocations.
+    If no owned stopped run is available, SKIP with reason SIMULATION_HISTORY_FULL:
+    all three active slots are occupied by unowned or running runs; export/save then explicitly
+    Delete a stopped run in History to free a slot. Do not send backtesting.run in this case.
+    A race may still return SIMULATION_HISTORY_FULL from run; use the same safe ownership
+    check or SKIP with that reason, never blind retry. Teardown skips uncaptured run IDs.
+  requires:
+    grants: ["allowAgentIndicators"]
+    signIn: false
+  defaults:
+    symbol: NSE:TCS-EQ
+    interval: 1D
+    strategy: |
+      //@version=5
+      strategy("AI TEST SMA cross", overlay=true, initial_capital=100000)
+      fastLen = input.int(10, "Fast", minval=2)
+      slowLen = input.int(30, "Slow", minval=3)
+      fast = ta.sma(close, fastLen)
+      slow = ta.sma(close, slowLen)
+      if ta.crossover(fast, slow)
+          strategy.entry("Long", strategy.long)
+      if ta.crossunder(fast, slow)
+          strategy.close("Long")
+
+tests:
+  - id: backtesting.capabilities
+    name: Capabilities describe simulation-only execution
+    category: contract
+    tags: ["backtesting"]
+    execute:
+      type: backtesting.capabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.liveBrokerOrders
+          equals: false
+        - path: data.modes
+          contains: "backtest"
+
+  - id: backtesting.presets-readable
+    name: Preset and run lists are pageable without mutation
+    category: contract
+    tags: ["backtesting"]
+    setup:
+      - id: presets
+        type: backtesting.presetList
+        params: {"offset": 0, "limit": 5}
+    execute:
+      type: backtesting.list
+      params: {"offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.runs
+          type: array
+
+  - id: backtesting.pine-run
+    name: Pine strategy run completes with sane metrics
+    category: workflow
+    tags: ["backtesting", "pine", "slow"]
+    setup:
+      - id: history
+        type: backtesting.list
+        params: {"offset": 0, "limit": 5}
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "{{suite.defaults.symbol}}", "feed": "default", "interval": "{{suite.defaults.interval}}"}
+      - id: chartReady
+        kind: poll
+        type: chart.getState
+        params: {}
+        until:
+          path: data.history.state
+          equals: ready
+        intervalMs: 1000
+        timeoutMs: 30000
+      - id: compile
+        type: indicators.validate
+        params: {"source": "{{suite.defaults.strategy}}"}
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "{{suite.defaults.strategy}}", "bars": 1000, "range": null, "versionSuffix": "AI TEST {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-run"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "section": "trades", "limit": 1}
+        until:
+          path: data.status
+          oneOf: ["completed", "failed", "cancelled", "interrupted"]
+        intervalMs: 2000
+        timeoutMs: 180000
+      - id: show
+        type: backtesting.show
+        params: {"runId": "{{steps.run.data.runId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-show"
+    execute:
+      type: backtesting.get
+      params: {"runId": "{{steps.run.data.runId}}", "section": "trades", "offset": 0, "limit": 20}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.status
+          equals: completed
+        - path: data.language
+          equals: pine
+        - path: data.totalBars
+          gte: 2
+        - path: data.metrics.equity
+          finite: true
+        - path: data.metrics.netPnl
+          finite: true
+        - path: data.metrics.closedLegs
+          gte: 0
+        - path: data.metrics.maxDrawdown
+          gte: 0
+        - path: data.metrics.maxDrawdownPct
+          gte: 0
+          lte: 100
+        - path: data.metrics.fees
+          gte: 0
+        - path: data.total
+          equals: "{{steps.done.data.metrics.closedLegs}}"
+        - path: data.rows
+          type: array
+      state:
+        - label: equity curve is pageable and finite
+          type: backtesting.get
+          params: {"runId": "{{steps.run.data.runId}}", "section": "equity", "offset": 0, "limit": 5}
+          assertions:
+            - path: data.section
+              equals: equity
+            - path: data.total
+              gte: 1
+    teardown:
+      - id: detach
+        type: backtesting.removeFromChart
+        params: {"runId": "{{steps.run.data.runId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-detach"
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: delete
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-delete"
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: backtesting.python-config-rejected-for-pine
+    name: Generic Python config is rejected for a Pine run
+    category: contract
+    tags: ["backtesting", "pine", "errors"]
+    execute:
+      type: backtesting.run
+      params: {"language": "pine", "source": "{{suite.defaults.strategy}}", "config": {"initialCapital": 5000}, "bars": 200}
+      idempotencyKey: "ai-test-{{run.id}}-bt-badconfig"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: backtesting.unknown-run
+    name: Reading an unknown run ID fails explicitly
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.get
+      params: {"runId": "sim-ai-test-does-not-exist"}
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true

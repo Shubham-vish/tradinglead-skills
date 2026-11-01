@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "releases": [
+    {
+      "revision": 1,
+      "file": "bundle-1.json",
+      "sha256": "a0f5eb5035050b46e1b81013648c867b9c0a0e80047275ea30899a0553ab5316",
+      "requires": {
+        "minDesktop": "0.1.8",
+        "maxDesktopExclusive": "0.2.0",
+        "cliApi": 1,
+        "bridgeProtocol": 2
+      }
+    }
+  ]
+}

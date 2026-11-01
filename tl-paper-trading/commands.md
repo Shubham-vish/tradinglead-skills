@@ -1,6 +1,6 @@
 # tl-paper-trading command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture; multi-stock sessions keep one shared interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -23,6 +24,7 @@ Compatibility alias: `simulation.practice`. Same validation, grants, cancellatio
 Create a fresh paper-replay branch from a completed backtest using identical frozen candles/settings. Starts flat by default; automatic strategy is explicit. Never live orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -30,6 +32,7 @@ Local indicator/backtesting grant required.
 | `runId` | Completed backtest ID. |
 | `autoStrategy` | Optional boolean, default false. |
 | `startIndex` | Optional initial historical candle index. |
+| `preflightManifestSha256` | Optional exact reviewed automatic-paper manifest SHA-256; rejects source/settings/runtime/data/session/revision drift. |
 
 Compatibility alias: `simulation.replay`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
@@ -38,13 +41,15 @@ Compatibility alias: `simulation.replay`. Same validation, grants, cancellation,
 Start local forward PAPER from a completed backtest on its fresh live 1-240 minute chart. Seeds flat; manual by default, optional sequential Python. No broker orders.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Completed backtest ID. |
 | `autoStrategy` | Optional boolean, default false. |
-| `sessionSchedule` | Optional explicit {timeZone,weekdays:[ISO1-7],open:HH:mm,close:HH:mm,holidays:[YYYY-MM-DD],source:user-assumption,label?}. Omit inherits source-run defaults; null uses strict continuous intervals. Pinned for life of forward run. |
+| `sessionSchedule` | Optional {timeZone,weekdays:[ISO1-7],open:HH:mm,close:HH:mm,holidays:[YYYY-MM-DD],specialSessions:[{date,open,close}],source:user-assumption,label?}. Date overrides replace regular hours even on holidays/weekends. Omit inherits source-run defaults; null uses strict continuous intervals. Pinned for life of forward run. |
+| `preflightManifestSha256` | Optional exact reviewed automatic-paper manifest SHA-256; rejects source/settings/runtime/data/session/revision drift. |
 
 Compatibility alias: `simulation.forward`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
@@ -53,6 +58,7 @@ Compatibility alias: `simulation.forward`. Same validation, grants, cancellation
 Stop a forward-paper clock without closing exposure or deleting orders. Never auto-resumes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -67,6 +73,7 @@ Compatibility alias: `simulation.pause`. Same validation, grants, cancellation, 
 Explicitly resume paused forward paper on the original fresh live chart. Stale data/corrections/gaps block it. Missed contiguous candles require explicit catchUp.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -82,6 +89,7 @@ Compatibility alias: `simulation.resume`. Same validation, grants, cancellation,
 Advance historical replay. Manual practice fetches the next bounded page from its saved feed when captured candles run out, retaining the same account. Inspect paper.history for waiting/search limits. Backtest-derived replay remains frozen; automatic sequential mode steps exactly one. Forward paper advances only from its feed. No next candle means no fill.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **quota, code, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -97,6 +105,7 @@ Compatibility alias: `simulation.step`. Same validation, grants, cancellation, r
 Rewind manual practice replay to the state before its last Next/Play step: the candle, fills, orders and balance from that step and anything placed since are undone. Saved with the session (recent steps, bounded in size); unavailable after history is rolled or the interval changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -111,6 +120,7 @@ Compatibility alias: `simulation.back`. Same validation, grants, cancellation, r
 Submit an entry/exit for MANUAL replay or running manual forward paper. Replay market orders fill at the current revealed close with costs; other orders and protection use later candles. Forward fills require a candle opening after the decision. Inspect orderExecution for filled/rejected immediate outcomes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -127,6 +137,7 @@ Compatibility alias: `simulation.order`. Same validation, grants, cancellation, 
 Cancel a pending paper order; filled orders cannot be cancelled. Forward cancellation is queued for candles opening after the decision; earlier terms remain effective.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -143,6 +154,7 @@ Compatibility alias: `simulation.cancelOrder`. Same validation, grants, cancella
 Replace pending paper order terms atomically; invalid input preserves the original. Forward amendments are queued by decision time, never backdated into the forming candle.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -160,6 +172,7 @@ Compatibility alias: `simulation.replaceOrder`. Same validation, grants, cancell
 Change paper position protection. Forward changes are queued for candles opening after the decision. No broker call; inspect pendingProtection for queued terms.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -176,6 +189,7 @@ Compatibility alias: `simulation.protect`. Same validation, grants, cancellation
 Explicit full/partial reduce-only close. Manual replay fills at the current revealed close with costs, including the final candle; inspect orderExecution for filled/rejected outcomes. Automatic replay and forward closes remain queued for subsequent eligible candles. Never auto-liquidates at end of history.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -187,3 +201,40 @@ Local indicator/backtesting grant required.
 | `all` | Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request. |
 
 Compatibility alias: `simulation.close`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
+## `backtesting.paperPreflight`
+
+Review an exact completed frozen run for automatic paper, including successful candidate-rerun provenance/source/typed inputs/costs/runtime/data/session/revision and strong manifest. Does not run parity or any strategy.
+
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Exact successful completed run. |
+| `expectedRevision` | Current revision. |
+| `mode` | replay\|forward. |
+
+Compatibility alias: `simulation.paperPreflight`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
+## `backtesting.paperParity`
+
+Optional explicit full-frozen-sample vectorized/sequential Python parity evaluation in two independent accounts. Requires exact reviewed paper manifest, all candles within250 or reject, no truncation. Reports actual differences, never guarantees parity. Pine automatic remains unsupported.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+Local indicator/backtesting grant required.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Exact successful completed run. |
+| `expectedRevision` | Reviewed revision. |
+| `mode` | replay\|forward. |
+| `manifestSha256` | Exact preflight SHA-256. |
+| `confirmed` | Must be true. |
+
+Compatibility alias: `simulation.paperParity`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.

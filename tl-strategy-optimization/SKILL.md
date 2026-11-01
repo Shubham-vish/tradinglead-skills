@@ -1,14 +1,15 @@
 ---
 name: tl-strategy-optimization
-description: Use TradingLead's Strategy Optimizer in the Optimize tab for Python or Pine parameter sweeps, train/test holdouts, walk-forward, measured search estimates and confirmed selected-parameter reruns on frozen backtest data. Owns experiment setup and interpretation, not general single-run execution, engine development or HTML reports.
+description: Use TradingLead's Strategy Optimizer in the Optimize tab for Python or Pine parameter sweeps, train/test holdouts, walk-forward, measured search estimates, confirmed selected-parameter reruns and detailed optimization HTML reports from frozen data. Owns optimization reporting, not general single-run execution, engine development or the research HTML library.
 ---
 
 # Strategy Optimizer
 
 Start with [tl-desktop](../tl-desktop/SKILL.md). Read current
 `backtesting.capabilities` and [commands.md](commands.md).
-This skill owns `backtesting.optimize`, `optimizePreview`, `optimizeMeasure`
-and `optimizeRerun` in the inline **Optimize** tab, **not** the `research.*` HTML library.
+This skill owns `backtesting.optimize`, `optimizePreview`, `optimizeMeasure`,
+`optimizeRerun`, `optimizeReport` and `optimizeReportGet` in the inline
+**Optimize** tab, **not** the `research.*` HTML library.
 Use [tl-backtesting](../tl-backtesting/SKILL.md) when creating/restoring the
 prerequisite run or reading its shared result contract; it is not a second
 owner of experiment selection. Improving a strategy through experiments is
@@ -47,7 +48,7 @@ in the addressed running app before use; source/tests do not prove deployment.
    - `sweep` (default): evaluate ALL frozen candles; no forced test.
      Selection is in-sample and can overfit.
    - `holdout`: choose on training only, test that winner once.
-   - `walkForward`: 1-5 rolling cold-start folds; later training can contain
+   - `walkForward`: 1-5 independently initialized rolling folds; later training can contain
      earlier revealed tests. This is not a continuously carried portfolio.
    There is no separate train-only mode.
 3. Read `parameterMetadata` from ordinary run summaries: variable `id`,
@@ -56,14 +57,25 @@ in the addressed running app before use; source/tests do not prove deployment.
    execution-setting names. For Python, use declared/read keys that the frozen
    source actually consumes. Inventing a key does not alter a hard-coded
    strategy; metadata or a successful command does not prove behavioral effect.
+   Legacy Python summaries can include `inferred:true` suggestions from simple
+   literal `params.get("key", default)` calls in the frozen source. Their value
+   is a detected fallback, not a recorded runtime value or declared constraint.
+   Saved values and declarations take precedence. Discovery does not execute
+   source or alter the frozen run; dynamic/conflicting defaults are not guessed.
    Build a bounded Cartesian grid: at most 4 parameter keys, at most 12 candidate
    combinations. Pine values must satisfy declared types, bounds and options;
    invalid candidates are rejected before starting optimization.
 4. For holdout/walk-forward, provide `trainBars` and `testBars`, each at least
    2 and actually compatible with the sample/warmup. Walk-forward allows 1-5
-   folds (command default1). Total budgets remain 72 evaluations and 1,000
-   sequential prefix calls. Each segment starts flat with original capital
-   and its own original-config warmup; no pre-test warmup or carried orders.
+   folds (command default1). Maximum workload is 65 evaluations (12 training
+   candidates plus one selected test per fold, across five folds) and 1,000
+   sequential prefix calls. Each segment starts flat with original capital.
+   Omitted `warmupMode` means `coldStart`, using the original-config warmup
+   inside each segment. Explicit `warmupMode:"pastOnly"` and `warmupBars:0-5000`
+   use preceding captured, unscored indicator candles with a fresh scored
+   account. Python recalculates each scored prefix within the 1000-call cap;
+   Pine secondary-history warmup is unsupported. Neither carries orders,
+   positions or equity between segments.
 5. Choose `objective:"netPnl"` (default, highest training net P&L including
    open mark-to-market) or `"maxDrawdown"` (lowest training drawdown).
    Optional `minCompletedPositions` is an integer 0-1000000, default0:
@@ -92,9 +104,95 @@ completion before `librarySave` or `optimizeRerun`; never reuse the pre-search
 revision. `get.status` can remain `"completed"` for the baseline while
 `get.research.status` is `"running"`, `"failed"` or `"cancelled"`. The
 measurement similarly has its own `researchMeasurement.status`.
-Starting another optimization replaces the previous report on that active run.
-Save a stopped library snapshot first if the user wants to preserve the earlier
-experiment; the command has no separate replace-confirmation parameter.
+Starting another optimization appends a retained experiment; `research` remains
+the latest-attempt compatibility view. Read earlier attempts with
+`get {section:"optimization",attemptIndex:N}` using their zero-based index in
+`experiments`. Failed/cancelled trials remain recorded, and storage limits fail
+explicitly rather than pruning earlier evidence. Save a stopped library
+snapshot to preserve the run outside active history.
+
+Newer runs can record exposure bookkeeping when results, previews or exports
+are read. That metadata is separate from execution, baseline accounting and
+optimization revision; a read is not proof of untouched validation data.
+
+## Sampled search and newer Desktop commands
+
+The UI's **Sample combinations** uses explicit Advanced JSON and
+`search:{method:"sampled",version:"floyd-mulberry32-v1",seed,budget}`.
+Use 1-4 keys, at most 1000 unique scalar values per key, a 1-80 character seed
+and budget 1-12. The finite sample is repeatable, not an adaptive search or
+guarantee of finding the best combination. Preview the exact selection before
+execution. Seed, budget and manifest pin at the first trial; edited settings
+create a new attempt rather than modifying retained trials.
+
+The following commands require Desktop protocol 2 with `catalog.aliases`.
+Older shells omit them even when the local UI works. Check the addressed live
+catalog first; never bypass the missing command using private execution:
+
+- `backtesting.optimizeResume`: explicit confirmed resume of the latest
+  interrupted/failed/cancelled sampled attempt, pinned by run revision,
+  attempt ID and original manifest SHA-256. Completed and failed trial IDs are
+  not reexecuted; it accepts no setup changes.
+- `backtesting.optimizeChecks`: confirmed bounded neighbor/cost checks on the
+  selected candidate's original training window. Pin run/revision, attempt,
+  manifest, fold and candidate. Budget covers the baseline plus neighbors
+  times cost scenarios; the limit is 12 evaluations and 1000 prefix calls.
+- `backtesting.optimizeValidateSymbols`: confirmed independent evaluations of
+  1-12 explicitly reviewed symbols on the pinned feed/interval/training dates.
+  Budget equals symbol count; unsupported metadata or incomplete history
+  fails, never substitutes the original symbol or claims pooled returns.
+
+Read exact fields in [commands.md](commands.md), poll domain completion, and
+read retained compact check reports through `get {section:"candidateChecks"}`.
+Frozen full plans/accounts remain in stopped exports. Independent-symbol
+checks fetch history and are not part of a read-only audit.
+
+## Detailed optimization reports
+
+In **Backtesting > Optimize > Optimization results**, choose **Generate detailed
+report**, then **View report** or **Export HTML**. The expanded reader supports
+light/dark themes and fullscreen. The self-contained download includes every
+recorded evaluation, original-versus-reconstructed metrics, equity/drawdown
+charts, complete exit legs, open positions, recorded order/fill events, frozen
+settings, provenance and source. Native disclosures work offline; no scripts,
+remote assets or live data. Expand sections before printing.
+
+For Desktop commands, discover both new commands in the addressed tab first:
+
+1. Read the completed active run and current revision.
+2. Explicitly call `backtesting.optimizeReport` with `runId`,
+   `expectedRevision`, `confirmed:true` and a fresh retry key. This executes
+   the recorded candidate segments again using the frozen source/data and
+   installed engine. It does not rerank, add a new active run, modify the
+   baseline, change the optimization revision or evaluate unselected holdouts.
+3. Poll `backtesting.optimizeReportGet` with the same run/revision until
+   `completed`, `failed` or `cancelled`. The report has its own `id`, `status`,
+   `completed`, `total` and `mismatchedEvaluations`. Cancel through
+   `backtesting.cancel`, then inspect **report** status, not baseline status.
+4. On completion, fix `reportId` to that `id`. Read
+   `optimizeReportGet` with `offset:0`, `chunkSize:16000` and the same
+   `runId`, `expectedRevision`, `reportId`; follow `nextOffset` until null.
+   Concatenate `text` as HTML (not JSON). Offsets count UTF-16 code units.
+   Confirm the complete length equals `totalChars` before writing a file.
+
+Only one report is cached per account in the current page session. Reload or
+generating another report can remove that cache. **Export HTML to retain it**;
+`librarySave` saves the optimization summary and frozen run, not this generated
+HTML. No reports are silently inserted into the separate `research.*` library
+(its smaller size budget is unsuitable for full ledgers).
+
+Older summary-only optimizations can reconstruct if their frozen inputs and
+windows are sufficient. Original trade-by-trade identity cannot be proven:
+the original optimizer did not retain candidate ledgers. Matching metrics do
+not prove identical trades. Changed metrics are prominently flagged, never
+silently substituted for recorded results. Reasons are only recorded comments
+and execution facts, not invented source-level rationale.
+
+Generation is cancellable and revision/account guarded, requires the local
+indicator/backtesting grant, and uses no fresh data or free active slot.
+Evidence is bounded to 8 Mi characters and HTML to 24 Mi characters; an oversized
+report fails explicitly, never silently truncates. The download contains private
+strategy source and trading records; keep it local unless sharing is authorized.
 
 ## Grid and split normalization
 
@@ -193,10 +291,11 @@ supply `--tab` and `--key` separately.
 - Baseline metrics refer to the original full sample, not an equal-length
   benchmark for shorter windows. Defaults impose no minimum position count;
   low-drawdown selection alone can favor an inactive strategy.
-- Each segment starts flat; walk-forward does not carry a live portfolio
+- Each scored segment starts flat; walk-forward does not carry a live portfolio
   continuously through all segments.
-- Pine segments use only their primary candles and compatible captured
-  secondary history, excluding earlier cold-start history. Uncaptured
+- Cold-start Pine segments use only their primary candles and compatible
+  captured secondary history. Past-only primary warmup is explicit; secondary
+  warmup remains unsupported. Uncaptured
   timeframes or request coverage fail explicitly; optimization never fetches a
   substitute dataset. Original source-run accounting remains unchanged.
 - Sequential source receives prefix data, but that does not prove the source
@@ -205,5 +304,6 @@ supply `--tab` and `--key` separately.
   selection. Do not promote a best in-sample result as robust.
 - A proposed experiment is not evidence it has been run.
 
-Use [tl-research](../tl-research/SKILL.md) to store a readable HTML report from
-the actual returned metrics, provenance and caveats.
+Use the detailed-report workflow above for complete candidate ledgers and HTML
+exports. Use [tl-research](../tl-research/SKILL.md) only for a separate, smaller
+authored summary built from actual metrics, provenance and caveats.

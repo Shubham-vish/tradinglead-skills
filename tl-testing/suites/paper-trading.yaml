@@ -1,0 +1,95 @@
+version: 1
+suite:
+  id: paper-trading
+  name: Paper trading (read-only)
+  description: Inspects paper/backtesting capabilities, the run list and the paper-trading panel without placing, replacing or closing any order. Starting a practice session or orders is out of scope for automated tests on a real account.
+  readOnly: true
+  requires:
+    grants: []
+    signIn: false
+
+tests:
+  - id: paper.capabilities
+    name: Capabilities state that there is no broker execution
+    category: contract
+    tags: ["paper-trading"]
+    execute:
+      type: backtesting.capabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.liveBrokerOrders
+          equals: false
+
+  - id: paper.runs
+    name: Run list is pageable and every row carries status and mode
+    category: contract
+    tags: ["paper-trading"]
+    execute:
+      type: backtesting.list
+      params: {"offset": 0, "limit": 10}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.runs
+          type: array
+
+  - id: paper.applied-strategy
+    name: Applied strategy state is readable
+    category: contract
+    tags: ["paper-trading"]
+    execute:
+      type: backtesting.appliedStrategy
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+
+  - id: paper.panel
+    name: Selecting the paper-trading bottom panel is acknowledged and visible
+    category: state
+    tags: ["paper-trading", "ui"]
+    setup:
+      - id: before
+        type: workspace.getState
+        params: {}
+    execute:
+      type: workspace.setPanel
+      params: {"panel": "paper-trading", "expanded": true}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.confirmed
+          equals: false
+      state:
+        - label: workspace reflects the panel request
+          kind: poll
+          type: workspace.getState
+          params: {}
+          until:
+            path: data.panels.activePanel
+            equals: paper-trading
+          intervalMs: 500
+          timeoutMs: 10000
+          assertions:
+            - path: data.panels.activePanel
+              equals: paper-trading
+            - path: data.panels.expanded
+              equals: true
+      visual:
+        screenshot: paper-panel
+        criteria:
+          - The paper-trading panel is open below the chart.
+          - It clearly labels activity as simulated/paper, with no real broker order controls.
+    teardown:
+      - id: collapsePaper
+        type: workspace.setPanel
+        params: {"panel": "paper-trading", "expanded": false}
+      - id: restorePanel
+        type: workspace.setPanel
+        params: {"panel": "{{steps.before.data.panels.activePanel}}", "expanded": "{{steps.before.data.panels.expanded}}"}

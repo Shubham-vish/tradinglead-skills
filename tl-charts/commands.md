@@ -1,6 +1,6 @@
 # tl-charts command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 Read bounded native chart view/scale/timezone and drawing toolbar state.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -18,6 +19,7 @@ Parameters: `{}`.
 Set native view; ranges request positioning, not verified history. Symbol/interval: chart.open. Date: guarded navigator.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -33,6 +35,7 @@ Retry key: **required**. External local-assistant access is still required.
 List/add/remove native Compare/Overlay only; never other studies. Adds use selected feed; no fallback.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -48,6 +51,7 @@ Retry key: **required**. External local-assistant access is still required.
 Request native toolbar action. Screenshot returns bounded PNG, not a file. Replay guards undo/redo/date/compare.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -59,6 +63,7 @@ Retry key: **required**. External local-assistant access is still required.
 Page user drawings only: id/tool, up to 10 time/price points, visible/locked; excludes managed visuals.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -70,6 +75,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Create one allowlisted user drawing with exact tool point count. Epoch seconds/prices; no raw overrides.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -83,6 +89,7 @@ Retry key: **required**. External local-assistant access is still required.
 Hide/lock/remove up to 50 exact user drawing IDs; never studies or managed visuals. Preflights all targets; not transactional.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -96,6 +103,7 @@ Retry key: **required**. External local-assistant access is still required.
 Set drawing modes/tool or reorder existing favorites. Confirmed removeAll deletes all user drawings, preserving managed visuals.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -112,6 +120,7 @@ Retry key: **required**. External local-assistant access is still required.
 Native indicator templates, not drawing styles/layouts. Apply replaces native studies only, preserving symbol/interval; no replay. Indicator grant/retry key required, including list.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -128,6 +137,7 @@ Local indicator/backtesting grant required.
 Read split-chart layout: active pane, maximized pane, split sizes and each pane's last symbol/feed/interval. chart.*/studies.*/indicators.* always target the active pane.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -138,6 +148,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Change split layout, active pane (retargets chart.* commands), focus/restore, split sizes, fullscreen or pane linking.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, panel, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -154,6 +165,7 @@ Retry key: **required**. External local-assistant access is still required.
 Save the active pane's chart as a named saved layout, or load a saved layout id (from layout.getState saved:true) into the active pane, replacing its chart.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, panel, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -166,6 +178,7 @@ Retry key: **required**. External local-assistant access is still required.
 Read the mounted Chart Grid: settings, universe, ranking, paging and a bounded page of card symbols with load status.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -178,6 +191,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Change the mounted Chart Grid; source/sort/filter/paging changes reset page. Verify with grid.getState.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -206,6 +220,7 @@ Retry key: **required**. External local-assistant access is still required.
 Open the Chart Grid sidebar, optionally with explicit symbols or a completed visible scan's tickers in grid order.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -219,9 +234,10 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `chart.getState`
 
-Read active chart context and history/live/navigation status. Receipt time is not market freshness.
+Read active chart context and history/live/navigation status. ready=widget only; poll dataReady (verified candles) before reading data. feedCatalog reports broker-catalog issues separately from error. Receipt time is not market freshness.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -230,6 +246,7 @@ Parameters: `{}`.
 Export chart bars/study values without fetching. Check timestamps, completeness and truncation.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -240,6 +257,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Toggle supported live updates; may use broker quota. Requires AI access. Verify chart.getState.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -250,6 +268,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Request history reload; may use provider quota. Verify readiness with chart.getState.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -258,6 +277,7 @@ Parameters: `{}`.
 Browse bounded history. Never ends replay or enables live. Verify chart.getState.navigation.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **navigate, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -269,6 +289,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Control native manual Bar Replay only; select opens the chart's notice and candle picker for user interaction. Other actions require an active native cursor, never paper replay. Requires local write approval and retry key. Inspect chart.getState.replay afterward.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -280,6 +301,7 @@ Retry key: **required**. External local-assistant access is still required.
 Page native study names from the ready chart; not Pine source.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -291,6 +313,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read a discovered study's input types, defaults, bounds and options.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -301,6 +324,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Add a native study; no source execution/removals. Requires indicator grant and retry key. Verify chart.snapshot.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -313,6 +337,7 @@ Local indicator/backtesting grant required.
 List bounded, unmanaged native studies on this chart with exact entity IDs and visibility. Excludes Pine, Python and backtest studies.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -324,6 +349,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Toggle one exact built-in native study, never a managed script or drawing. Requires matching current visibility, indicator grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -338,6 +364,7 @@ Local indicator/backtesting grant required.
 Remove one exact built-in native study only. Requires matching current visibility, indicator grant and retry key. Does not delete saved source or drawings.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -351,6 +378,7 @@ Local indicator/backtesting grant required.
 Read the single selected editable user drawing and its type. No chart change or template contents.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -359,6 +387,7 @@ Parameters: `{}`.
 List bounded saved template names for that exact selected drawing type; no template contents.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -372,6 +401,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Apply an exact saved template to the currently selected user drawing. Requires sign-in, local write approval and retry key; never creates or deletes drawings.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -381,9 +411,10 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `feeds.list`
 
-Discover chart feeds. Inspect discovery.status: failed broker discovery returns only default with an explicit error, never cached brokers. Chart feeds do not change the backend screening source.
+Discover chart feeds. Inspect discovery.status: failed broker discovery returns only default with an explicit error and bounded discovery.reason, never cached brokers. Chart feeds do not change the backend screening source.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -392,6 +423,7 @@ Parameters: `{}`.
 Navigate this tab to an explicit symbol, chart feed and interval. This is not a broker trade.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **navigate, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |

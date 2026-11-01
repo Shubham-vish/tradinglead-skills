@@ -1,0 +1,241 @@
+version: 1
+suite:
+  id: smoke
+  name: Read-only bridge smoke
+  description: Discovery, tab readiness, permissions and core read-only command contracts. Safe on a user's real workspace; never mutates.
+  readOnly: true
+  requires:
+    grants: []
+    signIn: false
+  defaults:
+    page: /charts
+
+tests:
+  - id: smoke.health
+    name: Bridge health reports a ready tab
+    category: contract
+    tags: ["smoke", "bridge"]
+    execute:
+      kind: cli
+      command: health
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.version
+          equals: 1
+        - path: data.ready
+          equals: true
+
+  - id: smoke.tabs
+    name: The run tab is listed and ready
+    category: contract
+    tags: ["smoke", "bridge"]
+    execute:
+      kind: cli
+      command: tabs
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.tabs
+          minLength: 1
+        - path: data.tabs
+          contains: {"tabId": "{{run.tabId}}", "ready": true}
+
+  - id: smoke.desktop-status
+    name: Desktop status shows the frontend connected on a known page
+    category: contract
+    tags: ["smoke", "bridge"]
+    execute:
+      kind: desktop
+      action: status
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.ready
+          equals: true
+        - path: data.frontendConnected
+          equals: true
+        - path: data.loading
+          equals: false
+        - path: data.page
+          oneOf: ["/", "/charts", "/ai-workspace", "/datafeed"]
+
+  - id: smoke.capabilities
+    name: Live tab catalog includes the core command families
+    category: contract
+    tags: ["smoke", "catalog"]
+    execute:
+      kind: cli
+      command: capabilities
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.tabId
+          equals: "{{run.tabId}}"
+        - path: data.capabilities
+          minLength: 100
+        - path: data.capabilities
+          contains: {"type": "backtesting.run"}
+        - path: data.capabilities
+          contains: {"type": "alerts.create"}
+
+  - id: smoke.workspace-state
+    name: workspace.getState exposes account and grant flags
+    category: contract
+    tags: ["smoke", "permissions"]
+    execute:
+      type: workspace.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.agentEnabled
+          equals: true
+        - path: data.allowAgentWrites
+          type: boolean
+        - path: data.allowAgentIndicators
+          type: boolean
+        - path: data.authenticated
+          type: boolean
+        - path: data.tabId
+          equals: "{{run.tabId}}"
+
+  - id: smoke.chart-state
+    name: chart.getState reports an available chart with context
+    category: contract
+    tags: ["smoke", "charts"]
+    execute:
+      type: chart.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.available
+          equals: true
+        - path: data.ready
+          type: boolean
+
+  - id: smoke.layout-state
+    name: layout.getState lists panes and the active pane
+    category: contract
+    tags: ["smoke", "layouts"]
+    execute:
+      type: layout.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.layout
+          oneOf: ["single", "columns", "rows", "grid"]
+        - path: data.activePane
+          type: string
+        - path: data.panes
+          minLength: 1
+
+  - id: smoke.feeds
+    name: feeds.list returns at least the default feed
+    category: contract
+    tags: ["smoke", "markets"]
+    execute:
+      type: feeds.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.providers
+          contains: {"id": "default", "available": true}
+
+  - id: smoke.backtesting-capabilities
+    name: Backtesting capabilities are simulation-only
+    category: contract
+    tags: ["smoke", "backtesting"]
+    execute:
+      type: backtesting.capabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.liveBrokerOrders
+          equals: false
+        - path: data.modes
+          contains: "backtest"
+
+  - id: smoke.indicator-capabilities
+    name: Pine capabilities and applied-indicator readiness are readable
+    category: contract
+    tags: ["smoke", "indicators"]
+    setup:
+      - id: caps
+        type: indicators.listCapabilities
+        params: {}
+    execute:
+      type: indicators.applied
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.chart
+          exists: true
+        - path: data.indicators
+          type: array
+
+  - id: smoke.validate-pine
+    name: indicators.validate compiles a tiny Pine indicator without side effects
+    category: contract
+    tags: ["smoke", "indicators", "pine"]
+    execute:
+      type: indicators.validate
+      params:
+        source: "//@version=5\nindicator(\"AI TEST smoke EMA\", overlay=true)\nlength = input.int(5, \"Length\", minval=2)\nplot(ta.ema(close, length), \"EMA\")\n"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.valid
+          equals: true
+        - path: data.kind
+          equals: indicator
+        - path: data.validation
+          equals: compile-only
+        - path: data.inputs
+          minLength: 1
+
+  - id: smoke.unknown-command
+    name: An unregistered command fails closed with a stable code
+    category: contract
+    tags: ["smoke", "errors"]
+    execute:
+      kind: cli
+      command: exec
+      args: ["ai.test.notARealCommand"]
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          oneOf: ["UNSUPPORTED_COMMAND", "INVALID_PARAMS", "INVALID_REQUEST"]
+
+  - id: smoke.screenshot
+    name: Read-only screenshot shows a usable chart workspace
+    category: visual
+    tags: ["smoke", "visual"]
+    execute:
+      kind: screenshot
+      source: window
+    assert:
+      visual:
+        screenshot: smoke-workspace
+        criteria:
+          - The TradingLead chart workspace is visible, not a blank page, login wall or crash screen.
+          - Candles or a loading-complete chart area are rendered in the active pane.
+          - No error toast or red failure banner covers the chart.

@@ -1,0 +1,1025 @@
+version: 1
+suite:
+  id: "reads-contract"
+  name: "Read-only command contracts"
+  description: "Exercises every read-only lookup that needs no mounted panel: result shapes, paging bounds and explicit error codes for invalid parameters and unknown IDs. Nothing is created, changed or opened; the screening reads assert the sidebar is unchanged. The screening run-scoped checks assume the Scanner is closed (it is unless a test opened it)."
+  readOnly: true
+  requires:
+    grants: []
+    signIn: true
+
+tests:
+  - id: reads.watchlists-list
+    name: "Watchlists list returns named lists with counts"
+    category: contract
+    tags: ["watchlists"]
+    execute:
+      type: watchlists.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.watchlists
+          type: "array"
+        - path: data.source
+          type: "string"
+
+  - id: reads.watch-rows
+    name: "Displayed Watch rows page within the requested limit"
+    category: contract
+    tags: ["watchlists"]
+    execute:
+      type: watchlists.getRows
+      params: {"offset": 0, "limit": 3}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.rows
+          type: "array"
+        - path: data.rows.length
+          lte: 3
+        - path: data.offset
+          equals: 0
+        - path: data.total
+          gte: 0
+        - path: data.columns
+          minLength: 1
+        - path: data.activeList.name
+          type: "string"
+        - path: data.truncated
+          type: "boolean"
+
+  - id: reads.watch-rows-csv
+    name: "CSV export is bounded and formula-escaped"
+    category: contract
+    tags: ["watchlists"]
+    execute:
+      type: watchlists.getRows
+      params: {"format": "csv", "limit": 3}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.format
+          equals: "csv"
+        - path: data.csv
+          type: "string"
+        - path: data.bytes
+          lte: 131072
+        - path: data.spreadsheetFormulaEscaping
+          equals: true
+        - path: data.shown
+          lte: 3
+
+  - id: reads.watch-rows-invalid
+    name: "Watch rows reject limit 0"
+    category: contract
+    tags: ["watchlists", "errors"]
+    execute:
+      type: watchlists.getRows
+      params: {"limit": 0}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.chart-view-state
+    name: "Chart view state agrees with chart.getState"
+    category: contract
+    tags: ["charts"]
+    execute:
+      type: chart.viewState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.symbol
+          type: "string"
+        - path: data.interval
+          type: "string"
+        - path: data.timezone.id
+          type: "string"
+        - path: data.timezones
+          minLength: 1
+        - path: data.drawingMode.tool
+          type: "string"
+        - path: data.priceScale.autoScale
+          type: "boolean"
+        - path: data.legend.ohlcVisible
+          type: "boolean"
+      state:
+        - label: "view state symbol matches the active chart"
+          type: chart.getState
+          params: {}
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.execute.data.symbol}}"
+          - path: data.interval
+            equals: "{{steps.execute.data.interval}}"
+
+  - id: reads.drawings-list
+    name: "User drawings page is bounded"
+    category: contract
+    tags: ["charts", "drawings"]
+    execute:
+      type: drawings.list
+      params: {"offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.items
+          type: "array"
+        - path: data.items.length
+          lte: 5
+        - path: data.total
+          gte: 0
+        - path: data.offset
+          equals: 0
+        - path: data.truncated
+          type: "boolean"
+
+  - id: reads.drawings-list-invalid
+    name: "Drawings page rejects limit above 50"
+    category: contract
+    tags: ["charts", "drawings", "errors"]
+    execute:
+      type: drawings.list
+      params: {"limit": 500}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.drawing-template-no-selection
+    name: "Drawing template state without a selected drawing fails with an actionable code"
+    category: contract
+    tags: ["charts", "drawings", "errors"]
+    setup:
+      - id: drawings
+        type: drawings.list
+        params: {"limit": 1}
+    execute:
+      type: drawingTemplates.state
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "DRAWING_SELECTION_REQUIRED"
+
+  - id: reads.drawing-template-list-no-selection
+    name: "Template listing without a selected drawing fails with an actionable code"
+    category: contract
+    tags: ["charts", "drawings", "errors"]
+    execute:
+      type: drawingTemplates.list
+      params: {"entityId": "ai-test-none", "type": "trend_line"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "DRAWING_SELECTION_REQUIRED"
+
+  - id: reads.research-capabilities
+    name: "Research capabilities state limits and local-only storage"
+    category: contract
+    tags: ["research"]
+    execute:
+      type: research.listCapabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.limits.reports
+          gte: 1
+        - path: data.limits.htmlJsonBytes
+          gte: 1024
+        - path: data.storage
+          matches: "local"
+        - path: data.workflow
+          type: "string"
+
+  - id: reads.research-list
+    name: "Research reports list without HTML"
+    category: contract
+    tags: ["research"]
+    execute:
+      type: research.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.reports
+          type: "array"
+        - path: data.total
+          gte: 0
+        - path: data.storage
+          type: "string"
+
+  - id: reads.research-get-unknown
+    name: "Unknown research report ID fails"
+    category: contract
+    tags: ["research", "errors"]
+    execute:
+      type: research.get
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.activity
+    name: "Command activity is bounded and has no arguments"
+    category: contract
+    tags: ["workspace"]
+    setup:
+      - id: warm
+        type: workspace.getState
+        params: {}
+    execute:
+      type: workspace.getActivity
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.activeCommands
+          gte: 0
+        - path: data.entries
+          minLength: 1
+        - path: data.entries
+          notContains: {"params": {}}
+        - path: data.latestSequence
+          gte: 1
+        - path: data.truncated
+          type: "boolean"
+
+  - id: reads.studies-list-paging
+    name: "Native study names page with nextOffset"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      type: studies.list
+      params: {"offset": 0, "limit": 3}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.ready
+          equals: true
+        - path: data.studies.length
+          equals: 3
+        - path: data.nextOffset
+          equals: 3
+        - path: data.total
+          gt: 3
+        - path: data.hasMore
+          equals: true
+
+  - id: reads.studies-inputs
+    name: "RSI inputs expose typed defaults and bounds"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      type: studies.inputs
+      params: {"name": "Relative Strength Index"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.name
+          equals: "Relative Strength Index"
+        - path: data.inputs
+          contains: {"id": "length", "type": "integer", "defval": 14}
+        - path: data.canApply
+          equals: true
+        - path: data.totalInputs
+          gte: 1
+
+  - id: reads.studies-inputs-unknown
+    name: "Unknown native study name fails"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: studies.inputs
+      params: {"name": "AI TEST no such study"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "NATIVE_STUDY_NOT_FOUND"
+
+  - id: reads.studies-applied
+    name: "Applied native studies list exact entity IDs"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      type: studies.applied
+      params: {"limit": 50}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.ready
+          equals: true
+        - path: data.studies
+          type: "array"
+        - path: data.total
+          gte: 0
+        - path: data.hasMore
+          type: "boolean"
+
+  - id: reads.editor-state
+    name: "Studio editor state reports availability"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      type: indicators.editorState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.available
+          type: "boolean"
+
+  - id: reads.indicators-list
+    name: "Pine library metadata reports storage and sync state"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      type: indicators.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.indicators
+          type: "array"
+        - path: data.storage
+          type: "string"
+        - path: data.cloudSync.status
+          type: "string"
+
+  - id: reads.indicators-purchased
+    name: "Purchased indicator collection is readable"
+    category: contract
+    tags: ["indicators", "marketplace"]
+    execute:
+      type: indicators.purchased
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.items
+          type: "array"
+
+  - id: reads.indicators-sales
+    name: "Creator sales are readable"
+    category: contract
+    tags: ["indicators", "marketplace"]
+    execute:
+      type: indicators.sales
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.items
+          type: "array"
+
+  - id: reads.indicators-get-unknown
+    name: "Unknown Pine script ID fails"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: indicators.get
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INDICATOR_NOT_FOUND"
+
+  - id: reads.indicators-settings-unknown
+    name: "Settings for an unknown Pine entity fail"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: indicators.getSettings
+      params: {"entityId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: reads.python-capabilities
+    name: "Python runtime is sandboxed with explicit limits"
+    category: contract
+    tags: ["python"]
+    execute:
+      type: pythonIndicators.capabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.sandboxed
+          equals: true
+        - path: data.language
+          equals: "Python"
+        - path: data.limits.bars
+          gte: 1
+        - path: data.entryPoint
+          type: "string"
+
+  - id: reads.python-list
+    name: "Python sources list reports sync state"
+    category: contract
+    tags: ["python"]
+    execute:
+      type: pythonIndicators.list
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.scripts
+          type: "array"
+        - path: data.storage
+          type: "string"
+
+  - id: reads.python-get-unknown
+    name: "Unknown Python script ID fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.get
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.python-history-unknown
+    name: "History for an unknown Python script fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.history
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.python-applied
+    name: "Python chart instances are readable"
+    category: contract
+    tags: ["python"]
+    execute:
+      type: pythonIndicators.applied
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.chart.ready
+          type: "boolean"
+        - path: data.indicators
+          type: "array"
+        - path: data.chart.symbol
+          type: "string"
+
+  - id: reads.python-validate-ok
+    name: "Valid Python passes syntax-only validation without executing"
+    category: contract
+    tags: ["python"]
+    execute:
+      type: pythonIndicators.validate
+      params: {"source": "def calculate(bars, params):\n    return {\"plots\": []}\n"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.valid
+          equals: true
+        - path: data.executed
+          equals: false
+        - path: data.diagnostics
+          length: 0
+        - path: data.validation
+          equals: "syntax-only"
+
+  - id: reads.python-validate-bad
+    name: "Invalid Python returns a located syntax diagnostic"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.validate
+      params: {"source": "def calculate(:\n"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.valid
+          equals: false
+        - path: data.diagnostics
+          contains: {"line": 1, "severity": "error", "code": "python_syntax"}
+        - path: data.executed
+          equals: false
+
+  - id: reads.python-settings-unknown
+    name: "Settings for an unknown Python instance fail"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.getSettings
+      params: {"instanceId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: reads.alerts-activity
+    name: "Alert trigger history pages newest first"
+    category: contract
+    tags: ["alerts"]
+    execute:
+      type: alerts.activity
+      params: {"limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.events
+          type: "array"
+        - path: data.events.length
+          lte: 5
+        - path: data.count
+          gte: 0
+
+  - id: reads.alerts-activity-invalid
+    name: "Alert activity rejects limit above 50"
+    category: contract
+    tags: ["alerts", "errors"]
+    execute:
+      type: alerts.activity
+      params: {"limit": 500}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.library-list
+    name: "Saved backtest library pages with quota"
+    category: contract
+    tags: ["backtesting"]
+    execute:
+      type: backtesting.libraryList
+      params: {"offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.rows
+          type: "array"
+        - path: data.limits.runs
+          equals: 100
+        - path: data.usage.runs
+          gte: 0
+        - path: data.limit
+          equals: 5
+
+  - id: reads.library-list-invalid
+    name: "Library list rejects an unknown scope"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryList
+      params: {"scope": "bogus"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.library-export-unknown
+    name: "Exporting an unknown saved run fails"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryExport
+      params: {"runId": "sim-ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: reads.compare-too-few
+    name: "Compare needs two to four saved runs"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.compare
+      params: {"runIds": ["sim-ai-test-missing"]}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.chart-options
+    name: "Backtest chart options expose saved and effective options"
+    category: contract
+    tags: ["backtesting"]
+    execute:
+      type: backtesting.getChartOptions
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.options.visible
+          type: "boolean"
+        - path: data.options.styles.profit
+          exists: true
+        - path: data.effectiveOptions
+          exists: true
+        - path: data.context.symbol
+          type: "string"
+
+  - id: reads.export-unknown
+    name: "Exporting an unknown run fails"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.export
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: reads.cancel-unknown
+    name: "Cancelling an unknown run fails"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.cancel
+      params: {"runId": "sim-ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: reads.research-preview-unknown
+    name: "Optimization preview for an unknown run fails (compatibility alias)"
+    category: contract
+    tags: ["backtesting", "optimization", "errors"]
+    execute:
+      type: backtesting.researchPreview
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "sweep", "grid": {"fastLen": [5, 10]}}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: reads.preset-get-unknown
+    name: "Reading an unknown strategy preset fails"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.presetGet
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.screener-capabilities
+    name: "Backend screeners and limits are discoverable"
+    category: contract
+    tags: ["screening"]
+    execute:
+      type: screener.listCapabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.screeners
+          minLength: 1
+        - path: data.limits.maxTickers
+          equals: 500
+        - path: data.limits.maxScreeners
+          gte: 1
+        - path: data.source
+          equals: "tradinglead-backend"
+
+  - id: reads.screener-results-unknown
+    name: "Unknown screener run is reported expired"
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screener.getResults
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_EXPIRED"
+
+  - id: reads.screener-cancel-unknown
+    name: "Cancelling an unknown screener run fails"
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screener.cancel
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_EXPIRED"
+
+  - id: reads.screener-run-invalid
+    name: "Screener run with no tickers is rejected before consuming allowance"
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screener.run
+      params: {"tickers": [], "screeners": []}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.provider-capabilities
+    name: "Provider screener publishes its Pine capability manifest"
+    category: contract
+    tags: ["screening", "provider"]
+    execute:
+      type: providerScreener.listCapabilities
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.manifest.languageId
+          equals: "pine"
+        - path: data.manifest.schemaVersion
+          equals: 1
+
+  - id: reads.provider-results-unknown
+    name: "Unknown provider scan fails"
+    category: contract
+    tags: ["screening", "provider", "errors"]
+    execute:
+      type: providerScreener.getResults
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+
+  - id: reads.provider-cancel-unknown
+    name: "Cancelling an unknown provider scan fails"
+    category: contract
+    tags: ["screening", "provider", "errors"]
+    execute:
+      type: providerScreener.cancel
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+
+  - id: reads.provider-run-invalid
+    name: "Provider scan without feed/source is rejected before any broker request"
+    category: contract
+    tags: ["screening", "provider", "errors"]
+    execute:
+      type: providerScreener.run
+      params: {"tickers": []}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.screening-saved
+    name: "Saved screeners list headlessly without opening the Scanner"
+    category: contract
+    tags: ["screening"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.listSaved
+      params: {"offset": 0, "limit": 3}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.items
+          type: "array"
+        - path: data.pagination.total
+          gte: 0
+        - path: data.opensPanel
+          equals: false
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: reads.screening-saved-invalid
+    name: "Saved screeners reject limit above 25"
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screening.listSaved
+      params: {"limit": 99}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: reads.screening-closed-analysis
+    name: "screening.getAnalysis with the Scanner closed returns RUN_NOT_FOUND without opening it"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.getAnalysis
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: reads.screening-closed-cancel
+    name: "screening.cancel with the Scanner closed returns RUN_NOT_FOUND without opening it"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.cancel
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: reads.screening-closed-set-analysis
+    name: "screening.setAnalysis with the Scanner closed returns RUN_NOT_FOUND without opening it"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.setAnalysis
+      params: {"runId": "ai-test-missing", "expectedAnalysisRevision": 1, "search": "x"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: reads.screening-closed-refine
+    name: "screening.refine with the Scanner closed returns RUN_NOT_FOUND without opening it"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.refine
+      params: {"runId": "ai-test-missing", "expectedRevision": 1, "expectedAnalysisRevision": 1, "scope": "filtered"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"
+
+  - id: reads.screening-closed-history-settings
+    name: "screening.useHistorySettings with the Scanner closed returns RUN_NOT_FOUND without opening it"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: screening.useHistorySettings
+      params: {"runId": "ai-test-missing", "expectedRevision": 1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"

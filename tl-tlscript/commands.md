@@ -1,6 +1,6 @@
 # tl-tlscript command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 Discover TLScript-Pine: the supported Pine indicator runtime, input contract, bounds and example. Not TradingView runtime equivalence or the retired limited TLScript language. Pine strategy backtesting lives under the backtesting.* commands, not this indicator surface.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -18,6 +19,7 @@ Parameters: `{}`.
 Read Studio's current source, parameters, dirty/compile state, selected instance and actual workspace visibility. An open mounted editor may still be hidden.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -26,6 +28,7 @@ Parameters: `{}`.
 Open Studio and load exact saved or applied Pine/Python source, inputs and update target. Waits for mounting; refuses dirty drafts and unavailable/private source. Requires indicator grant and retry key; never runs source or changes chart instances.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -39,6 +42,7 @@ Local indicator/backtesting grant required.
 Open Studio and load source as an unsaved draft, or start New with source:"": language-specific guidance comments only (Pine includes //@version=6), not an executable starter. Waits for mounting and preserves dirty edits. Requires indicator grant and retry key; never compiles, saves, applies or removes chart instances.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -54,6 +58,7 @@ Local indicator/backtesting grant required.
 Compile TLScript-Pine indicators or strategies in the isolated Pine worker without saving or applying. Returns kind and input metadata or source diagnostics, not calculation correctness. Strategies execute through backtesting commands only.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **code**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -65,6 +70,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Refresh this account's saved indicator metadata with a device cache. Use get for source. Reports offline/conflicting or unconfirmed cloud state rather than claiming account persistence.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -73,6 +79,7 @@ Parameters: `{}`.
 Read this authenticated account's purchased native indicator collection, independent of chart placement. Does not purchase, import source, or grant a license.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -83,6 +90,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read this authenticated creator's native indicator sales and manual settlement status. Does not transfer money.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -93,6 +101,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Apply a purchased native indicator as an apply-only linked chart instance after server license verification. No editable import or payment. Requires indicator grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -105,6 +114,7 @@ Local indicator/backtesting grant required.
 Publish a saved Pine indicator as a separate paid apply-only publication and register its fixed-term checkout. Requires verified seller approval, current saved revision, indicator grant and retry key. Does not charge a buyer or transfer money. Existing free shares cannot become paid.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -121,6 +131,7 @@ Local indicator/backtesting grant required.
 Read current saved TLScript-Pine source and inputs after refreshing this account's library. Offline reads use the retained device cache; this command addresses the current local revision only.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -132,6 +143,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Compile and save TLScript-Pine indicator or strategy source and inputs to this account with a device cache. Cloud persistence is confirmed separately; conflicts/offline retain local source. Updating requires the current local revision. Requires indicator grant and retry key; never updates chart instances or runs a strategy. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -148,6 +160,7 @@ Local indicator/backtesting grant required.
 Delete an account library file at its current device revision and report cloud confirmation. Does not remove chart instances or revoke separately published shares. Requires indicator grant and a retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -160,6 +173,7 @@ Local indicator/backtesting grant required.
 Inspect this tab's Pine chart readiness and applied TLScript-Pine snapshots without source payloads. Does not fetch candles or certify data freshness.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -168,6 +182,7 @@ Parameters: `{}`.
 Retry pending saved Pine chart instances using Studio's restore queue. Requires a registered chart, indicator grant and retry key. Acknowledges the request, not successful restoration; poll indicators.applied for history readiness, restorationStatus and restoreErrors. Does not change saved source or resolve layout conflicts.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 Parameters: `{}`.
@@ -177,6 +192,7 @@ Parameters: `{}`.
 Add TLScript-Pine to the ready chart. Supply source OR saved id. Saved input values are used unless explicitly overridden. Requires local indicator grant and retry key; no feed fallback. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -194,6 +210,7 @@ Local indicator/backtesting grant required.
 Recalculate one owned Pine instance, retaining supported appearance. Supply source OR saved id, or omit both to retain its existing source/private artifact. Requires indicator grant and retry key; never adds a missing target. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -213,6 +230,7 @@ Local indicator/backtesting grant required.
 Remove one applied TLScript-Pine instance and its applied-layout entry, not a built-in study or saved library source.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -225,6 +243,7 @@ Local indicator/backtesting grant required.
 Show/hide an owned TLScript-Pine instance without executing or deleting source.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -238,6 +257,7 @@ Local indicator/backtesting grant required.
 Open named TLScript-Pine Style settings. Style changes do not execute the script.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -250,6 +270,7 @@ Local indicator/backtesting grant required.
 Open named TLScript-Pine calculation inputs. Only explicit Apply & recalculate runs the script; opening does not run or save source.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -257,11 +278,24 @@ Local indicator/backtesting grant required.
 | `entityId` | Pine entity OR instanceId. |
 | `instanceId` | Stable applied ID; mutually exclusive with entityId. |
 
+## `indicators.closeSettings`
+
+Close this account's Pine/Python settings or inputs dialog without applying. Refuses busy or unsaved edits; use discard:true explicitly to discard. Removal also closes the associated dialog.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+Local indicator/backtesting grant required.
+
+| Parameter | Contract |
+| --- | --- |
+| `discard` | Optional boolean, default false; explicitly discard unsaved dialog edits. |
+
 ## `indicators.getSettings`
 
 Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected. Pine includes per-instance annotations: widthCandles (default 1.5), heightScale (default 1), adaptive (default false).
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -274,6 +308,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Apply named appearance without executing source. Requires unchanged expected snapshot, indicator grant and retry key. Re-read settings after a conflict; no saved-source or backtest changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |

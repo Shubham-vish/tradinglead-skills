@@ -1,0 +1,132 @@
+version: 1
+suite:
+  id: strategy-optimization
+  name: Small Pine parameter grid
+  description: Runs a frozen Pine backtest, previews and executes a 2x2 sweep over declared input IDs, polls the optimization section and checks the winner is one of the requested candidates. Deletes the AI TEST run afterwards.
+  activeHistoryPolicy: |
+    Inspect the history setup response before changing the chart or creating the base run.
+    If data.runs has three active entries, reclaim ONLY a stopped run created by THIS
+    invocation: its ID must be recorded from a successful creation and its name must start
+    with AI TEST. Prefix matching alone does not establish ownership. Read backtesting.get,
+    delete that ID using the fresh revision and an ai-test retry key, then verify absence
+    with backtesting.list. Never delete or cancel unowned runs, including old AI TEST residue.
+    Otherwise SKIP with reason SIMULATION_HISTORY_FULL: no safe active slot; export/save
+    then explicitly Delete a stopped run in History. Do not run or optimize a user run.
+    If run races with another creator and returns SIMULATION_HISTORY_FULL, apply this same
+    rule or SKIP; teardown skips uncaptured IDs but still restores any changed chart.
+  requires:
+    grants: ["allowAgentIndicators"]
+    signIn: false
+  defaults:
+    strategy: |
+      //@version=5
+      strategy("AI TEST optimize", overlay=true, initial_capital=100000)
+      fastLen = input.int(10, "Fast", minval=2)
+      slowLen = input.int(30, "Slow", minval=3)
+      if ta.crossover(ta.sma(close, fastLen), ta.sma(close, slowLen))
+          strategy.entry("Long", strategy.long)
+      if ta.crossunder(ta.sma(close, fastLen), ta.sma(close, slowLen))
+          strategy.close("Long")
+
+tests:
+  - id: optimize.sweep
+    name: Preview then run a 4-candidate sweep on a completed run
+    category: workflow
+    tags: ["optimization", "pine", "slow"]
+    setup:
+      - id: history
+        type: backtesting.list
+        params: {"offset": 0, "limit": 5}
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "NSE:INFY-EQ", "feed": "default", "interval": "1D"}
+      - id: chartReady
+        kind: poll
+        type: chart.getState
+        params: {}
+        until:
+          path: data.history.state
+          equals: ready
+        intervalMs: 1000
+        timeoutMs: 30000
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "{{suite.defaults.strategy}}", "bars": 1000, "range": null, "versionSuffix": "AI TEST opt {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-opt-run"
+      - id: base
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+        until:
+          path: data.status
+          oneOf: ["completed", "failed", "cancelled", "interrupted"]
+        intervalMs: 2000
+        timeoutMs: 180000
+      - id: preview
+        type: backtesting.optimizePreview
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.base.data.revision}}", "mode": "sweep", "grid": {"fastLen": [5, 10], "slowLen": [20, 40]}, "objective": "netPnl"}
+    execute:
+      type: backtesting.optimize
+      params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.base.data.revision}}", "mode": "sweep", "grid": {"fastLen": [5, 10], "slowLen": [20, 40]}, "objective": "netPnl"}
+      idempotencyKey: "ai-test-{{run.id}}-opt-sweep"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: optimization completes with all candidates evaluated
+          kind: poll
+          type: backtesting.get
+          params: {"runId": "{{steps.run.data.runId}}", "section": "optimization", "offset": 0, "limit": 10}
+          until:
+            path: data.research.status
+            oneOf: ["completed", "failed", "cancelled"]
+          intervalMs: 2000
+          timeoutMs: 240000
+          assertions:
+            - path: data.research.status
+              equals: completed
+            - path: data.research.total
+              equals: 4
+            - path: data.rows
+              length: 4
+    teardown:
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: delete
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-opt-delete"
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: optimize.preview-only-guard
+    name: Preview refuses a nonexistent run without execution
+    category: contract
+    tags: ["optimization", "errors"]
+    execute:
+      type: backtesting.optimizePreview
+      params: {"runId": "sim-ai-test-does-not-exist", "expectedRevision": 1, "mode": "sweep", "grid": {}}
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: optimize.holdout-needs-bars
+    name: Holdout without trainBars/testBars is rejected
+    category: contract
+    tags: ["optimization", "errors"]
+    execute:
+      type: backtesting.optimizePreview
+      params: {"runId": "sim-ai-test-does-not-exist", "expectedRevision": 1, "mode": "holdout", "grid": {"fastLen": [5, 10]}}
+    assert:
+      response:
+        - path: status
+          equals: error

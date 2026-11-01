@@ -1,6 +1,6 @@
 # tl-markets command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 Read displayed Watch rows/state or bounded formula-safe CSV text; no file/clipboard writes or freshness claim.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -23,6 +24,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Select a discovered list OR visible row on the active chart. Mounted Watch required; poll rows/chart.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -36,6 +38,7 @@ Retry key: **required**. External local-assistant access is still required.
 Set mounted Watch sort/filter/column state. Existing column preferences persist; filters are session-only.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -50,6 +53,7 @@ Retry key: **required**. External local-assistant access is still required.
 Remove 1-100 symbols from an existing cloud watchlist using the UI writer.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -61,6 +65,7 @@ Retry key: **required**. External local-assistant access is still required.
 Manage lists/favorite stars or flag visible rows using guarded UI stores. Delete requires confirm:true.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -75,9 +80,10 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `symbol.details`
 
-Read bounded mounted company/fundamentals; optionally show/hide Details. No automatic fetch while collapsed.
+Read bounded mounted company/fundamentals without a write grant; expanded changes require write approval and a retry key. No automatic fetch while collapsed.
 
-Retry key: **required**. External local-assistant access is still required.
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -88,6 +94,7 @@ Retry key: **required**. External local-assistant access is still required.
 Read up to 100 matched/unmatched peers for the mounted Peers panel's current chart symbol.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -98,6 +105,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Reload mounted peers through the UI Refresh/Retry path; poll peers.get. Does not scrape upstream.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -105,9 +113,10 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `indices.getState`
 
-Read index catalog/constituents; optionally select a published category, opening its index on chart.
+Read index catalog/constituents without a write grant; category selection requires write approval and a retry key and opens its index on chart.
 
-Retry key: **required**. External local-assistant access is still required.
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **navigate, write, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -120,6 +129,7 @@ Retry key: **required**. External local-assistant access is still required.
 Configure mounted heatmap using its offered universe/options; no historical period exists. Poll getState.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -133,9 +143,10 @@ Retry key: **required**. External local-assistant access is still required.
 
 ## `watchlists.multiView`
 
-Read mounted Multi Watchlists layout; optionally replace up to 12 panels with existing lists.
+Read mounted Multi Watchlists without a write grant; panels replacement requires write approval and a retry key.
 
-Retry key: **required**. External local-assistant access is still required.
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -146,6 +157,7 @@ Retry key: **required**. External local-assistant access is still required.
 Read up to 50 authorized published report names and filter availability from the open Market Intelligence panel. Not streaming quotes.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -154,6 +166,7 @@ Parameters: `{}`.
 Read at most 10 authorized published report rows with snapshot provenance. Requires the mounted panel and a dataset from intelligence.catalog; not live quotes or redistribution rights.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -166,6 +179,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read at most five published NSE participant summaries from the mounted Futures panel. Aggregate reports, not live positions or forecasts.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -176,6 +190,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read current heatmap settings, aggregate breadth and quote receipt time from the open panel. No per-ticker quotes; receipt time is not provider freshness.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -184,6 +199,7 @@ Parameters: `{}`.
 Fetch historical OHLCV candles for a symbol/interval/window through the exact same feed path the chart uses. Pick the feed with feeds.list (default TradingLead/local adapters, or a connected broker like kite, fyers, web-dhan). Give the window as from+to, to+countBack, or just countBack. Returns up to 5000 bounded candles with epoch-millisecond UTC times; not a live/streaming quote and receipt time is not provider freshness. No feed is ever silently substituted.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -199,6 +215,7 @@ Retry key: **not required**. External local-assistant access is still required.
 List available stock categories or the symbols in one category.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -209,6 +226,7 @@ Retry key: **not required**. External local-assistant access is still required.
 List the signed-in user's TradingLead watchlists, not broker watchlists.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -217,6 +235,7 @@ Parameters: `{}`.
 Create a TradingLead watchlist without overwriting an existing different list. Requires sign-in, an idempotencyKey and local write permission for external agents.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -229,6 +248,7 @@ Retry key: **required**. External local-assistant access is still required.
 Add unique symbols to an existing TradingLead watchlist. Requires sign-in, an idempotencyKey and local write permission for external agents.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |

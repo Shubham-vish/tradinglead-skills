@@ -1,0 +1,731 @@
+version: 1
+suite:
+  id: "screening-read"
+  name: "Scanner and Patterns without quota"
+  description: "Exercises Scanner and Historical Patterns commands that never execute a scan or study: view switching, draft revision guards, unknown run/history IDs and analysis on missing results. Opening the Scanner/Patterns is restored from the sidebar read in setup; the draft is re-applied unchanged. Consumes no scan allowance or provider quota."
+  requires:
+    grants: []
+    signIn: true
+
+tests:
+  - id: scanread.show-history
+    name: "screening.show switches to Scanned History without executing"
+    category: state
+    tags: ["screening", "ui"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.show
+      params: {"view": "history"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.view
+          equals: "history"
+        - path: data.executed
+          equals: false
+        - path: data.visible
+          equals: true
+      state:
+        - label: "state reports the history view and the draft is unchanged"
+          type: screening.getState
+          params: {}
+          assertions:
+          - path: data.view
+            equals: "history"
+          - path: data.revision
+            equals: "{{steps.draft.data.revision}}"
+    teardown:
+      - id: backToScanner
+        type: screening.show
+        params: {"view": "{{steps.draft.data.view}}"}
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.show-invalid
+    name: "screening.show rejects an unknown view"
+    category: contract
+    tags: ["screening", "errors"]
+    execute:
+      type: screening.show
+      params: {"view": "bogus"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: scanread.configure-stale
+    name: "configure with a stale revision is rejected and leaves the draft intact"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.configure
+      params: {"definition": {"mode": "preset", "preset": "gainers"}, "expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+      state:
+        - label: "draft revision unchanged"
+          type: screening.getState
+          params: {}
+          assertions:
+          - path: data.revision
+            equals: "{{steps.draft.data.revision}}"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.configure-same
+    name: "Re-applying the current definition bumps the revision without running"
+    category: state
+    tags: ["screening"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.configure
+      params: {"definition": "{{steps.draft.data.definition}}", "expectedRevision": "{{steps.draft.data.revision}}"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.applied
+          equals: true
+        - path: data.executed
+          equals: false
+      state:
+        - label: "revision not regressed, no run started and definition unchanged"
+          type: screening.getState
+          params: {}
+          assertions:
+          - path: data.revision
+            gte: "{{steps.draft.data.revision}}"
+          - path: data.run
+            equals: null
+          - path: data.definition.mode
+            equals: "{{steps.draft.data.definition.mode}}"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.load-stale
+    name: "Loading saved rules with a stale revision is rejected"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.load
+      params: {"id": "ai-test-missing", "expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.open-history-unknown
+    name: "Opening an unknown history snapshot fails without rerunning"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.openHistory
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "HISTORY_NOT_FOUND"
+      state:
+        - label: "draft unchanged"
+          type: screening.getState
+          params: {}
+          assertions:
+          - path: data.revision
+            equals: "{{steps.draft.data.revision}}"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.refine-stale
+    name: "Refine with a stale draft revision reports a conflict"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.refine
+      params: {"runId": "ai-test-missing", "expectedRevision": 999999, "expectedAnalysisRevision": 1, "scope": "filtered"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["REVISION_CONFLICT", "RUN_NOT_FOUND", "INVALID_PARAMS"]
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.set-analysis-unknown
+    name: "Changing analysis of a run that is not visible fails"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.setAnalysis
+      params: {"runId": "ai-test-missing", "expectedAnalysisRevision": 1, "search": "x"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.history-settings-stale
+    name: "Copying history settings with a stale revision is rejected"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.useHistorySettings
+      params: {"runId": "ai-test-missing", "expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.cancel-unknown-mounted
+    name: "Cancelling an unknown run in the open Scanner fails"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.cancel
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "RUN_NOT_FOUND"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: scanread.results-unknown-mounted
+    name: "Results for an unknown run in the open Scanner fail"
+    category: contract
+    tags: ["screening", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: draft
+        type: screening.getState
+        params: {}
+    execute:
+      type: screening.getResults
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["RUN_NOT_FOUND", "RUN_EXPIRED"]
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.show
+    name: "patterns.show opens Historical Patterns without changing the study"
+    category: state
+    tags: ["patterns", "ui"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.show
+      params: {"expanded": false}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.visible
+          equals: true
+      state:
+        - label: "study draft unchanged"
+          type: patterns.getState
+          params: {}
+          assertions:
+          - path: data.revision
+            equals: "{{steps.pat.data.revision}}"
+          - path: data.visible
+            equals: true
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.hide
+    name: "patterns.hide closes Historical Patterns"
+    category: state
+    tags: ["patterns", "ui"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.hide
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.visible
+          equals: false
+      state:
+        - label: "sidebar no longer shows patterns"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar.panel
+            notEquals: "patterns"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.show-invalid
+    name: "patterns.show rejects a non-boolean expanded"
+    category: contract
+    tags: ["patterns", "errors"]
+    execute:
+      type: patterns.show
+      params: {"expanded": "yes"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: patread.chart-ticker-stale
+    name: "useChartTicker with a stale revision is rejected"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.useChartTicker
+      params: {"expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.chart-ticker
+    name: "useChartTicker copies the ready chart ticker into the draft without executing"
+    category: state
+    tags: ["patterns"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: chart
+        type: chart.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.useChartTicker
+      params: {"expectedRevision": "{{steps.pat.data.revision}}"}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.revision
+          gte: "{{steps.pat.data.revision}}"
+      state:
+        - label: "draft symbol is the chart symbol and no job started"
+          type: patterns.getState
+          params: {}
+          assertions:
+          - path: data.draft.symbol
+            equals: "{{steps.chart.data.symbol}}"
+          - path: data.job.status
+            equals: "{{steps.pat.data.job.status}}"
+    teardown:
+      - id: restoreDraft
+        type: patterns.configure
+        params: {"query": "{{steps.pat.data.draft}}", "expectedRevision": "{{steps.execute.data.revision}}"}
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.run-stale
+    name: "patterns.run with a stale revision is rejected before any provider request"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.run
+      params: {"expectedRevision": -1}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+      state:
+        - label: "no job started"
+          type: patterns.getState
+          params: {}
+          assertions:
+          - path: data.job.status
+            equals: "{{steps.pat.data.job.status}}"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.set-analysis-unknown
+    name: "patterns.setAnalysis on an unknown result fails"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.setAnalysis
+      params: {"runId": "ai-test-missing", "expectedAnalysisRevision": 1, "analysis": {"sort": "new"}}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PATTERN_RUN_NOT_FOUND"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.open-occurrence-unknown
+    name: "Opening an occurrence of an unknown result fails without changing the chart"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: chart
+        type: chart.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.openOccurrence
+      params: {"runId": "ai-test-missing", "occurrenceId": "x"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PATTERN_RUN_NOT_FOUND"
+      state:
+        - label: "chart unchanged"
+          type: chart.getState
+          params: {}
+          assertions:
+          - path: data.symbol
+            equals: "{{steps.chart.data.symbol}}"
+          - path: data.interval
+            equals: "{{steps.chart.data.interval}}"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.cancel-unknown
+    name: "Cancelling an unknown study job fails"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: pat
+        type: patterns.getState
+        params: {}
+    execute:
+      type: patterns.cancel
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PATTERN_RUN_NOT_FOUND"
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: patread.results-unknown
+    name: "Results for an unknown study fail without opening Patterns"
+    category: contract
+    tags: ["patterns", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: patterns.getResults
+      params: {"runId": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["PATTERN_RUN_NOT_FOUND", "PATTERNS_NOT_READY"]
+      state:
+        - label: "the command left the sidebar unchanged"
+          type: workspace.getState
+          params: {}
+          assertions:
+          - path: data.sidebar
+            equals: "{{steps.sidebarBefore.data.sidebar}}"

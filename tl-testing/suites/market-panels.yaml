@@ -1,0 +1,362 @@
+version: 1
+suite:
+  id: "market-panels"
+  name: "Mounted market panels"
+  description: "Opens the heatmap/grid sidebars and the peers/futures/intelligence bottom panels, polls their read commands until the mounted panel is ready and checks bounded shapes and provenance, then restores the sidebar and bottom panel read in setup. Reads stored/published data only; no quotes are streamed and nothing is written."
+  requires:
+    grants: []
+    signIn: true
+
+tests:
+  - id: panels.heatmap
+    name: "Heatmap reports settings, breadth and receipt provenance"
+    category: state
+    tags: ["markets", "heatmap"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.openSidebar
+        params: {"panel": "heatmap", "expanded": true}
+    execute:
+      kind: poll
+      type: heatmap.getState
+      params: {}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.settings.universe
+          type: "string"
+        - path: data.universes
+          minLength: 1
+        - path: data.summary.total
+          gte: 1
+        - path: data.summary.shown
+          gte: 1
+        - path: data.summary.advancing
+          gte: 0
+        - path: data.provenance.receivedAt
+          gt: 0
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.grid
+    name: "Chart Grid state exposes settings and a bounded card page"
+    category: state
+    tags: ["grid"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.openSidebar
+        params: {"panel": "grid", "expanded": true}
+    execute:
+      kind: poll
+      type: grid.getState
+      params: {"offset": 0, "limit": 3}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.active
+          equals: true
+        - path: data.settings.pageSize
+          oneOf: [6, 12, 18, 24]
+        - path: data.cards.items
+          type: "array"
+        - path: data.cards.items.length
+          lte: 3
+        - path: data.paging.mode
+          oneOf: ["pages", "more"]
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.peers
+    name: "Peers list matched tickers for the chart symbol"
+    category: state
+    tags: ["markets", "peers"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.setPanel
+        params: {"panel": "peers", "expanded": true}
+    execute:
+      kind: poll
+      type: peers.get
+      params: {"limit": 3}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.symbol
+          type: "string"
+        - path: data.matched
+          type: "array"
+        - path: data.matched.length
+          lte: 3
+        - path: data.provenance.source
+          type: "string"
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.futures
+    name: "Futures participant report returns at most five dated rows"
+    category: state
+    tags: ["markets", "futures"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.setPanel
+        params: {"panel": "futures", "expanded": true}
+    execute:
+      kind: poll
+      type: futures.getReport
+      params: {"isIndex": true}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.section
+          equals: "index_futures"
+        - path: data.rows
+          minLength: 1
+        - path: data.rows.length
+          lte: 5
+        - path: data.rows.0.participants.FII.net
+          finite: true
+        - path: data.provenance.dateSemantics
+          type: "string"
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.intelligence-catalog
+    name: "Market Intelligence lists datasets with availability"
+    category: state
+    tags: ["markets", "intelligence"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.setPanel
+        params: {"panel": "intelligence", "expanded": true}
+    execute:
+      kind: poll
+      type: intelligence.catalog
+      params: {}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.datasets
+          contains: {"dataset": "indices", "state": "available"}
+        - path: data.total
+          gte: 1
+        - path: data.datasets.length
+          lte: 50
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.intelligence-report
+    name: "An available Market Intelligence dataset returns at most ten rows with provenance"
+    category: state
+    tags: ["markets", "intelligence"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: workspace.setPanel
+        params: {"panel": "intelligence", "expanded": true}
+      - id: catalog
+        kind: poll
+        type: intelligence.catalog
+        params: {}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 45000
+    execute:
+      kind: poll
+      type: intelligence.getReport
+      params: {"dataset": "indices"}
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 45000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.dataset
+          equals: "indices"
+        - path: data.rows
+          minLength: 1
+        - path: data.rows.length
+          lte: 10
+        - path: data.columns
+          minLength: 1
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: panels.peers-invalid
+    name: "Peers reject limit 0"
+    category: contract
+    tags: ["markets", "peers", "errors"]
+    execute:
+      type: peers.get
+      params: {"limit": 0}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: panels.futures-invalid
+    name: "Futures report rejects a non-boolean isIndex"
+    category: contract
+    tags: ["markets", "futures", "errors"]
+    execute:
+      type: futures.getReport
+      params: {"isIndex": "x"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: panels.grid-invalid
+    name: "Grid state rejects limit above 100"
+    category: contract
+    tags: ["grid", "errors"]
+    execute:
+      type: grid.getState
+      params: {"limit": 500}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: panels.intelligence-invalid
+    name: "Unknown Market Intelligence dataset is rejected"
+    category: contract
+    tags: ["markets", "intelligence", "errors"]
+    execute:
+      type: intelligence.getReport
+      params: {"dataset": "ai-test-nope"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["INVALID_PARAMS", "MARKET_NOT_READY"]
+
+  - id: panels.heatmap-closed
+    name: "Heatmap state while the heatmap is not open fails explicitly"
+    category: contract
+    tags: ["markets", "heatmap", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: away
+        type: workspace.openSidebar
+        params: {"panel": "watchlists", "expanded": false}
+    execute:
+      type: heatmap.getState
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          oneOf: ["MARKET_NOT_READY", "MARKET_LOADING"]
+    teardown:
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000

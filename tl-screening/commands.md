@@ -1,15 +1,16 @@
 # tl-screening command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
 ## `screening.getState`
 
-Open Scanner and read draft revision, universe, current view, stages and run status. Requires real sign-in; the current cloud Scanner does not support preview/sample mode.
+Read mounted Scanner draft, revisions and run status without opening it. Unmounted: ready:false, draft:null. Use screening.show to open. Requires real sign-in.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -18,6 +19,7 @@ Parameters: `{}`.
 Switch the visible Scanner or Scanned History view without running or changing rules. Leaving historical results clears that comparison.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -25,17 +27,19 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.catalog`
 
-Read server presets, fields, SQL schema, original strategy catalog and account limits. Strategy discovery failures are explicit; does not scan.
+Read server presets, fields, SQL schema, original strategy catalog and account limits. Strategy discovery failures are explicit; does not scan or open Scanner.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
 ## `screening.listUniverses`
 
-List available active, saved watchlist, flagged and predefined category choices. Explicit symbols are also supported.
+List available active, saved watchlist, flagged and predefined category choices. Explicit symbols are also supported. Does not open Scanner.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -44,6 +48,7 @@ Parameters: `{}`.
 Replace the visible rules and optionally select a universe, without executing. Read getState first.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -56,6 +61,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Start the visible preset/custom/SQL/Classic scan once. Consumes allowance, including cache hits. Poll getResults; no automatic retry.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, network, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -64,9 +70,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.getResults`
 
-Read this visible run's bounded results, warnings and pagination. Closing Scan cancels pending work.
+Read this visible run's bounded results, warnings and pagination. Closing Scan cancels pending work; with Scanner closed returns RUN_NOT_FOUND without opening it.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -76,9 +83,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.cancel`
 
-Cancel the current visible run. Already-submitted server work may count toward allowance.
+Cancel the current visible run; Scanner closed: RUN_NOT_FOUND, never opens. Submitted server work may count toward allowance.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -86,9 +94,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.getAnalysis`
 
-Read the actual visible results grid, discovered column IDs, analysis revision and paged filtered rows across all pages. No query.
+Read the actual visible results grid, discovered column IDs, analysis revision and paged filtered rows across all pages. No query; never opens Scanner.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -100,9 +109,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.setAnalysis`
 
-Change the actual grid's display/filter/selection without scanning. Discover column IDs and revision through getAnalysis first.
+Change the actual grid's display/filter/selection without scanning. Discover column IDs and revision through getAnalysis first. Scanner closed: RUN_NOT_FOUND.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -118,9 +128,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.refine`
 
-Use the actual filtered or filtered-selected grid stocks as the next universe, retaining prior metric stages. Does not execute; configure next rules without universe, then run.
+Use the actual filtered or filtered-selected grid stocks as the next universe, retaining prior metric stages. Does not execute; configure next rules without universe, then run. Scanner closed: RUN_NOT_FOUND.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -131,9 +142,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.listSaved`
 
-Refresh this account's cloud-saved screener metadata. Does not load or run.
+Refresh this account's cloud-saved screener metadata. Does not load, run or open Scanner.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -142,9 +154,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.listHistory`
 
-List this account's retained completed scans, not saved screener rules. Uncharged, no execution.
+List this account's retained completed scans, not saved screener rules. Uncharged, no execution; does not open Scanner.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -156,6 +169,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Open a persisted result snapshot in the visible scanner. Does not rerun, consume allowance or change the current draft/universe. Use returned runId with getResults.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -163,9 +177,10 @@ Retry key: **not required**. External local-assistant access is still required.
 
 ## `screening.useHistorySettings`
 
-Copy the currently opened historical scan's rules and original stocks into the visible draft. No execution; starts an independent comparison on next run.
+Copy the currently opened historical scan's rules and original stocks into the visible draft. No execution; starts an independent comparison on next run. Scanner closed: RUN_NOT_FOUND.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -177,6 +192,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Delete only this account's immutable scan snapshot, not saved rules. Requires real sign-in, cloud-write grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -187,6 +203,7 @@ Retry key: **required**. External local-assistant access is still required.
 Load saved rules into the visible UI without running; retain the currently selected universe.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -198,6 +215,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Persist visible rules to this account's cloud storage. Requires real sign-in, cloud-write grant and retry key. Updates need id and etag; omitted id creates a copy.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -212,6 +230,7 @@ Retry key: **required**. External local-assistant access is still required.
 Delete a cloud-saved screener at its current etag. Requires cloud-write grant and retry key; leaves the visible draft intact.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -223,6 +242,7 @@ Retry key: **required**. External local-assistant access is still required.
 Discover supported backend screeners and their actual parameters before running a scan.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -231,6 +251,7 @@ Parameters: `{}`.
 Start an authenticated, plan-limited cloud scan without changing the grid. Every run consumes account allowance and reads current stored data, not streaming quotes. Poll getResults.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -244,6 +265,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read an owned scan's status, results, evidence and source timestamps.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -254,6 +276,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Cancel an owned scan. This does not undo a saved watchlist.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -264,6 +287,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Discover bounded Desktop broker-candle screening, available providers, TLScript-Pine runtime requirements and closed-bar policy. Separate from SQL-backed screeners.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -272,6 +296,7 @@ Parameters: `{}`.
 Start a paced local TLScript-Pine scan over 1-50 explicit broker symbols. No SQL/provider fallback or invented symbol metadata. Secondary-data requests are unavailable. Newest candle is conservatively excluded; read each row's actual evaluation timestamp. Consumes provider quota.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **quota, code, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -289,6 +314,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read an owned local scan's progress, matches, explicit errors and candle provenance. Runs expire after 30 minutes/reload; no raw candle arrays are returned.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -299,6 +325,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Cancel a local broker scan and its pending history request. Does not undo watchlist writes or broker quota already consumed.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |

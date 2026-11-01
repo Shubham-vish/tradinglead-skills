@@ -1,0 +1,143 @@
+version: 1
+suite:
+  id: indicators
+  name: TLScript-Pine Studio validate, apply and remove
+  description: Compiles a tiny Pine indicator, rejects broken and strategy source on the indicator surface, applies headlessly to the active chart, verifies it, and removes exactly that instance. Never saves to the user's source library.
+  requires:
+    grants: ["allowAgentIndicators"]
+    signIn: false
+  defaults:
+    source: |
+      //@version=5
+      indicator("AI TEST EMA", overlay=true)
+      length = input.int(9, "Length", minval=2, maxval=200)
+      plot(ta.ema(close, length), "AI TEST EMA", color=color.orange)
+
+tests:
+  - id: indicators.validate-ok
+    name: Valid Pine compiles with inputs and compile-only labels
+    category: contract
+    tags: ["indicators", "pine"]
+    execute:
+      type: indicators.validate
+      params: {"source": "{{suite.defaults.source}}", "profile": true}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.valid
+          equals: true
+        - path: data.kind
+          equals: indicator
+        - path: data.title
+          equals: AI TEST EMA
+        - path: data.inputs
+          contains: {"id": "length"}
+        - path: data.calculationCorrectness
+          equals: not-verified
+
+  - id: indicators.validate-broken
+    name: Broken Pine returns status ok with valid:false and located diagnostics
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.validate
+      params: {"source": "//@version=5\nindicator(\"AI TEST broken\")\nplot(ta.ema(close, )\n"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.valid
+          equals: false
+        - path: data.diagnostics
+          minLength: 1
+
+  - id: indicators.strategy-on-indicator-surface
+    name: Strategy source is not applied as an indicator
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.apply
+      params: {"source": "//@version=5\nstrategy(\"AI TEST strat\", overlay=true)\nif ta.crossover(ta.sma(close, 5), ta.sma(close, 20))\n    strategy.entry(\"L\", strategy.long)\n", "showInStudio": false}
+      idempotencyKey: "ai-test-{{run.id}}-ind-strategy-reject"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: indicators.apply-remove
+    name: Apply headlessly, verify the instance, then remove exactly it
+    category: state
+    tags: ["indicators", "pine", "chart-write"]
+    setup:
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "NSE:TCS-EQ", "feed": "default", "interval": "1D"}
+      - id: ready
+        kind: poll
+        type: indicators.applied
+        params: {}
+        until:
+          path: data.chart.ready
+          equals: true
+        intervalMs: 1000
+        timeoutMs: 30000
+    execute:
+      type: indicators.apply
+      params: {"source": "{{suite.defaults.source}}", "inputs": {"length": 12}, "showInStudio": false}
+      idempotencyKey: "ai-test-{{run.id}}-ind-apply"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.instanceId
+          exists: true
+        - path: data.title
+          equals: AI TEST EMA
+      state:
+        - label: applied list contains the instance
+          type: indicators.applied
+          params: {}
+          assertions:
+            - path: data.indicators
+              contains: {"instanceId": "{{steps.execute.data.instanceId}}"}
+    teardown:
+      - id: remove
+        type: indicators.remove
+        params: {"instanceId": "{{steps.execute.data.instanceId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-ind-remove"
+      - id: afterRemove
+        type: indicators.applied
+        params: {}
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: indicators.applied-visual
+    name: Applied EMA renders as an orange overlay line
+    category: visual
+    tags: ["indicators", "visual", "chart-write"]
+    execute:
+      type: indicators.apply
+      params: {"source": "{{suite.defaults.source}}", "showInStudio": false}
+      idempotencyKey: "ai-test-{{run.id}}-ind-visual"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      visual:
+        screenshot: indicators-ema-overlay
+        criteria:
+          - An orange EMA line is drawn over the candles and follows price.
+          - The legend shows the TL Pine badge and the "AI TEST EMA" title (Pine inputs live in the native settings dialog, not the legend).
+          - No compile or runtime error badge is visible on the study.
+    teardown:
+      - id: removeVisual
+        type: indicators.remove
+        params: {"instanceId": "{{steps.execute.data.instanceId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-ind-visual-remove"

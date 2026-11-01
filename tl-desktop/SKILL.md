@@ -11,10 +11,27 @@ Desktop controls. Use the installed app's live capabilities as authoritative.
 
 ## Connect without exposing credentials
 
-The normal terminal entry point is `TradingLead-Desktop/cli.cjs`. In the standard
-Codes layout it is `../../TradingLead-Desktop/cli.cjs` relative to this skill.
-Resolve the actual checkout; do not assume the terminal's working directory.
-The examples below run **from the TradingLead-Desktop repository**.
+For apps containing managed AI integration, use `tradinglead --help`, then
+`tradinglead agent-guide` and `tradinglead skills list`. First launch offers
+setup; **Help > AI integrations** enables/repairs the CLI and Copilot skill
+registration. Open a new terminal/AI session after setup. No MCP, checkout or
+separate Node.js installation is needed for the installed CLI.
+
+If PATH is unavailable, inspect the installed app's `resources/agent/AI-README.md`
+(macOS: `Contents/Resources/agent/AI-README.md`) and its adjacent `tradinglead`
+or `tradinglead.cmd` helper. The user-local fallback is
+`~/.tradinglead-desktop/bin/tradinglead` (`tradinglead.cmd` on Windows).
+Do not print `api.json`; the helper handles private discovery.
+
+`tradinglead skills read NAME --file DOCUMENT` reads a listed reference from
+the current compatible bundle. `skills status` reports its version, compatibility,
+registration conflicts and last update result; `skills update` explicitly checks
+the fixed public GitHub source. New skills cannot upgrade native app features.
+Older apps without this integration need a Desktop update first.
+
+For **source-checkout development**, the equivalent entry point is
+`TradingLead-Desktop/cli.cjs`; the examples below use `node cli.cjs` from that
+repository. Installed users replace `node cli.cjs` with `tradinglead`.
 
 ```bash
 node cli.cjs health
@@ -28,7 +45,8 @@ node cli.cjs exec chart.getState --tab ACTUAL_TAB_ID
 1. Check health and tabs. If Desktop is not running, launch the installed app,
    or use the existing repo's documented `npm run dev`. Discover an installed
    bundle from native app metadata, not a guessed path. Do not start a duplicate
-   instance, restart an existing app, change its origin or reload user charts.
+   instance, restart an existing app or reload user charts. Change the website
+   origin only when the user asks (see the development recipe below).
 2. Select the intended native tab. Even with one tab, pass `--tab` explicitly.
    Never choose another tab just because the requested one is unavailable.
 3. Check account, chart symbol/feed/interval and permissions before changing
@@ -39,6 +57,104 @@ node cli.cjs exec chart.getState --tab ACTUAL_TAB_ID
    `desktop reconnect` retries existing access; it cannot grant access.
    `desktop open-access` opens the user control, not an approval bypass.
    Do not reload the page merely to reconnect: unsaved work may exist.
+
+### Troubleshoot an unreachable or stale tab
+
+Newer Desktop builds add `windowCount`, `tabCount` and (only when not ready) a
+`hint` to `health`; `tabs` adds a `hint` when it is empty; `desktop status`
+adds a `hint` when the tab is not ready. Older builds omit these fields. Follow
+the hint; on macOS:
+
+| Symptom | Fix (no app restart) |
+| --- | --- |
+| Health answers but `tabs` is `[]` / `windowCount:0` (app running with no window) | `open -a TradingLead` reopens a window. |
+| `desktop status` shows `page` other than `/charts` (e.g. `/`) | `open "tradinglead://charts"` navigates the **current** tab to charts. |
+| On `/charts` but `frontendConnected:false`, or the website was just deployed | Reload via `open "tradinglead://charts"` to load the new frontend build. |
+
+The deep link navigates the active tab, so activate the intended tab first
+(`desktop activate --tab ID`) and ask before doing it if the user may have
+unsaved work. Then poll `desktop status --tab ID` until `ready:true`.
+
+## Development: point the app at a local dev server
+
+Use this when the user asks, e.g. "point the app to localhost:3001" or "switch
+back to production". Run from the TradingLead-Desktop repository.
+
+1. **Check the dev server answers** before switching, or the tab loads an error
+   page: `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:3001/charts`
+   must print `200` (or a redirect). If not, ask the user to start it.
+2. **Read and switch the origin.** The bridge token is the only gate (no AI
+   grant, no `--tab`):
+
+   ```bash
+   node cli.cjs desktop getOrigin
+   # {origin, cloudOrigin:"https://tradinglead.in", isLocal, allowedOrigins:[...]}
+   node cli.cjs desktop setOrigin --params '{"origin":"http://localhost:3001","path":"/charts"}'
+   # {previousOrigin, origin, path, navigated:true, verifyWith}
+   ```
+
+   `setOrigin` navigates the **active** tab, so warn the user about unsaved
+   work and `desktop activate --tab ID` the intended tab first. Add
+   `"navigate":false` to change the origin without loading a page.
+3. **Verify.** Poll `node cli.cjs tabs` until the tab reports `ready:true`.
+   The new origin is trusted at once; readiness follows when the dev frontend
+   registers. Then run `desktop status --tab ID` (expect the localhost `origin`
+   and `page:"/charts"`) and `exec chart.getState --tab ID`. If it stays
+   `ready:false`, follow the `desktop status` hint. Page-side AI access
+   settings can differ per website origin, so localhost may need the user to enable it
+   (`desktop open-access` opens the user's control; agents cannot grant it).
+4. **Switch back** when asked or when the dev task ends:
+   `node cli.cjs desktop setOrigin --params '{"origin":"cloud","path":"/charts"}'`,
+   then verify with `getOrigin` (`isLocal:false`) and `tabs`.
+
+Allowed origins are only `cloud` / `https://tradinglead.in`,
+`https://www.tradinglead.in` and loopback `http(s)://localhost|127.0.0.1|[::1]`
+**with an explicit port**. Remote domains, credentials, paths, queries or
+fragments in `origin` fail with `ORIGIN_NOT_ALLOWED` (403). A bad `path` (it must
+start with `/` and contain no scheme or `//`) fails with `INVALID_PATH` (400). After a switch,
+requests still in flight on a page that lost trust or navigated end with
+`NOT_READY`. Re-check `tabs` and retry with the same idempotency key.
+
+### Diagnostics controls (read-only)
+
+```bash
+node cli.cjs desktop appInfo     # version, electron, buildChannel, isDev, origin, protocol, per-tab catalog
+node cli.cjs desktop services    # feed registry, sidecar (no credentials), Python runtime, updater
+node cli.cjs desktop logs --params '{"kind":"events","tail":50}'   # or kind "bars"; tail 1-200
+node cli.cjs desktop screenshot [--tab TAB_ID] [--params '{"selector":"#chart"}']
+```
+
+`screenshot` captures the given tab (default: the active trusted tab; with
+several tabs and none active it answers `TAB_REQUIRED`), optionally cropped to
+the first visible element matching `selector` (≤256 chars; `INVALID_SELECTOR`,
+`SELECTOR_NOT_FOUND`). It writes a private PNG under
+`~/.tradinglead-desktop/screenshots/` (newest 50 kept) and returns
+`{path, bytes, width, height, tabId}`. `logs` returns redacted, bounded JSON
+entries; it never exposes tokens. `appInfo.tabs[].catalog` shows the accepted
+entry count, `hash`, `buildId` and the per-entry `rejected` list
+(`{type, reason}`, max 64, plus `rejectedCount`). A tab whose catalog had bad
+entries is still ready with the valid ones; inspect `rejected` when a command
+is unexpectedly `UNSUPPORTED_COMMAND`.
+
+Catalog protocol 2 (`appInfo.protocol`): Desktop validates each entry
+independently, ignores unknown descriptor fields, passes `effects`, and accepts
+a renderer `aliases` map (≤128). Alias commands such as `simulation.*` are
+listed with `aliasOf` and execute with the canonical command's grants and retry
+identity. Limits: 256 accepted entries and 128 KiB of minified UTF-8 JSON
+(aliases excluded).
+
+The developer-only diag HTTP bridge (`~/.tradinglead-desktop/diag/bridge.json`)
+starts only in dev builds or with `TL_DIAG_BRIDGE=1`; it has no script or
+devtools routes. Prefer the controls above.
+
+`getOrigin`/`setOrigin` and the diagnostics controls need a Desktop build that
+contains them (`desktop capabilities` lists app-level ones under `appActions`).
+Older builds answer `INVALID_REQUEST`. On those builds
+use the alternatives: press **⌘L** (Ctrl+L) in the app and use its
+Local/Cloud switch or type the URL. When launching a dev shell, pass
+`--url=http://localhost:3001/charts` or set `ELECTRON_APP_URL`. A runtime switch
+(control or ⌘L) overrides the launch URL until the app restarts. Never restart
+a running app just to change its origin.
 
 The CLI reads private local discovery itself. Never print the discovery token,
 put it in command-line arguments, paste raw diagnostic state, or reuse discovery
@@ -55,6 +171,16 @@ If `node install.cjs --check` passes in the canonical skill collection but a
 workflow such as `tl-paper-trading` is missing from this agent's available list,
 refresh skill discovery or start a new session. Do not create a duplicate skill
 or replace a correct link merely to change a cached listing.
+
+## Demos and recordings
+
+For demo videos and screenshot decks, use these commands:
+
+- `ui.waitIdle` waits until the app is settled.
+- `ui.listTargets` and `ui.getTargetRect` return named element boxes (`data-demo-id`).
+- `demo.prepare`, `demo.redact` and `demo.reset` control presentation mode and PII blur.
+
+All of these are ephemeral and need no write grant. In plain browsers, the gated `window.__tlDemo` exposes them on dev or loopback hosts only. See [demos.md](demos.md).
 
 ## Command and retry protocol
 
@@ -76,12 +202,22 @@ Do not combine `--params` with `--params-file`.
 - `mutates:false` does not mean side-effect-free: commands can open panels,
   navigate a chart, modify tab-local drafts, start jobs or consume query quota.
   Read the exact descriptor before using a read-only audit as execution consent.
+- Source descriptors declare `effects`: `navigate`, `panel`, `quota`, `code`,
+  `write`, `network`, or exclusive `none`. Effects describe possible consequences,
+  not grants. Only `none` promises an observational local read. Network-only reads
+  do not reveal or select UI, but still contact services.
+  Desktop protocol 2 independently negotiates `catalog.effects` and
+  `catalog.aliases`; old shells keep full alias entries and receive no new fields.
+  Alias callers retain identical runtime validation and retry identity.
+- `symbol.details` without `expanded`, `indices.getState` without `category`,
+  and `watchlists.multiView` without `panels` need no write grant or retry key.
+  Their explicit change variants, including false/empty values, require both.
 - Require the **final** JSON `status:"ok"`. HTTP acceptance, request ID or
   process startup is not completion. Inspect domain states such as `preparing`,
   `running`, `paused`, `completed`, and `valid:false` separately.
 - In the current source, `feeds.list` can return final `status:"ok"` with only
   the default feed and `data.discovery.status:"error"` /
-  `code:"FEED_DISCOVERY_FAILED"`. No broker was verified. Explicit default
+  `code:"FEED_DISCOVERY_FAILED"` and a bounded `reason`. No broker was verified. Explicit default
   chart/history commands remain independent of broker discovery; a requested
   broker still fails rather than falling back to default.
 - The CLI emits an accepted request ID to stderr. A timeout or cancelled
@@ -175,6 +311,7 @@ require the Python guide, and direct paper practice does not require a backtest.
 | Strategy | Run/review Python or Pine backtests, applied strategies, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
 | Strategy | Sweeps / holdout / walk-forward | [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md) |
 | Strategy | Replay-to-trade direct practice / backtest-derived replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
+| Quality | Run or author agent-executed test suites (smoke, per-domain, workflows, visual/LLM-judged) and local unit tests | [tl-testing](../tl-testing/SKILL.md) |
 
 ## Workspace shell
 
@@ -188,7 +325,12 @@ require the Python guide, and direct paper practice does not require a backtest.
 **Bottom panels** — `workspace.setPanel` with `peers`, `watchlists` (Multi
 Watchlists), `futures`, `backtesting`, `paper-trading`, `intelligence` or
 `indicators` (Indicator Studio); `simulation` is a legacy alias. Send
-`expanded` explicitly. Verify `workspace.getState.panels`.
+`expanded` explicitly. Backtesting may be docked right, independent of the
+bottom tab: pass `dock:"bottom"|"right"` (backtesting only) to place and select
+it deterministically; `dock:"right"` fails with `DOCK_UNAVAILABLE` below 720px.
+Without `dock`, a right-docked Backtesting only toggles its side panel. The
+result's `expected` predicts the state; verify `workspace.getState.panels`
+(`bottom:{panel,expanded}` is what the bottom dock shows, `backtesting:{dock,visible}`).
 
 **Right sidebar** — `workspace.openSidebar`:
 

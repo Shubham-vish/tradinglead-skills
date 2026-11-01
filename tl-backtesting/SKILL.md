@@ -70,6 +70,21 @@ successful backtest. Inspect the returned actual period and candle count.
 Python signals are decided at candle close and fill on a later eligible candle. Read
 capabilities for ambiguous-bar, stop/target, gap, trailing and accounting rules.
 An exit leg is not necessarily a distinct independent position.
+Win/loss classification uses net P&L after allocated fees: positive is a win,
+negative is a loss, and exact zero is neither. Breakevens remain in the win-rate
+denominator and break losing streaks; profit factor excludes zero-P&L legs.
+
+An optional `sessionSchedule` pins explicit user-assumed IANA timezone, ISO
+weekdays, regular `open`/`close`, holidays and `specialSessions:[{date,open,close}]`.
+Overrides replace the whole session on that local opening date, even on a
+holiday or weekend, so evening Muhurat and half-days can be represented.
+Hours are explicit assumptions, not an inferred exchange calendar. For example,
+`{date:"2025-10-21",open:"18:00",close:"19:00"}` models an assumed evening session;
+verify actual exchange hours rather than treating this example as official.
+Captured 1-240 minute backtest/replay candles must be in-session and on that
+date's opening-time grid. Invalid candles fail, never silently filter or fill
+gaps. Calendar candles retain source date buckets. Replay inherits the pinned
+schedule; forward uses the same overrides for closures, continuity and next open.
 
 New Pine runs preserve the emulator's actual fills, quantities, allocated fees,
 FIFO open lots and candle-close equity, not re-simulated directional signals.
@@ -109,6 +124,13 @@ their `strategy.sourceId/revision` remain null.
 - `backtesting.get`: page `trades`, `events`, `equity` or `optimization` (legacy `research`); inspect
   totals, offsets and analytics truncation. `risk` permits explicit regular
   sampling assumptions for annualized statistics; omission does not annualize.
+  Use `limit:1-100`. For trades/events/equity, advance `offset` by returned
+  `rows.length` until `total` is consumed; those sections do not promise
+  `nextOffset`. Optimization/candidate-check pages expose `nextOffset`.
+  `risk.samplingBasis:"sessionBars"` requires an explicit user calendar and
+  complete observed 1-240 minute session grid. `candidateChecks` pages retained
+  compact candidate-check reports; `attemptIndex` selects an earlier retained
+  attempt only with section optimization/research.
 - `backtesting.export`: stopped runs only. Fix `expectedRevision` across all
   chunks, follow returned offsets, concatenate JSON text and parse only when
   complete. Offsets count UTF-16 code units, not bytes.
@@ -117,6 +139,16 @@ their `strategy.sourceId/revision` remain null.
   with a filled event.
 - Report unknown freshness, gaps, adjustments and calendar assumptions
   honestly. Run creation time is not a candle/source timestamp.
+
+Reading newer evidence-enabled runs can persist exposure bookkeeping without
+changing their source, candles, execution accounting or revision. Read-only
+inspection is not a claim that held-out evidence remains unseen.
+
+`backtesting.compareView`, `paperPreflight` and `paperParity` require Desktop
+protocol 2 with `catalog.aliases`; older shells omit them. Discover the exact
+live contract before use. Comparison exports are local reviewed saved-run
+views, not native chart screenshots. Paper parity executes strategies and
+requires explicit confirmation; preflight alone does not prove parity.
 
 ## Three separate local stores
 
@@ -130,6 +162,11 @@ Read current revisions before mutations. `librarySave` needs the active
 `expectedRevision` and `expectedLibraryRevision` (0 only for a new saved copy).
 Restore requires a free active slot and does not start execution. Never delete
 user runs automatically to make space.
+On `SIMULATION_HISTORY_FULL`, export/save a stopped run if needed, then explicitly
+Delete it from active History (`backtesting.delete` with its current revision).
+Saving/exporting alone does not free an active slot. AI suites may clean only
+IDs they created during the same invocation, additionally requiring `AI TEST`
+names; otherwise skip clearly instead of deleting existing user evidence.
 `libraryList` can filter `scope:"all"|"backtest"|"paper"` (paper includes
 replay and forward). `libraryUpdate` requires the saved revision and changes
 only display name, notes and tags; immutable run evidence is untouched.

@@ -11,7 +11,10 @@
         "limit": "1-100, default 25",
         "format": "rows (default)|csv; CSV <=128 KiB",
         "columns": "CSV only: 1-24 visible column IDs; default visible columns"
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "watchlists.select",
@@ -22,7 +25,13 @@
         "name": "Exact list ID",
         "symbol": "Visible row ticker; instead of kind/name",
         "clearFilters": "Explicit true to discard applied screeners on list switch"
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "watchlists.setView",
@@ -34,7 +43,11 @@
         "columns": "Up to 24 {colId,hide?,width?,pinned?}, in order",
         "search": "Optional quick-filter text, <=80 chars; empty clears",
         "move": "Exclusive {symbol,toIndex}: move an existing row in unfiltered, unsorted manual order"
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "watchlists.removeSymbols",
@@ -43,7 +56,11 @@
       "params": {
         "name": "Existing watchlist",
         "symbols": "1-100 unique canonical tickers"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "watchlists.manage",
@@ -58,15 +75,24 @@
         "enabled": "Favorite only: required boolean",
         "symbols": "Flag only: 1-100 unique visible tickers",
         "color": "Flag only: red|blue|green|yellow|purple|cyan|pink|currentColor (remove)"
-      }
+      },
+      "effects": [
+        "panel",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "symbol.details",
-      "description": "Read bounded mounted company/fundamentals; optionally show/hide Details. No automatic fetch while collapsed.",
-      "mutates": true,
+      "description": "Read bounded mounted company/fundamentals without a write grant; expanded changes require write approval and a retry key. No automatic fetch while collapsed.",
+      "mutates": false,
       "params": {
         "expanded": "Optional boolean; poll after opening"
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "peers.get",
@@ -74,7 +100,10 @@
       "mutates": false,
       "params": {
         "limit": "1-100, default 25"
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "peers.configure",
@@ -82,17 +111,27 @@
       "mutates": true,
       "params": {
         "refresh": "Required true; reload stored peers and chart catalog"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "indices.getState",
-      "description": "Read index catalog/constituents; optionally select a published category, opening its index on chart.",
-      "mutates": true,
+      "description": "Read index catalog/constituents without a write grant; category selection requires write approval and a retry key and opens its index on chart.",
+      "mutates": false,
       "params": {
         "category": "Optional published category ID",
         "offset": "0-100000, default 0",
         "limit": "1-100, default 25"
-      }
+      },
+      "effects": [
+        "navigate",
+        "write",
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "heatmap.configure",
@@ -106,21 +145,32 @@
         "limit": "0|50|100|250|500",
         "search": "Optional highlight query, <=80 chars",
         "expanded": "Optional boolean"
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "watchlists.multiView",
-      "description": "Read mounted Multi Watchlists layout; optionally replace up to 12 panels with existing lists.",
-      "mutates": true,
+      "description": "Read mounted Multi Watchlists without a write grant; panels replacement requires write approval and a retry key.",
+      "mutates": false,
       "params": {
         "panels": "Optional array of {type:category|watchlist|flaglist,name}; [] closes all cards"
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "chart.viewState",
       "description": "Read bounded native chart view/scale/timezone and drawing toolbar state.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "chart.setView",
@@ -133,7 +183,13 @@
         "goToDate": "UTC date, offset ISO timestamp, or epoch seconds.",
         "timezone": "Available timezone ID from viewState.",
         "legend": "{ohlcVisible:boolean}"
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "chart.compare",
@@ -146,7 +202,13 @@
         "id": "Exact listed id for remove.",
         "offset": "Optional list offset.",
         "limit": "Optional list 1-50."
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "chart.action",
@@ -155,7 +217,11 @@
       "params": {
         "action": "undo|redo|settings|screenshot|fullscreen|resetScale|objectTree|compareDialog|goToDate",
         "enabled": "Required boolean only for fullscreen."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "drawings.list",
@@ -164,7 +230,10 @@
       "params": {
         "offset": "Optional 0-10000.",
         "limit": "Optional 1-50, default 50."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "drawings.create",
@@ -175,7 +244,10 @@
         "points": "1-7 {time:integer epoch seconds,price:finite}",
         "text": "Optional text for text tool, max 500.",
         "locked": "Optional boolean."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "drawings.update",
@@ -186,7 +258,10 @@
         "visible": "Optional boolean.",
         "locked": "Optional boolean.",
         "remove": "Optional true; exclusive with visible/locked."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "drawings.setMode",
@@ -200,7 +275,10 @@
         "favoriteOrder": "All current favorite tool IDs from chart.viewState, ordered; max 50.",
         "removeAll": "Optional true.",
         "confirm": "Required true only with removeAll."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "studyTemplates.manage",
@@ -214,7 +292,10 @@
         "confirm": "Required true for apply/delete.",
         "offset": "list only, 0-10000.",
         "limit": "list only, 1-50."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "layout.getState",
@@ -222,7 +303,10 @@
       "mutates": false,
       "params": {
         "saved": "Optional boolean: also list up to 50 saved chart layouts (needs sign-in)."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "layout.set",
@@ -236,7 +320,14 @@
         "vertical": "25-75",
         "fullscreen": "bool",
         "sync": "{symbol?,interval?} bools: active pane drives others"
-      }
+      },
+      "effects": [
+        "navigate",
+        "panel",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "layout.saved",
@@ -246,7 +337,14 @@
         "action": "save|load.",
         "name": "save: 1-64 chars.",
         "id": "load: saved layout id."
-      }
+      },
+      "effects": [
+        "navigate",
+        "panel",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "grid.getState",
@@ -256,7 +354,10 @@
         "offset": "Optional 0-499 card offset.",
         "limit": "Optional 1-100, default 24.",
         "options": "Optional boolean: include universe choices (max 200)."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "grid.configure",
@@ -282,7 +383,11 @@
         "expanded": "bool",
         "openCard": "page symbol to active chart",
         "panel": "close|openPage, alone"
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "grid.open",
@@ -296,13 +401,94 @@
         "timeframe": "Optional",
         "candles": "Optional",
         "pageSize": "Optional"
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
+    },
+    {
+      "type": "ui.waitIdle",
+      "description": "Wait until visually settled: chart history/replay/feed discovery done, no busy spinners or finite animations, fonts loaded, 2 stable frames. Returns {idle,waitedMs,pending}; TIMEOUT lists pending.",
+      "mutates": false,
+      "params": {
+        "timeoutMs": "Optional 100-60000, default 8000.",
+        "scope": "Optional data-demo-id subtree."
+      },
+      "effects": [
+        "none"
+      ]
+    },
+    {
+      "type": "ui.listTargets",
+      "description": "List named demo targets {id,label,role,visible,rect{x,y,w,h} CSS px,viewport}; PII boxes have redact:true.",
+      "mutates": false,
+      "params": {
+        "scope": "Optional data-demo-id subtree."
+      },
+      "effects": [
+        "none"
+      ]
+    },
+    {
+      "type": "ui.getTargetRect",
+      "description": "Rect of one demo target, first visible unless nth. TARGET_NOT_FOUND/TARGET_HIDDEN.",
+      "mutates": false,
+      "params": {
+        "id": "Target id from ui.listTargets.",
+        "nth": "Optional 0-based match index."
+      },
+      "effects": [
+        "none"
+      ]
+    },
+    {
+      "type": "demo.prepare",
+      "description": "Ephemeral presentation mode: hide tours/toasts/banners, optionally freeze clock labels, redact PII, hide cursor. Nothing persisted; no write grant. Returns previous; demo.reset restores.",
+      "mutates": false,
+      "params": {
+        "hideTours": "bool, default true",
+        "hideToasts": "bool, default true",
+        "hideCookieBanner": "bool, default true",
+        "freezeClock": "ISO time for clock labels",
+        "redact": "bool",
+        "cursor": "bool; false hides it"
+      },
+      "effects": [
+        "ui"
+      ]
+    },
+    {
+      "type": "demo.reset",
+      "description": "Leave presentation mode; clears redaction and frozen clock.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "ui"
+      ]
+    },
+    {
+      "type": "demo.redact",
+      "description": "Blur PII (account, contact, broker ids, balances) plus optional selectors. Ephemeral.",
+      "mutates": false,
+      "params": {
+        "enable": "Required bool",
+        "selectors": "Optional up to 20 extra CSS selectors."
+      },
+      "effects": [
+        "ui"
+      ]
     },
     {
       "type": "screening.getState",
-      "description": "Open Scanner and read draft revision, universe, current view, stages and run status. Requires real sign-in; the current cloud Scanner does not support preview/sample mode.",
+      "description": "Read mounted Scanner draft, revisions and run status without opening it. Unmounted: ready:false, draft:null. Use screening.show to open. Requires real sign-in.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "screening.show",
@@ -310,19 +496,28 @@
       "mutates": false,
       "params": {
         "view": "scanner|history; history requires advertised support."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "screening.catalog",
-      "description": "Read server presets, fields, SQL schema, original strategy catalog and account limits. Strategy discovery failures are explicit; does not scan.",
+      "description": "Read server presets, fields, SQL schema, original strategy catalog and account limits. Strategy discovery failures are explicit; does not scan or open Scanner.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "screening.listUniverses",
-      "description": "List available active, saved watchlist, flagged and predefined category choices. Explicit symbols are also supported.",
+      "description": "List available active, saved watchlist, flagged and predefined category choices. Explicit symbols are also supported. Does not open Scanner.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "screening.configure",
@@ -332,7 +527,10 @@
         "definition": "Complete preset/custom/sql/classic definition without tickers; use catalog. Classic uses screeners:[{name,parameters}] from the advertised strategy catalog.",
         "universe": "Optional {kind:active|watchlist|flag|category|symbols,name?,tickers?}.",
         "expectedRevision": "Required visible draft revision from getState."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "screening.run",
@@ -341,29 +539,40 @@
       "params": {
         "expectedRevision": "Required current visible draft revision.",
         "cacheMode": "Optional refresh or prefer_cache (matching result under 60s); requires advertised support. Classic is refresh-only."
-      }
+      },
+      "effects": [
+        "quota",
+        "network",
+        "panel"
+      ]
     },
     {
       "type": "screening.getResults",
-      "description": "Read this visible run's bounded results, warnings and pagination. Closing Scan cancels pending work.",
+      "description": "Read this visible run's bounded results, warnings and pagination. Closing Scan cancels pending work; with Scanner closed returns RUN_NOT_FOUND without opening it.",
       "mutates": false,
       "params": {
         "runId": "Required ID from run.",
         "offset": "Optional zero-based row offset.",
         "limit": "Optional 1-25 rows, default 10."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "screening.cancel",
-      "description": "Cancel the current visible run. Already-submitted server work may count toward allowance.",
+      "description": "Cancel the current visible run; Scanner closed: RUN_NOT_FOUND, never opens. Submitted server work may count toward allowance.",
       "mutates": false,
       "params": {
         "runId": "Required ID from run."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "screening.getAnalysis",
-      "description": "Read the actual visible results grid, discovered column IDs, analysis revision and paged filtered rows across all pages. No query.",
+      "description": "Read the actual visible results grid, discovered column IDs, analysis revision and paged filtered rows across all pages. No query; never opens Scanner.",
       "mutates": false,
       "params": {
         "runId": "Current completed run/history ID.",
@@ -371,11 +580,14 @@
         "limit": "Optional 1-25 rows, default 10.",
         "columnOffset": "Optional column offset, 0-10000.",
         "columnLimit": "Optional 1-50 columns, default 25."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "screening.setAnalysis",
-      "description": "Change the actual grid's display/filter/selection without scanning. Discover column IDs and revision through getAnalysis first.",
+      "description": "Change the actual grid's display/filter/selection without scanning. Discover column IDs and revision through getAnalysis first. Scanner closed: RUN_NOT_FOUND.",
       "mutates": false,
       "params": {
         "runId": "Current completed run/history ID.",
@@ -387,36 +599,48 @@
         "selectedTickers": "Replace selection with up to 2500 unique canonical returned tickers; hidden selections do not refine.",
         "expanded": "Optional boolean: open/close expanded analysis.",
         "reset": "Optional true to reset the grid; cannot combine with other changes."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "screening.refine",
-      "description": "Use the actual filtered or filtered-selected grid stocks as the next universe, retaining prior metric stages. Does not execute; configure next rules without universe, then run.",
+      "description": "Use the actual filtered or filtered-selected grid stocks as the next universe, retaining prior metric stages. Does not execute; configure next rules without universe, then run. Scanner closed: RUN_NOT_FOUND.",
       "mutates": false,
       "params": {
         "runId": "Current completed run/history ID.",
         "expectedRevision": "Current draft revision.",
         "expectedAnalysisRevision": "Current grid revision from getAnalysis.",
         "scope": "filtered|selected; includes all filtered pages, excludes hidden selections."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "screening.listSaved",
-      "description": "Refresh this account's cloud-saved screener metadata. Does not load or run.",
+      "description": "Refresh this account's cloud-saved screener metadata. Does not load, run or open Scanner.",
       "mutates": false,
       "params": {
         "offset": "Optional zero-based offset.",
         "limit": "Optional 1-25 items, default 10."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "screening.listHistory",
-      "description": "List this account's retained completed scans, not saved screener rules. Uncharged, no execution.",
+      "description": "List this account's retained completed scans, not saved screener rules. Uncharged, no execution; does not open Scanner.",
       "mutates": false,
       "params": {
         "offset": "Optional zero-based offset.",
         "limit": "Optional 1-25 metadata items, default 10."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "screening.openHistory",
@@ -424,16 +648,23 @@
       "mutates": false,
       "params": {
         "id": "Discovered scan history ID."
-      }
+      },
+      "effects": [
+        "panel",
+        "network"
+      ]
     },
     {
       "type": "screening.useHistorySettings",
-      "description": "Copy the currently opened historical scan's rules and original stocks into the visible draft. No execution; starts an independent comparison on next run.",
+      "description": "Copy the currently opened historical scan's rules and original stocks into the visible draft. No execution; starts an independent comparison on next run. Scanner closed: RUN_NOT_FOUND.",
       "mutates": false,
       "params": {
         "runId": "Currently opened historical run ID.",
         "expectedRevision": "Current draft revision."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "screening.deleteHistory",
@@ -441,7 +672,12 @@
       "mutates": true,
       "params": {
         "id": "Discovered scan history ID."
-      }
+      },
+      "effects": [
+        "network",
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "screening.load",
@@ -450,7 +686,11 @@
       "params": {
         "id": "Saved screener ID.",
         "expectedRevision": "Required current visible draft revision."
-      }
+      },
+      "effects": [
+        "panel",
+        "network"
+      ]
     },
     {
       "type": "screening.save",
@@ -462,7 +702,12 @@
         "id": "Optional saved ID.",
         "etag": "Required with id.",
         "expectedRevision": "Required current visible draft revision."
-      }
+      },
+      "effects": [
+        "network",
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "screening.delete",
@@ -471,13 +716,21 @@
       "params": {
         "id": "Saved screener ID.",
         "etag": "Current saved etag."
-      }
+      },
+      "effects": [
+        "network",
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "patterns.getState",
-      "description": "Open Historical Patterns and read the visible draft/revisions, chart ticker, analysis controls and job state. Does not fetch candles.",
+      "description": "Read mounted Historical Patterns draft/revisions and job state without opening it. Unmounted: ready:false, draft:null. Use patterns.show to open.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "patterns.show",
@@ -485,21 +738,31 @@
       "mutates": false,
       "params": {
         "expanded": "Optional boolean."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "patterns.hide",
       "description": "Close Historical Patterns and cancel pending study work. Applied results remain in this account's mounted workspace.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "patterns.searchSymbols",
-      "description": "Search the active chart feed's NSE catalog. Does not select a ticker, run analysis or switch feeds.",
+      "description": "Search the active chart feed's NSE catalog (max 25). Read-only: does not open the sidebar, select a ticker, run analysis or switch feeds.",
       "mutates": false,
       "params": {
         "query": "1-100 characters."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "patterns.configure",
@@ -508,7 +771,10 @@
       "params": {
         "expectedRevision": "Current draft revision from getState.",
         "query": "{symbol,weekdays,startMinute,endMinute,count,mode,conditionWeekday?}; optional resolution:'15'. ISO weekdays 1-7; IST minutes, exclusive end; count 1-200 candidate weeks; separate|grouped."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "patterns.useChartTicker",
@@ -516,7 +782,10 @@
       "mutates": false,
       "params": {
         "expectedRevision": "Current draft revision."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "patterns.run",
@@ -524,7 +793,12 @@
       "mutates": false,
       "params": {
         "expectedRevision": "Current draft revision; concurrent studies are rejected."
-      }
+      },
+      "effects": [
+        "panel",
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "patterns.cancel",
@@ -532,7 +806,10 @@
       "mutates": false,
       "params": {
         "runId": "Current job ID from run or getState."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "patterns.getResults",
@@ -543,7 +820,10 @@
         "offset": "Optional 0-1400, default 0.",
         "limit": "Optional 1-10, default 6.",
         "includeBars": "Optional boolean, default false. At most 175 UTC-ms OHLCV candles per occurrence."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "patterns.setAnalysis",
@@ -553,7 +833,10 @@
         "runId": "Applied-result ID.",
         "expectedAnalysisRevision": "Current analysis revision.",
         "analysis": "Partial {direction:all|down|up,threshold:0..20,measure:up|sideways|recovery,band:0..20,sort:new|old,rebased:boolean,showExcluded:boolean,density:compact|comfortable|large|xlarge|xxlarge,view:charts|statistics|table,page:0..233}. Discover current values in getState."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "patterns.openOccurrence",
@@ -562,19 +845,30 @@
       "params": {
         "runId": "Applied-result ID.",
         "occurrenceId": "Exact ID from getResults."
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "research.listCapabilities",
       "description": "Discover saved HTML research limits, rendering and authoring guidance. No market-data fetch.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "research.list",
       "description": "List this account's locally saved HTML reports and selected ID; no HTML returned.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "research.get",
@@ -582,7 +876,10 @@
       "mutates": false,
       "params": {
         "id": "Saved report ID."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "research.create",
@@ -592,7 +889,10 @@
       "params": {
         "title": "1-100 characters.",
         "html": "Full document or fragment; at most 48 KiB JSON-encoded UTF-8. Inline CSS/SVG supported; scripts, forms and remote assets blocked."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "research.update",
@@ -604,7 +904,10 @@
         "expectedRevision": "Current positive revision from research.get.",
         "title": "1-100 characters.",
         "html": "Complete replacement HTML, same rendering and size limits as create."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "research.delete",
@@ -614,7 +917,10 @@
       "params": {
         "id": "Saved report ID.",
         "expectedRevision": "Current positive revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "research.show",
@@ -622,7 +928,10 @@
       "mutates": false,
       "params": {
         "id": "Optional saved report ID; otherwise reopen selected report."
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "backtesting.presetList",
@@ -632,7 +941,10 @@
       "params": {
         "offset": "0-50, default 0.",
         "limit": "1-50, default 20."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.presetGet",
@@ -641,7 +953,10 @@
       "permission": "indicators",
       "params": {
         "id": "Saved strategy preset ID."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.presetSave",
@@ -653,7 +968,10 @@
         "snapshot": "{title,source,parameters,config,strategyMode,bars,range,sessionSchedule}. config is normalized to full simulationConfig including instrument/fees/sizing/risk. range: explicit null (trailing) or inclusive {from,to} epoch ms; sessionSchedule: explicit null (continuous) or user-assumption schema. Active chart context is not pinned.",
         "id": "Omit for a new copy; existing ID to replace.",
         "expectedRevision": "Required current revision when replacing."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.presetDelete",
@@ -663,7 +981,10 @@
       "params": {
         "id": "Saved strategy preset ID.",
         "expectedRevision": "Required current revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.presetList",
@@ -673,7 +994,10 @@
       "params": {
         "offset": "0-50, default 0.",
         "limit": "1-50, default 20."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.presetGet",
@@ -682,7 +1006,10 @@
       "permission": "indicators",
       "params": {
         "id": "Saved strategy preset ID."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.presetSave",
@@ -694,7 +1021,10 @@
         "snapshot": "{title,source,parameters,config,strategyMode,bars,range,sessionSchedule}. config is normalized to full simulationConfig including instrument/fees/sizing/risk. range: explicit null (trailing) or inclusive {from,to} epoch ms; sessionSchedule: explicit null (continuous) or user-assumption schema. Active chart context is not pinned.",
         "id": "Omit for a new copy; existing ID to replace.",
         "expectedRevision": "Required current revision when replacing."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.presetDelete",
@@ -704,7 +1034,10 @@
       "params": {
         "id": "Saved strategy preset ID.",
         "expectedRevision": "Required current revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.practice",
@@ -713,13 +1046,19 @@
       "permission": "indicators",
       "params": {
         "config": "Optional simulation config. Defaults: 100000 virtual units, no automatic brackets, shorting allowed, zero warmup; configured costs still apply."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.capabilities",
       "description": "Discover simulation-only order, accounting, Python signal and causality limits. No broker execution.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.list",
@@ -729,7 +1068,10 @@
         "search": "Optional title/symbol text, max 100 chars.",
         "offset": "0-100.",
         "limit": "1-100; follow nextOffset until null."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.libraryList",
@@ -740,7 +1082,10 @@
         "scope": "Optional all|backtest|paper. Paper includes replay and forward; filters before pagination. Storage usage remains account-wide.",
         "offset": "0-100.",
         "limit": "1-100; follow nextOffset until null."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.librarySave",
@@ -751,14 +1096,20 @@
         "runId": "Active run ID.",
         "expectedRevision": "Active run revision.",
         "expectedLibraryRevision": "0 for new copy; current saved revision for replacement."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.libraryMigrate",
       "description": "Copy stopped legacy active runs safely into IndexedDB without deleting originals or overwriting existing saved snapshots.",
       "mutates": true,
       "permission": "indicators",
-      "params": {}
+      "params": {},
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.libraryRestore",
@@ -768,7 +1119,10 @@
       "params": {
         "runId": "Saved ID.",
         "expectedLibraryRevision": "Current saved revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.libraryDelete",
@@ -778,7 +1132,10 @@
       "params": {
         "runId": "Saved ID.",
         "expectedLibraryRevision": "Current saved revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.libraryUpdate",
@@ -789,7 +1146,10 @@
         "runId": "Saved ID.",
         "expectedLibraryRevision": "Current saved revision.",
         "metadata": "{name?:max100,notes?:max2000,tags?:up to10 strings max30}."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.libraryExport",
@@ -797,7 +1157,10 @@
       "mutates": false,
       "params": {
         "runId": "Saved ID."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.libraryImport",
@@ -808,7 +1171,10 @@
         "run": "Full saved run payload (as returned by libraryExport).",
         "summary": "Saved run summary projection from libraryExport.",
         "detail": "Optional display metadata {name?:max100,notes?:max2000,tags?:up to10 strings max30}."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.compare",
@@ -818,7 +1184,10 @@
         "runIds": "2-4 distinct saved run IDs.",
         "offset": "0-3, default0.",
         "limit": "1-4, default4; response byte budget may return fewer."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.research",
@@ -832,17 +1201,27 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.getChartOptions",
       "description": "Read saved options, effective preview options, preview owner/ID/validity, active date selection and range handle IDs. Never executes a strategy.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.setChartOptions",
@@ -854,7 +1233,10 @@
         "range": "Optional {from,to} epoch ms inclusive, visible to seed loaded visible closed candles, or null to clear.",
         "action": "Optional save (default)|preview|apply|cancel. Preview replaces this owner's staged appearance patch. Apply persists that patch; cancel restores saved appearance. Date ranges are save-only.",
         "previewId": "Required for preview/apply/cancel: 1-80 letters, numbers, underscores or hyphens. Reuse within one preview session, with a fresh retry key for each action. Omit for save."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.run",
@@ -871,11 +1253,17 @@
         "config": "Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings.",
         "bars": "2-20000, default20000; Python sequential max/default250.",
         "range": "Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period.",
-        "sessionSchedule": "Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles.",
+        "sessionSchedule": "Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles.",
         "versionSuffix": "Optional short version label appended to the run title (e.g. \"aggressive\" → \"Name - aggressive\") so different parameter variants stay distinguishable on the chart legend and in history.",
         "inputs": "Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs.",
         "pineSettings": "Pine only: explicit overrides {initial_capital,default_qty_type:fixed|cash|percent_of_equity,default_qty_value,commission_type:percent|cash_per_contract|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "backtesting.get",
@@ -883,11 +1271,15 @@
       "mutates": false,
       "params": {
         "runId": "Owned run ID.",
-        "section": "trades|events|equity|optimization, default trades. Legacy research is accepted; both return section:research and the existing research summary, with top-level paged rows.",
+        "section": "trades|events|equity|optimization|candidateChecks, default trades. Legacy research is accepted; both return section:research and the existing research summary. candidateChecks pages all retained compact check reports; full frozen plans/accounts remain in stopped exports.",
         "offset": "Nonnegative page offset.",
         "limit": "1-100, default 50; optimization pages use nextOffset until null.",
-        "risk": "Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual}; omitted means no annualization."
-      }
+        "risk": "Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual,samplingBasis?:regular|sessionBars,sessionSchedule?}. sessionBars requires a user calendar and complete observed 1-240 minute grid. No inferred 252 or invented gap returns.",
+        "attemptIndex": "Optional nonnegative zero-based retained attempt index; only with section optimization/research. Latest remains the backwards research alias."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.export",
@@ -898,7 +1290,40 @@
         "expectedRevision": "Current revision, fixed across all chunks.",
         "offset": "UTF-16 code-unit offset, default 0.",
         "chunkSize": "1-16000 code units, default 16000."
-      }
+      },
+      "effects": [
+        "none"
+      ]
+    },
+    {
+      "type": "backtesting.optimizeReport",
+      "description": "Explicitly reconstruct every recorded optimization evaluation from frozen inputs using the installed engine, without modifying baseline, selection or saved runs. Includes all recorded trades/events/equity in a styled offline HTML report. Reports mismatched original metrics; never tests unselected holdout candidates. One session-only report per account; export to retain. Poll optimizeReportGet; cancel with cancel.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Completed active optimization run.",
+        "expectedRevision": "Current run revision.",
+        "confirmed": "Must be true: this executes frozen strategy segments again. Requires indicator execution grant."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
+    },
+    {
+      "type": "backtesting.optimizeReportGet",
+      "description": "Read detailed report progress or download complete HTML in revision/report-pinned UTF-16 chunks. Does not execute source. 8 Mi-character evidence / 24 Mi-character HTML limits; over-limit generation fails without truncation. No cloud write.",
+      "mutates": false,
+      "params": {
+        "runId": "Owned active run.",
+        "expectedRevision": "Current frozen run revision.",
+        "reportId": "Required when reading HTML chunks; ID from generation/status.",
+        "offset": "Optional HTML offset; omit for status. Begin at 0, follow nextOffset until null.",
+        "chunkSize": "1-16000 UTF-16 code units; default 16000."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.cancel",
@@ -906,7 +1331,10 @@
       "mutates": false,
       "params": {
         "runId": "Owned running ID."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.replay",
@@ -916,8 +1344,13 @@
       "params": {
         "runId": "Completed backtest ID.",
         "autoStrategy": "Optional boolean, default false.",
-        "startIndex": "Optional initial historical candle index."
-      }
+        "startIndex": "Optional initial historical candle index.",
+        "preflightManifestSha256": "Optional exact reviewed automatic-paper manifest SHA-256; rejects source/settings/runtime/data/session/revision drift."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.forward",
@@ -927,8 +1360,13 @@
       "params": {
         "runId": "Completed backtest ID.",
         "autoStrategy": "Optional boolean, default false.",
-        "sessionSchedule": "Optional explicit {timeZone,weekdays:[ISO1-7],open:HH:mm,close:HH:mm,holidays:[YYYY-MM-DD],source:user-assumption,label?}. Omit inherits source-run defaults; null uses strict continuous intervals. Pinned for life of forward run."
-      }
+        "sessionSchedule": "Optional {timeZone,weekdays:[ISO1-7],open:HH:mm,close:HH:mm,holidays:[YYYY-MM-DD],specialSessions:[{date,open,close}],source:user-assumption,label?}. Date overrides replace regular hours even on holidays/weekends. Omit inherits source-run defaults; null uses strict continuous intervals. Pinned for life of forward run.",
+        "preflightManifestSha256": "Optional exact reviewed automatic-paper manifest SHA-256; rejects source/settings/runtime/data/session/revision drift."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.pause",
@@ -938,7 +1376,10 @@
       "params": {
         "runId": "Forward run ID.",
         "expectedRevision": "Current revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.resume",
@@ -949,7 +1390,11 @@
         "runId": "Forward run ID.",
         "expectedRevision": "Current revision.",
         "catchUp": "Optional boolean, default false; account for up to 100 missed contiguous closed candles."
-      }
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.step",
@@ -960,7 +1405,13 @@
         "runId": "Replay ID.",
         "expectedRevision": "Required current run revision.",
         "count": "1-100, default 1; automatic sequential mode requires 1."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "backtesting.back",
@@ -970,7 +1421,10 @@
       "params": {
         "runId": "Replay ID.",
         "expectedRevision": "Required current run revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.order",
@@ -982,7 +1436,10 @@
         "expectedRevision": "Current run revision.",
         "order": "{side:buy|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?}",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.cancelOrder",
@@ -994,7 +1451,10 @@
         "expectedRevision": "Current run revision.",
         "orderId": "Pending order ID.",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.replaceOrder",
@@ -1007,7 +1467,10 @@
         "orderId": "Pending order ID.",
         "order": "Full replacement order, same fields as simulation.order.",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.protect",
@@ -1019,7 +1482,10 @@
         "expectedRevision": "Current run revision.",
         "protection": "{stopLoss?:positive|null,takeProfit?:positive|null,trailingStopPct?:0-99}",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.close",
@@ -1032,7 +1498,10 @@
         "quantity": "Optional positive quantity, default full position.",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument).",
         "all": "Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.show",
@@ -1043,7 +1512,13 @@
         "runId": "Owned run ID.",
         "tradeId": "Optional closed trade to focus.",
         "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "backtesting.removeFromChart",
@@ -1052,7 +1527,10 @@
       "permission": "indicators",
       "params": {
         "runId": "Currently displayed owned run ID."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.showSettings",
@@ -1061,7 +1539,11 @@
       "permission": "indicators",
       "params": {
         "runId": "Currently displayed owned run ID."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "backtesting.delete",
@@ -1071,7 +1553,10 @@
       "params": {
         "runId": "Owned run ID.",
         "expectedRevision": "Current run revision."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.applyStrategy",
@@ -1092,21 +1577,33 @@
         "bars": "2-20000, default20000; Python sequential max/default250.",
         "range": "Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period.",
         "strategyMode": "Python: vectorized (default) or sequential. Pine: vectorized only.",
-        "sessionSchedule": "Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles."
-      }
+        "sessionSchedule": "Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles."
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "backtesting.removeStrategy",
       "description": "Remove the strategy currently applied to the chart. Its last backtest run and saved history are retained.",
       "mutates": true,
       "permission": "indicators",
-      "params": {}
+      "params": {},
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "backtesting.appliedStrategy",
       "description": "Read the strategy currently applied to the chart, if any, including liveRunId (newest run, null until a rerun is accepted), previousRunId (last completed result kept while rerunning), runContext ({symbol,resolution} being computed), status (applied/running/error), error and autoRerun.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.setStrategyAutoRerun",
@@ -1115,11 +1612,123 @@
       "permission": "indicators",
       "params": {
         "enabled": "Boolean; false disables auto-rerun."
-      }
+      },
+      "effects": [
+        "write"
+      ]
+    },
+    {
+      "type": "backtesting.optimizeChecks",
+      "description": "Explicit bounded neighboring-parameter/cost checks of one exact selected candidate on its pinned training window only. Actual frozen Pine/Python executions, independent accounts, per-trial failures/drawdown/count/fees sensitivity; no confidence or test peeks.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Completed baseline.",
+        "expectedRevision": "Current revision.",
+        "attemptId": "Retained completed attempt ID.",
+        "manifestSha256": "Exact attempt SHA-256.",
+        "fold": "Selected fold1-5.",
+        "candidate": "Selected candidate1-12.",
+        "neighbors": "0-11 single-key typed overrides around selected values.",
+        "costScenarios": "Explicit cost override objects; Python commissionBps/commissionFixed/slippageBps; Pine commission_type/commission_value/slippage.",
+        "budget": "Explicit1-12 covering (neighbors+1) times scenarios; 1000 prefix cap.",
+        "confirmed": "Must be true."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.optimizeValidateSymbols",
+      "description": "Explicit independent validation of a finite reviewed watchlist-symbol list on exact feed/interval/session/training dates. Read-only history capture with full coverage; frozen per-symbol manifests/accounts. Unsupported source or secondary universe fails honestly, never original-symbol replacement. No pooled capital/portfolio returns.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Completed baseline.",
+        "expectedRevision": "Current revision.",
+        "attemptId": "Retained completed attempt.",
+        "manifestSha256": "Exact attempt SHA-256.",
+        "fold": "Selected fold1-5.",
+        "candidate": "Selected candidate1-12.",
+        "symbols": "Explicit1-12 unique exact symbols whose source metadata is available.",
+        "budget": "Exact symbols.length;1000 prefix cap.",
+        "confirmed": "Must be true."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.paperPreflight",
+      "description": "Review an exact completed frozen run for automatic paper, including successful candidate-rerun provenance/source/typed inputs/costs/runtime/data/session/revision and strong manifest. Does not run parity or any strategy.",
+      "mutates": false,
+      "params": {
+        "runId": "Exact successful completed run.",
+        "expectedRevision": "Current revision.",
+        "mode": "replay|forward."
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.paperParity",
+      "description": "Optional explicit full-frozen-sample vectorized/sequential Python parity evaluation in two independent accounts. Requires exact reviewed paper manifest, all candles within250 or reject, no truncation. Reports actual differences, never guarantees parity. Pine automatic remains unsupported.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Exact successful completed run.",
+        "expectedRevision": "Reviewed revision.",
+        "mode": "replay|forward.",
+        "manifestSha256": "Exact preflight SHA-256.",
+        "confirmed": "Must be true."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.compareView",
+      "description": "Read/export the complete reviewed compatible saved-run equity/drawdown/position paths with exact samples, axes, timezone, theme, legend and strong manifests. Local self-contained JSON/SVG/HTML, not native chart image capture. No execution.",
+      "mutates": false,
+      "params": {
+        "runIds": "2-4 distinct saved IDs.",
+        "theme": "light|dark, default light.",
+        "timeZone": "Explicit IANA timezone, default UTC.",
+        "format": "json|svg|html, default json.",
+        "viewId": "Pinned view ID for subsequent chunks.",
+        "offset": "0-25165824 UTF-16 code units; begin at 0.",
+        "chunkSize": "1-16000, default16000."
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.optimizeResume",
+      "description": "Explicitly resume the latest interrupted/cancelled/failed sampled attempt. Exact manifest/source/runtime/data/search must match; completed and failed trial IDs are never reexecuted. No setup edits accepted.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Owned completed baseline.",
+        "expectedRevision": "Current revision.",
+        "attemptId": "Latest sampled attempt ID.",
+        "manifestSha256": "Exact original strong manifest digest.",
+        "confirmed": "Must be true."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "backtesting.researchPreview",
-      "description": "Compatibility alias for backtesting.optimizePreview. Read exact frozen candle dates, offsets, workload and validated candidate overrides without executing a strategy or modifying history.",
+      "description": "Compatibility alias for backtesting.optimizePreview. Read exact frozen candle dates, offsets, workload and validated candidate overrides without strategy execution or baseline changes; evidence-enabled runs may record exposure metadata.",
       "mutates": false,
       "params": {
         "runId": "Completed active backtest. Legacy Pine runs without authoritative fills/input metadata/frozen request history must be rerun first.",
@@ -1128,11 +1737,17 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.researchMeasure",
@@ -1146,11 +1761,18 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.researchRerun",
@@ -1164,7 +1786,11 @@
         "fold": "Selected fold 1-5.",
         "candidate": "Selected eligible candidate 1-12.",
         "confirmed": "Must be true after user confirms same-sample separate rerun."
-      }
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.optimize",
@@ -1178,15 +1804,22 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.optimizePreview",
-      "description": "Read exact frozen candle dates, offsets, workload and validated candidate overrides without executing a strategy or modifying history.",
+      "description": "Read exact frozen candle dates, offsets, workload and validated candidate overrides without strategy execution or baseline changes; evidence-enabled runs may record exposure metadata.",
       "mutates": false,
       "params": {
         "runId": "Completed active backtest. Legacy Pine runs without authoritative fills/input metadata/frozen request history must be rerun first.",
@@ -1195,11 +1828,17 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "backtesting.optimizeMeasure",
@@ -1213,11 +1852,18 @@
         "grid": "Up to 4 Python parameter keys or declared Pine input variable IDs with value arrays; Cartesian max12. Pine values must satisfy declared types, bounds and options; not strategy execution-setting overrides.",
         "trainBars": "Required for holdout/walkForward >=2.",
         "testBars": "Required for holdout/walkForward >=2.",
-        "folds": "Walk-forward 1-5. Total max72 evaluations /1000 sequential prefix callbacks.",
+        "folds": "Walk-forward 1-5. Maximum 65 evaluations: 12 training candidates plus one selected test per fold; 1000 sequential prefix callbacks.",
+        "warmupMode": "Optional coldStart (legacy default) or pastOnly. Past-only uses preceding unscored indicator candles and a flat scored account.",
+        "warmupBars": "Optional 0-5000 preceding candles with pastOnly. Python recalculates each scored prefix (1000 callbacks maximum); Pine secondary warmup is unsupported.",
         "objective": "Optional netPnl (highest, default) or maxDrawdown (lowest); training-only; ties grid order. P&L includes open mark-to-market.",
         "minCompletedPositions": "Optional integer >=0 default0. Fully completed positions (Pine entry lots), not exit legs; checked on training only.",
-        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent."
-      }
+        "maxDrawdown": "Optional nonnegative maximum training drawdown in account currency/units, NOT percent.",
+        "search": "Optional {method:sampled,version:floyd-mulberry32-v1,seed:1-80 character string,budget:1-12}. Up to 1000 unique scalar values per key; finite deterministic sampling, never materializes the Cartesian product. Seed/budget pin at first trial; edits require a new attempt."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "backtesting.optimizeRerun",
@@ -1231,7 +1877,11 @@
         "fold": "Selected fold 1-5.",
         "candidate": "Selected eligible candidate 1-12.",
         "confirmed": "Must be true after user confirms same-sample separate rerun."
-      }
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.practice",
@@ -1240,13 +1890,19 @@
       "permission": "indicators",
       "params": {
         "config": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.capabilities",
       "description": "Compatibility alias for backtesting.capabilities. Same validation, behavior, grants, cancellation and retry keys.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.list",
@@ -1256,7 +1912,10 @@
         "search": "See canonical backtesting command.",
         "offset": "See canonical backtesting command.",
         "limit": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.libraryList",
@@ -1267,7 +1926,10 @@
         "scope": "See canonical backtesting command.",
         "offset": "See canonical backtesting command.",
         "limit": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.librarySave",
@@ -1278,14 +1940,20 @@
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
         "expectedLibraryRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.libraryMigrate",
       "description": "Compatibility alias for backtesting.libraryMigrate. Same validation, behavior, grants, cancellation and retry keys.",
       "mutates": true,
       "permission": "indicators",
-      "params": {}
+      "params": {},
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.libraryRestore",
@@ -1295,7 +1963,10 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedLibraryRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.libraryDelete",
@@ -1305,7 +1976,10 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedLibraryRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.libraryUpdate",
@@ -1316,7 +1990,10 @@
         "runId": "See canonical backtesting command.",
         "expectedLibraryRevision": "See canonical backtesting command.",
         "metadata": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.libraryExport",
@@ -1324,7 +2001,10 @@
       "mutates": false,
       "params": {
         "runId": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.libraryImport",
@@ -1335,7 +2015,10 @@
         "run": "See canonical backtesting command.",
         "summary": "See canonical backtesting command.",
         "detail": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.compare",
@@ -1345,7 +2028,10 @@
         "runIds": "See canonical backtesting command.",
         "offset": "See canonical backtesting command.",
         "limit": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.research",
@@ -1360,16 +2046,26 @@
         "trainBars": "See canonical backtesting command.",
         "testBars": "See canonical backtesting command.",
         "folds": "See canonical backtesting command.",
+        "warmupMode": "See canonical backtesting command.",
+        "warmupBars": "See canonical backtesting command.",
         "objective": "See canonical backtesting command.",
         "minCompletedPositions": "See canonical backtesting command.",
-        "maxDrawdown": "See canonical backtesting command."
-      }
+        "maxDrawdown": "See canonical backtesting command.",
+        "search": "See canonical backtesting command."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.getChartOptions",
       "description": "Compatibility alias for backtesting.getChartOptions. Same validation, behavior, grants, cancellation and retry keys.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.setChartOptions",
@@ -1381,7 +2077,10 @@
         "range": "See canonical backtesting command.",
         "action": "See canonical backtesting command.",
         "previewId": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.run",
@@ -1402,7 +2101,13 @@
         "versionSuffix": "See canonical backtesting command.",
         "inputs": "See canonical backtesting command.",
         "pineSettings": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "simulation.get",
@@ -1413,8 +2118,12 @@
         "section": "See canonical backtesting command.",
         "offset": "See canonical backtesting command.",
         "limit": "See canonical backtesting command.",
-        "risk": "See canonical backtesting command."
-      }
+        "risk": "See canonical backtesting command.",
+        "attemptIndex": "See canonical backtesting command."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.export",
@@ -1425,7 +2134,40 @@
         "expectedRevision": "See canonical backtesting command.",
         "offset": "See canonical backtesting command.",
         "chunkSize": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "none"
+      ]
+    },
+    {
+      "type": "simulation.optimizeReport",
+      "description": "Compatibility alias for backtesting.optimizeReport. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
+    },
+    {
+      "type": "simulation.optimizeReportGet",
+      "description": "Compatibility alias for backtesting.optimizeReportGet. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": false,
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "reportId": "See canonical backtesting command.",
+        "offset": "See canonical backtesting command.",
+        "chunkSize": "See canonical backtesting command."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.cancel",
@@ -1433,7 +2175,10 @@
       "mutates": false,
       "params": {
         "runId": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.replay",
@@ -1443,8 +2188,13 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "autoStrategy": "See canonical backtesting command.",
-        "startIndex": "See canonical backtesting command."
-      }
+        "startIndex": "See canonical backtesting command.",
+        "preflightManifestSha256": "See canonical backtesting command."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.forward",
@@ -1454,8 +2204,13 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "autoStrategy": "See canonical backtesting command.",
-        "sessionSchedule": "See canonical backtesting command."
-      }
+        "sessionSchedule": "See canonical backtesting command.",
+        "preflightManifestSha256": "See canonical backtesting command."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.pause",
@@ -1465,7 +2220,10 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.resume",
@@ -1476,7 +2234,11 @@
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
         "catchUp": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.step",
@@ -1487,7 +2249,13 @@
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
         "count": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "simulation.back",
@@ -1497,7 +2265,10 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.order",
@@ -1509,7 +2280,10 @@
         "expectedRevision": "See canonical backtesting command.",
         "order": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.cancelOrder",
@@ -1521,7 +2295,10 @@
         "expectedRevision": "See canonical backtesting command.",
         "orderId": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.replaceOrder",
@@ -1534,7 +2311,10 @@
         "orderId": "See canonical backtesting command.",
         "order": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.protect",
@@ -1546,7 +2326,10 @@
         "expectedRevision": "See canonical backtesting command.",
         "protection": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.close",
@@ -1559,7 +2342,10 @@
         "quantity": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command.",
         "all": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.show",
@@ -1570,7 +2356,13 @@
         "runId": "See canonical backtesting command.",
         "tradeId": "See canonical backtesting command.",
         "symbol": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "simulation.removeFromChart",
@@ -1579,7 +2371,10 @@
       "permission": "indicators",
       "params": {
         "runId": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.showSettings",
@@ -1588,7 +2383,11 @@
       "permission": "indicators",
       "params": {
         "runId": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "simulation.delete",
@@ -1598,7 +2397,10 @@
       "params": {
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.applyStrategy",
@@ -1620,20 +2422,32 @@
         "range": "See canonical backtesting command.",
         "strategyMode": "See canonical backtesting command.",
         "sessionSchedule": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "simulation.removeStrategy",
       "description": "Compatibility alias for backtesting.removeStrategy. Same validation, behavior, grants, cancellation and retry keys.",
       "mutates": true,
       "permission": "indicators",
-      "params": {}
+      "params": {},
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "simulation.appliedStrategy",
       "description": "Compatibility alias for backtesting.appliedStrategy. Same validation, behavior, grants, cancellation and retry keys.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.setStrategyAutoRerun",
@@ -1642,7 +2456,119 @@
       "permission": "indicators",
       "params": {
         "enabled": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "write"
+      ]
+    },
+    {
+      "type": "simulation.optimizeChecks",
+      "description": "Compatibility alias for backtesting.optimizeChecks. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "attemptId": "See canonical backtesting command.",
+        "manifestSha256": "See canonical backtesting command.",
+        "fold": "See canonical backtesting command.",
+        "candidate": "See canonical backtesting command.",
+        "neighbors": "See canonical backtesting command.",
+        "costScenarios": "See canonical backtesting command.",
+        "budget": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.optimizeValidateSymbols",
+      "description": "Compatibility alias for backtesting.optimizeValidateSymbols. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "attemptId": "See canonical backtesting command.",
+        "manifestSha256": "See canonical backtesting command.",
+        "fold": "See canonical backtesting command.",
+        "candidate": "See canonical backtesting command.",
+        "symbols": "See canonical backtesting command.",
+        "budget": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.paperPreflight",
+      "description": "Compatibility alias for backtesting.paperPreflight. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": false,
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "mode": "See canonical backtesting command."
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.paperParity",
+      "description": "Compatibility alias for backtesting.paperParity. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "mode": "See canonical backtesting command.",
+        "manifestSha256": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.compareView",
+      "description": "Compatibility alias for backtesting.compareView. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": false,
+      "params": {
+        "runIds": "See canonical backtesting command.",
+        "theme": "See canonical backtesting command.",
+        "timeZone": "See canonical backtesting command.",
+        "format": "See canonical backtesting command.",
+        "viewId": "See canonical backtesting command.",
+        "offset": "See canonical backtesting command.",
+        "chunkSize": "See canonical backtesting command."
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.optimizeResume",
+      "description": "Compatibility alias for backtesting.optimizeResume. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "attemptId": "See canonical backtesting command.",
+        "manifestSha256": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "simulation.researchPreview",
@@ -1656,10 +2582,16 @@
         "trainBars": "See canonical backtesting command.",
         "testBars": "See canonical backtesting command.",
         "folds": "See canonical backtesting command.",
+        "warmupMode": "See canonical backtesting command.",
+        "warmupBars": "See canonical backtesting command.",
         "objective": "See canonical backtesting command.",
         "minCompletedPositions": "See canonical backtesting command.",
-        "maxDrawdown": "See canonical backtesting command."
-      }
+        "maxDrawdown": "See canonical backtesting command.",
+        "search": "See canonical backtesting command."
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "simulation.researchMeasure",
@@ -1674,10 +2606,17 @@
         "trainBars": "See canonical backtesting command.",
         "testBars": "See canonical backtesting command.",
         "folds": "See canonical backtesting command.",
+        "warmupMode": "See canonical backtesting command.",
+        "warmupBars": "See canonical backtesting command.",
         "objective": "See canonical backtesting command.",
         "minCompletedPositions": "See canonical backtesting command.",
-        "maxDrawdown": "See canonical backtesting command."
-      }
+        "maxDrawdown": "See canonical backtesting command.",
+        "search": "See canonical backtesting command."
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "simulation.researchRerun",
@@ -1691,28 +2630,42 @@
         "fold": "See canonical backtesting command.",
         "candidate": "See canonical backtesting command.",
         "confirmed": "See canonical backtesting command."
-      }
+      },
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "workspace.getState",
       "description": "Read this tab's account/permission state and screening source.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "workspace.getActivity",
       "description": "Read bounded command status/error-code history and active command count. Never returns credentials, source or command arguments.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "workspace.setPanel",
-      "description": "Select an existing /charts bottom panel and optionally expand/minimize it. Requires AI access, not a persistent-write grant. Acknowledges the request; poll workspace.getState.",
+      "description": "Select a /charts bottom panel and expand/minimize it. Right-docked Backtesting toggles only its side panel unless dock is given. Returns expected placement; verify workspace.getState panels.",
       "mutates": false,
       "params": {
         "panel": "peers|watchlists|futures|backtesting|paper-trading|intelligence|indicators; simulation is a legacy alias",
-        "expanded": "Optional boolean, default true."
-      }
+        "expanded": "Optional boolean, default true.",
+        "dock": "Optional bottom|right, backtesting only: place it and select its tab. right fails DOCK_UNAVAILABLE under 720px."
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "workspace.openSidebar",
@@ -1721,21 +2674,30 @@
       "params": {
         "panel": "watchlists|indices|heatmap|scanner|grid|patterns|alerts|research|dataWindow|paperTrading|contests",
         "expanded": "Optional boolean, default true"
-      }
+      },
+      "effects": [
+        "panel"
+      ]
     },
     {
       "type": "workspace.setTheme",
-      "description": "Set this browser's app light/dark theme (same as Settings > Theme). Local UI preference only.",
+      "description": "Set this browser's app light/dark theme (same as Settings > Theme). Local UI preference only. Returns previous for restoring.",
       "mutates": false,
       "params": {
         "theme": "light|dark"
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "chart.getState",
-      "description": "Read active chart context and history/live/navigation status. Receipt time is not market freshness.",
+      "description": "Read active chart context and history/live/navigation status. ready=widget only; poll dataReady (verified candles) before reading data. feedCatalog reports broker-catalog issues separately from error. Receipt time is not market freshness.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "chart.snapshot",
@@ -1743,7 +2705,10 @@
       "mutates": false,
       "params": {
         "bars": "Optional 1-25 trailing rows, default 5."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "chart.setLive",
@@ -1751,13 +2716,21 @@
       "mutates": false,
       "params": {
         "enabled": "Required boolean"
-      }
+      },
+      "effects": [
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "chart.reload",
       "description": "Request history reload; may use provider quota. Verify readiness with chart.getState.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "chart.navigateHistory",
@@ -1766,7 +2739,12 @@
       "params": {
         "action": "date|latest|previous|retry",
         "date": "YYYY-MM-DD; required only for date"
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "chart.replayControl",
@@ -1775,7 +2753,11 @@
       "params": {
         "action": "select|play|pause|step|speed|end",
         "speed": "Required only for speed: 0.1-200 bars per second."
-      }
+      },
+      "effects": [
+        "navigate",
+        "write"
+      ]
     },
     {
       "type": "studies.list",
@@ -1784,7 +2766,10 @@
       "params": {
         "offset": "Optional nonnegative offset.",
         "limit": "Optional 1-100, default 50."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "studies.inputs",
@@ -1792,7 +2777,10 @@
       "mutates": false,
       "params": {
         "name": "Exact name from studies.list."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "studies.apply",
@@ -1802,7 +2790,10 @@
       "params": {
         "name": "Exact discovered study name.",
         "inputs": "Optional map of declared IDs to primitive values."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "studies.applied",
@@ -1811,7 +2802,10 @@
       "params": {
         "offset": "Optional nonnegative offset.",
         "limit": "Optional 1-100, default 50."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "studies.setVisibility",
@@ -1823,7 +2817,10 @@
         "name": "Exact study name from studies.applied.",
         "expectedVisible": "Current boolean visibility.",
         "visible": "Desired boolean visibility."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "studies.remove",
@@ -1834,13 +2831,19 @@
         "entityId": "Exact ID from studies.applied.",
         "name": "Exact study name from studies.applied.",
         "expectedVisible": "Current boolean visibility."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "drawingTemplates.state",
       "description": "Read the single selected editable user drawing and its type. No chart change or template contents.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "drawingTemplates.list",
@@ -1851,7 +2854,10 @@
         "type": "Selected drawing type from state.",
         "offset": "Optional nonnegative offset.",
         "limit": "Optional 1-50, default 50."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "drawingTemplates.apply",
@@ -1861,13 +2867,19 @@
         "entityId": "Selected drawing ID from state.",
         "type": "Selected drawing type from state.",
         "name": "Exact saved name from list."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "intelligence.catalog",
       "description": "Read up to 50 authorized published report names and filter availability from the open Market Intelligence panel. Not streaming quotes.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "intelligence.getReport",
@@ -1877,7 +2889,10 @@
         "dataset": "Exact available dataset from intelligence.catalog.",
         "symbol": "Optional supported canonical symbol filter.",
         "date": "Optional YYYY-MM-DD snapshot date."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "futures.getReport",
@@ -1885,19 +2900,28 @@
       "mutates": false,
       "params": {
         "isIndex": "Optional boolean, true for index futures (default), false for stock futures."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "heatmap.getState",
       "description": "Read current heatmap settings, aggregate breadth and quote receipt time from the open panel. No per-ticker quotes; receipt time is not provider freshness.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "alerts.list",
       "description": "List this account's saved cloud chart alert rules (id, ticker, timeframe, status, direction, price/trendline, frequency, price source). Read-only; does not return live trigger state.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "alerts.create",
@@ -1912,7 +2936,11 @@
         "name": "Optional label",
         "message": "Optional trigger note, max 500",
         "expiresAt": "Optional future ISO UTC; stops monitoring after"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "alerts.setEnabled",
@@ -1921,7 +2949,11 @@
       "params": {
         "id": "Saved alert rule id",
         "enabled": "Required boolean; true resumes, false pauses"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "alerts.update",
@@ -1936,7 +2968,11 @@
         "frequency": "Optional once|once_per_bar|every_cross",
         "message": "Optional; \"\" clears",
         "expiresAt": "Optional future ISO UTC; null clears"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "alerts.activity",
@@ -1946,7 +2982,10 @@
         "ruleId": "Optional rule id",
         "limit": "Optional 1-50, default 20",
         "cursor": "Optional cursor from a previous page"
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "alerts.delete",
@@ -1954,13 +2993,20 @@
       "mutates": true,
       "params": {
         "id": "Saved alert rule id"
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "feeds.list",
-      "description": "Discover chart feeds. Inspect discovery.status: failed broker discovery returns only default with an explicit error, never cached brokers. Chart feeds do not change the backend screening source.",
+      "description": "Discover chart feeds. Inspect discovery.status: failed broker discovery returns only default with an explicit error and bounded discovery.reason, never cached brokers. Chart feeds do not change the backend screening source.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "marketData.getBars",
@@ -1973,7 +3019,11 @@
         "from": "Optional window start: YYYY-MM-DD or epoch seconds. Supply from and/or countBack.",
         "to": "Optional window end: YYYY-MM-DD or epoch seconds; defaults to now.",
         "countBack": "Optional number of candles ending at 'to' (1-5000). Supply from and/or countBack."
-      }
+      },
+      "effects": [
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "universe.list",
@@ -1981,13 +3031,19 @@
       "mutates": false,
       "params": {
         "category": "Optional category identifier from this command."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "screener.listCapabilities",
       "description": "Discover supported backend screeners and their actual parameters before running a scan.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "screener.run",
@@ -1998,7 +3054,11 @@
         "screeners": "1-5 {name, parameters} from listCapabilities",
         "source": "Optional: default only. Broker-backed scanning is not available.",
         "refreshCache": "Optional legacy boolean; current screening always reads fresh."
-      }
+      },
+      "effects": [
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "screener.getResults",
@@ -2006,7 +3066,10 @@
       "mutates": false,
       "params": {
         "runId": "Scan identifier returned by run."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "screener.cancel",
@@ -2014,13 +3077,19 @@
       "mutates": false,
       "params": {
         "runId": "Scan identifier returned by run."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "providerScreener.listCapabilities",
       "description": "Discover bounded Desktop broker-candle screening, available providers, TLScript-Pine runtime requirements and closed-bar policy. Separate from SQL-backed screeners.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "providerScreener.run",
@@ -2035,7 +3104,12 @@
         "plotIndex": "Optional nonnegative safe integer selecting a real numeric plot, default 0. Available plots are discovered from execution, not compilation.",
         "condition": "{operator:gt|gte|lt|lte|eq,value:finite number}",
         "bars": "Optional 2-1000 history bars, default 500."
-      }
+      },
+      "effects": [
+        "quota",
+        "code",
+        "network"
+      ]
     },
     {
       "type": "providerScreener.getResults",
@@ -2043,7 +3117,10 @@
       "mutates": false,
       "params": {
         "runId": "Local provider run ID."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "providerScreener.cancel",
@@ -2051,13 +3128,19 @@
       "mutates": false,
       "params": {
         "runId": "Local provider run ID."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "watchlists.list",
       "description": "List the signed-in user's TradingLead watchlists, not broker watchlists.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "watchlists.create",
@@ -2067,7 +3150,11 @@
         "name": "Watchlist name",
         "symbols": "Canonical ticker array; supply symbols OR runId.",
         "runId": "Completed scan to save; supply runId OR symbols."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "watchlists.addSymbols",
@@ -2077,7 +3164,11 @@
         "name": "Existing watchlist name",
         "symbols": "Canonical ticker array; supply symbols OR runId.",
         "runId": "Completed scan to save; supply runId OR symbols."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "chart.open",
@@ -2087,19 +3178,30 @@
         "symbol": "Canonical ticker",
         "feed": "Explicit provider ID or default",
         "interval": "Explicit resolution, e.g. 1D"
-      }
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network"
+      ]
     },
     {
       "type": "indicators.listCapabilities",
       "description": "Discover TLScript-Pine: the supported Pine indicator runtime, input contract, bounds and example. Not TradingView runtime equivalence or the retired limited TLScript language. Pine strategy backtesting lives under the backtesting.* commands, not this indicator surface.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "indicators.editorState",
       "description": "Read Studio's current source, parameters, dirty/compile state, selected instance and actual workspace visibility. An open mounted editor may still be hidden.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "indicators.openEditor",
@@ -2110,7 +3212,11 @@
         "id": "Saved Pine/Python script ID; choose exactly one selector.",
         "instanceId": "Stable applied Pine/Python instance ID; preferred over entityId.",
         "entityId": "Current native applied Pine/Python entity ID."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "indicators.openDraft",
@@ -2123,7 +3229,11 @@
         "title": "Optional draft title.",
         "inputs": "Optional typed Pine inputs by variable ID; Pine only, nonempty source required.",
         "pineSettings": "Optional explicit Pine strategy execution overrides; Pine only, nonempty source required."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "indicators.validate",
@@ -2132,13 +3242,19 @@
       "params": {
         "source": "Nonempty Pine indicator or strategy source; no fixed character cap. Execution and transport limits still apply.",
         "profile": "Optional boolean; include bounded compile timing."
-      }
+      },
+      "effects": [
+        "code"
+      ]
     },
     {
       "type": "indicators.list",
       "description": "Refresh this account's saved indicator metadata with a device cache. Use get for source. Reports offline/conflicting or unconfirmed cloud state rather than claiming account persistence.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "indicators.purchased",
@@ -2146,7 +3262,10 @@
       "mutates": false,
       "params": {
         "cursor": "Optional cursor from the previous collection page."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "indicators.sales",
@@ -2154,7 +3273,10 @@
       "mutates": false,
       "params": {
         "cursor": "Optional cursor from the previous sales page."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "indicators.applyPurchased",
@@ -2164,7 +3286,12 @@
       "params": {
         "shareId": "Purchased native indicator share ID.",
         "inputs": "Optional declared Pine input values."
-      }
+      },
+      "effects": [
+        "code",
+        "network",
+        "write"
+      ]
     },
     {
       "type": "indicators.publishPaid",
@@ -2178,7 +3305,11 @@
         "termDays": "30, 90 or 365.",
         "visibility": "link or public; public requires moderation.",
         "shareId": "Optional existing paid publication to update with unchanged terms."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "indicators.get",
@@ -2187,7 +3318,10 @@
       "params": {
         "id": "Saved Pine indicator ID.",
         "revision": "Optional required current revision; older revisions are unavailable through this command."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "indicators.save",
@@ -2201,7 +3335,12 @@
         "expectedRevision": "Required current local revision when id is supplied.",
         "replace": "Optional boolean; true explicitly replaces a same-name device library file. Does not silently replace a conflicting account version.",
         "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
-      }
+      },
+      "effects": [
+        "network",
+        "write",
+        "panel"
+      ]
     },
     {
       "type": "indicators.delete",
@@ -2211,20 +3350,31 @@
       "params": {
         "id": "Saved indicator ID.",
         "expectedRevision": "Current saved local revision."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "indicators.applied",
       "description": "Inspect this tab's Pine chart readiness and applied TLScript-Pine snapshots without source payloads. Does not fetch candles or certify data freshness.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "indicators.retryRestores",
       "description": "Retry pending saved Pine chart instances using Studio's restore queue. Requires a registered chart, indicator grant and retry key. Acknowledges the request, not successful restoration; poll indicators.applied for history readiness, restorationStatus and restoreErrors. Does not change saved source or resolve layout conflicts.",
       "mutates": true,
       "permission": "indicators",
-      "params": {}
+      "params": {},
+      "effects": [
+        "code",
+        "write"
+      ]
     },
     {
       "type": "indicators.apply",
@@ -2239,7 +3389,12 @@
         "profile": "Optional boolean; include bounded execution timings.",
         "realtime": "Optional boolean, default false. Experimental chart-session-only intrabar state; sampled updates, minute intervals, observed live closure required; no replay or secondary requests. Not persisted.",
         "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
-      }
+      },
+      "effects": [
+        "code",
+        "write",
+        "panel"
+      ]
     },
     {
       "type": "indicators.update",
@@ -2256,7 +3411,12 @@
         "profile": "Optional boolean; include bounded execution timings.",
         "realtime": "Optional boolean; omission retains the selected instance mode. Explicit update resets intrabar state. Experimental, sampled chart-session-only; minute intervals and observed closure, no replay/secondary requests; not persisted.",
         "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
-      }
+      },
+      "effects": [
+        "code",
+        "write",
+        "panel"
+      ]
     },
     {
       "type": "indicators.remove",
@@ -2266,7 +3426,10 @@
       "params": {
         "entityId": "Pine entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "indicators.setVisibility",
@@ -2277,7 +3440,10 @@
         "entityId": "Pine entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "visible": "Required boolean."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "indicators.showSettings",
@@ -2287,7 +3453,11 @@
       "params": {
         "entityId": "Pine entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "indicators.showInputs",
@@ -2297,19 +3467,42 @@
       "params": {
         "entityId": "Pine entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
+    },
+    {
+      "type": "indicators.closeSettings",
+      "description": "Close this account's Pine/Python settings or inputs dialog without applying. Refuses busy or unsaved edits; use discard:true explicitly to discard. Removal also closes the associated dialog.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "discard": "Optional boolean, default false; explicitly discard unsaved dialog edits."
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.capabilities",
       "description": "Discover automatic isolated Python runtime, readiness, result schema and example. No script approval dialog; unrestricted host execution is not supported.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "pythonIndicators.list",
       "description": "Refresh this account's Python source metadata with a device cache and explicit cloud-sync state. No code executes.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "pythonIndicators.get",
@@ -2317,7 +3510,10 @@
       "mutates": false,
       "params": {
         "id": "Saved Python script ID."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "pythonIndicators.history",
@@ -2325,7 +3521,10 @@
       "mutates": false,
       "params": {
         "id": "Saved Python ID."
-      }
+      },
+      "effects": [
+        "network"
+      ]
     },
     {
       "type": "pythonIndicators.restore",
@@ -2336,7 +3535,11 @@
         "id": "Saved Python ID.",
         "revision": "Revision to restore.",
         "expectedRevision": "Current revision."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.delete",
@@ -2346,7 +3549,11 @@
       "params": {
         "id": "Saved Python ID.",
         "expectedRevision": "Current revision."
-      }
+      },
+      "effects": [
+        "network",
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.save",
@@ -2362,13 +3569,21 @@
         "expectedRevision": "Required current local revision with id.",
         "replace": "Optional boolean; explicitly replaces a same-name device file, never silently a conflicting account version.",
         "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
-      }
+      },
+      "effects": [
+        "network",
+        "write",
+        "panel"
+      ]
     },
     {
       "type": "pythonIndicators.applied",
       "description": "Read Python chart-instance state and provenance without raw result arrays or source.",
       "mutates": false,
-      "params": {}
+      "params": {},
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "pythonIndicators.apply",
@@ -2384,7 +3599,12 @@
         "instanceId": "Stable applied ID to update.",
         "entityId": "Native entity alternative to instanceId.",
         "showInStudio": "Optional boolean; default true for external AI, false for internal UI. False explicitly keeps the operation headless. Dirty drafts are preserved; retry only openEditor if presentation fails."
-      }
+      },
+      "effects": [
+        "code",
+        "write",
+        "panel"
+      ]
     },
     {
       "type": "pythonIndicators.remove",
@@ -2394,7 +3614,10 @@
       "params": {
         "instanceId": "Stable applied ID.",
         "entityId": "Native entity alternative."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.setVisibility",
@@ -2405,7 +3628,10 @@
         "instanceId": "Stable applied ID OR entityId.",
         "entityId": "Native entity alternative.",
         "visible": "Required boolean."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.showSettings",
@@ -2415,7 +3641,11 @@
       "params": {
         "instanceId": "Stable applied ID OR entityId.",
         "entityId": "Native entity alternative."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.showInputs",
@@ -2425,7 +3655,11 @@
       "params": {
         "instanceId": "Stable applied ID OR entityId.",
         "entityId": "Native entity alternative."
-      }
+      },
+      "effects": [
+        "panel",
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.validate",
@@ -2433,7 +3667,10 @@
       "mutates": false,
       "params": {
         "source": "Nonempty Python source."
-      }
+      },
+      "effects": [
+        "code"
+      ]
     },
     {
       "type": "indicators.getSettings",
@@ -2443,7 +3680,10 @@
         "entityId": "Primary applied entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "defaults": "Optional boolean, default false. Read source-derived default appearance without changing it."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "indicators.setSettings",
@@ -2456,7 +3696,10 @@
         "settings": "Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata. Optional annotations: widthCandles 0.5–12 (target full badge width in center-to-center candle spacings), heightScale 0.25–4 (colored badge/text scale), adaptive boolean (false fixes sizing at the 9px reference). Defaults 1.5/1/false; long text can widen badges, one-pixel font floor, compact colored badges absent from native image exports. Platform renderer settings, not Pine label.new arguments; boxes/tables unchanged.",
         "expected": "Unmodified current getSettings snapshot for stale-write protection.",
         "reset": "Optional array of style and/or visibility. Clear retained appearance overrides for those pages; also copy the corresponding default values into settings."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     },
     {
       "type": "pythonIndicators.getSettings",
@@ -2466,7 +3709,10 @@
         "entityId": "Primary applied entity OR instanceId.",
         "instanceId": "Stable applied ID; mutually exclusive with entityId.",
         "defaults": "Optional boolean, default false. Read source-derived default appearance without changing it."
-      }
+      },
+      "effects": [
+        "none"
+      ]
     },
     {
       "type": "pythonIndicators.setSettings",
@@ -2479,7 +3725,10 @@
         "settings": "Full getSettings snapshot with desired appearance edits; preserve plot IDs/order/metadata.",
         "expected": "Unmodified current getSettings snapshot for stale-write protection.",
         "reset": "Optional array of style and/or visibility. Clear retained appearance overrides for those pages; also copy the corresponding default values into settings."
-      }
+      },
+      "effects": [
+        "write"
+      ]
     }
   ],
   "desktopActions": [
@@ -2498,6 +3747,30 @@
     {
       "action": "reconnect",
       "description": "Request registration retry using existing grants. Disabled access opens the permission panel instead. Poll status."
+    },
+    {
+      "action": "getOrigin",
+      "description": "Read the app website origin, the cloud origin, whether it is local, and the trusted origins."
+    },
+    {
+      "action": "setOrigin",
+      "description": "Switch the website origin to \"cloud\"/https://tradinglead.in or a loopback dev server with an explicit port. params: { origin, path?, navigate? }. Navigates the active tab; poll tabs and desktop status."
+    },
+    {
+      "action": "screenshot",
+      "description": "Capture a PNG of the given tab (default: active trusted tab). params: { selector? } crops to the first matching element. Returns { path, bytes, width, height, tabId }; the file is private to the local user."
+    },
+    {
+      "action": "logs",
+      "description": "Read-only, redacted tail of Desktop diagnostics. params: { kind: \"events\"|\"bars\", tail?: 1-200 (default 50) }."
+    },
+    {
+      "action": "services",
+      "description": "Read feed registry, sidecar (no credentials), Python indicator runtime and updater status."
+    },
+    {
+      "action": "appInfo",
+      "description": "Read app version, Electron, build channel, dev mode, origin, agent protocol and per-tab catalog registration (entries, hash, rejected)."
     }
   ]
 }

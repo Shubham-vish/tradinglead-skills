@@ -1,0 +1,185 @@
+version: 1
+suite:
+  id: workflows
+  name: Multi-step end-to-end workflows
+  description: Chains commands across domains the way a user would ask an agent - chart to alert, strategy to evidence, scan to grid - and cleans up everything it created.
+  requires:
+    grants: ["allowAgentWrites", "allowAgentIndicators"]
+    signIn: true
+
+tests:
+  - id: workflow.chart-to-alert
+    name: Open a chart, read the last close, set an alert 20% above it, then delete it
+    category: workflow
+    tags: ["workflow", "charts", "alerts", "cloud-write"]
+    setup:
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "NSE:RELIANCE-EQ", "feed": "default", "interval": "1D"}
+      - id: ready
+        kind: poll
+        type: chart.getState
+        params: {}
+        until:
+          path: data.history.state
+          equals: ready
+        intervalMs: 1000
+        timeoutMs: 30000
+      - id: snap
+        type: chart.snapshot
+        params: {"bars": 1}
+    execute:
+      type: alerts.create
+      params: {"ticker": "NSE:RELIANCE-EQ", "price": "{{steps.snap.data.rows.0.4 * 1.2}}", "direction": "above", "name": "AI TEST wf {{run.id}}", "message": "AI TEST workflow alert", "expiresAt": "{{run.expiresIso}}"}
+      idempotencyKey: "ai-test-{{run.id}}-wf-alert"
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.rule.ticker
+          equals: NSE:RELIANCE-EQ
+        - path: data.rule.id
+          exists: true
+    teardown:
+      - id: delete
+        type: alerts.delete
+        params: {"id": "{{steps.execute.data.rule.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-alert-delete"
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: workflow.validate-backtest-evidence
+    name: Validate a strategy, backtest it, read trades and capture the chart overlay
+    category: workflow
+    tags: ["workflow", "backtesting", "pine", "slow", "visual"]
+    setup:
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: panelBefore
+        type: workspace.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "NSE:TCS-EQ", "feed": "default", "interval": "1D"}
+      - id: ready
+        kind: poll
+        type: chart.getState
+        params: {}
+        until:
+          path: data.history.state
+          equals: ready
+        intervalMs: 1000
+        timeoutMs: 30000
+      - id: compile
+        type: indicators.validate
+        params: {"source": "//@version=5\nstrategy(\"AI TEST wf\", overlay=true)\nif ta.crossover(ta.ema(close, 8), ta.ema(close, 21))\n    strategy.entry(\"L\", strategy.long)\nif ta.crossunder(ta.ema(close, 8), ta.ema(close, 21))\n    strategy.close(\"L\")\n"}
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST wf\", overlay=true)\nif ta.crossover(ta.ema(close, 8), ta.ema(close, 21))\n    strategy.entry(\"L\", strategy.long)\nif ta.crossunder(ta.ema(close, 8), ta.ema(close, 21))\n    strategy.close(\"L\")\n", "bars": 750, "range": null, "versionSuffix": "AI TEST wf {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-bt"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+        until:
+          path: data.status
+          oneOf: ["completed", "failed", "cancelled", "interrupted"]
+        intervalMs: 2000
+        timeoutMs: 180000
+      - id: show
+        type: backtesting.show
+        params: {"runId": "{{steps.run.data.runId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-bt-show"
+      - id: openPanel
+        type: workspace.setPanel
+        params: {"panel": "backtesting", "expanded": true}
+      - id: panelVisible
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until:
+          path: data.panels.backtesting.visible
+          equals: true
+        intervalMs: 500
+        timeoutMs: 10000
+    execute:
+      type: backtesting.get
+      params: {"runId": "{{steps.run.data.runId}}", "section": "trades", "offset": 0, "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.status
+          equals: completed
+        - path: data.metrics.equity
+          finite: true
+        - path: data.offset
+          equals: 0
+      visual:
+        screenshot: workflow-backtest-overlay
+        criteria:
+          - Entry and exit markers from "AI TEST wf" appear on the TCS daily candles.
+          - Marker placement looks consistent with EMA crossovers (no markers floating far from price).
+          - The backtesting panel shows the run as completed with net P&L and drawdown values.
+    teardown:
+      - id: detach
+        type: backtesting.removeFromChart
+        params: {"runId": "{{steps.run.data.runId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-bt-detach"
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: delete
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-bt-delete"
+      - id: restorePanel
+        type: workspace.setPanel
+        params: {"panel": "backtesting", "expanded": "{{steps.panelBefore.data.panels.backtesting.visible}}"}
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: workflow.symbols-to-grid-to-watchlist
+    name: Open a grid of explicit symbols, then save the same symbols as an AI TEST watchlist and remove it
+    category: workflow
+    tags: ["workflow", "grid", "watchlists", "cloud-write"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: grid
+        type: grid.open
+        params: {"symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ", "NSE:WIPRO-EQ"], "label": "AI TEST wf grid {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-wf-grid"
+      - id: gridState
+        type: grid.getState
+        params: {"offset": 0, "limit": 10}
+    execute:
+      type: watchlists.create
+      params: {"name": "AI TEST wf {{run.id}}", "symbols": ["NSE:TCS-EQ", "NSE:INFY-EQ", "NSE:WIPRO-EQ"]}
+      idempotencyKey: "ai-test-{{run.id}}-wf-wl"
+    assert:
+      response:
+        - path: status
+          equals: ok
+      state:
+        - label: watchlist exists with three symbols
+          type: watchlists.list
+          params: {}
+          assertions:
+            - path: data.watchlists
+              contains: {"name": "AI TEST wf {{run.id}}", "count": 3}
+    teardown:
+      - id: deleteList
+        type: watchlists.manage
+        params: {"action": "delete", "name": "AI TEST wf {{run.id}}", "confirm": true}
+        idempotencyKey: "ai-test-{{run.id}}-wf-wl-delete"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}

@@ -1,0 +1,99 @@
+version: 1
+suite:
+  id: llm-subjective
+  name: LLM-judged product quality
+  description: Subjective checks an AI judge scores against a rubric - chart readability, backtest evidence clarity and error-message usefulness. Each criterion is PASS/FAIL with one sentence of evidence; any FAIL fails the test.
+  requires:
+    grants: ["allowAgentWrites", "allowAgentIndicators"]
+    signIn: false
+
+tests:
+  - id: llm.chart-readability
+    name: A freshly opened chart is readable and correctly labelled
+    category: visual
+    tags: ["llm", "visual", "charts"]
+    judge: llm
+    steps:
+      - id: chartBefore
+        type: chart.getState
+        params: {}
+      - id: open
+        type: chart.open
+        params: {"symbol": "NSE:HDFCBANK-EQ", "feed": "default", "interval": "1D"}
+      - id: ready
+        kind: poll
+        type: chart.getState
+        params: {}
+        until:
+          path: data.history.state
+          equals: ready
+        intervalMs: 1000
+        timeoutMs: 30000
+      - id: shot
+        kind: screenshot
+        source: window
+    criteria:
+      - The header/legend shows HDFCBANK and the daily interval, matching the requested context.
+      - Candles fill the pane without large unexplained gaps or a flat line.
+      - Price and time axes are legible and not overlapping other UI.
+      - Nothing on screen claims live data freshness that was not verified.
+    teardown:
+      - id: restoreChart
+        type: chart.open
+        params: {"symbol": "{{steps.chartBefore.data.symbol}}", "feed": "{{steps.chartBefore.data.feed}}", "interval": "{{steps.chartBefore.data.interval}}"}
+
+  - id: llm.backtest-explainability
+    name: Backtest evidence would let a trader explain the result
+    category: workflow
+    tags: ["llm", "backtesting", "slow"]
+    judge: llm
+    steps:
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST judge\", overlay=true)\nif ta.crossover(ta.sma(close, 10), ta.sma(close, 30))\n    strategy.entry(\"L\", strategy.long)\nif ta.crossunder(ta.sma(close, 10), ta.sma(close, 30))\n    strategy.close(\"L\")\n", "bars": 500, "range": null, "versionSuffix": "AI TEST judge {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-judge-bt"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "section": "trades", "limit": 10}
+        until:
+          path: data.status
+          oneOf: ["completed", "failed", "cancelled", "interrupted"]
+        intervalMs: 2000
+        timeoutMs: 180000
+      - id: shot
+        kind: screenshot
+        source: window
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: delete
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-judge-bt-delete"
+    criteria:
+      - The get response states the captured period, bar count and execution model, so the result is reproducible.
+      - Trade rows carry entry/exit times, prices and P&L that are consistent with each other.
+      - Metrics (net P&L, drawdown, win rate, fees) are present and plausible for a long-only SMA cross.
+      - The UI or response does not imply real broker execution or exchange-verified fills.
+
+  - id: llm.error-quality
+    name: Error messages for common agent mistakes are actionable
+    category: contract
+    tags: ["llm", "errors"]
+    judge: llm
+    steps:
+      - id: badDrawing
+        type: drawings.create
+        params: {"tool": "rectangle", "points": [{"time": 1717200000, "price": 100}]}
+        idempotencyKey: "ai-test-{{run.id}}-judge-baddraw"
+      - id: badPine
+        type: indicators.validate
+        params: {"source": "//@version=5\nindicator(\"AI TEST\")\nplot(ta.rsi(close))\n"}
+      - id: badRun
+        type: backtesting.get
+        params: {"runId": "sim-ai-test-missing"}
+    criteria:
+      - Each failure returns a stable machine code, not a generic COMMAND_FAILED where a specific code exists.
+      - Each message says what was wrong and what to do next (e.g. point count, missing argument, unknown run).
+      - No message leaks file paths, tokens, URLs or stack traces.

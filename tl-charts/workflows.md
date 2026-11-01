@@ -12,8 +12,12 @@ Unknown envelope/parameter keys are rejected.
 1. Follow `tl-desktop` discovery; read `workspace.getState`, `chart.getState`
    and `feeds.list`. `available:true` on a feed describes its usable interface,
    not a verified authenticated provider session or fresh candles.
-2. Verify the intended account and active pane, exact symbol/feed/interval,
-   `ready:true`, settled discovery/source switching and history not loading/error.
+2. Verify the intended account and active pane, exact symbol/feed/interval and
+   `dataReady:true` (widget `ready`, verified `history.state:"ready"`, settled
+   discovery/source switching, no replay load). `ready:true` alone is not data.
+   `chart.getState.data.error` is the active chart's error. A broker-catalog
+   failure on the default feed is reported only in `data.feedCatalog`
+   (`{state:"error",message}`); it blocks broker feeds, not the default chart.
    No chart command accepts `paneId`; select the target with `layout.set`
    `activePane` first (see [layouts-grid.md](layouts-grid.md)).
 3. Use explicit `chart.open` parameters to change chart context, then poll state.
@@ -35,7 +39,9 @@ entitlements, credentials or automatic fallback. Current source returns only the
 default feed with `data.discovery.status:"error"` and code
 `FEED_DISCOVERY_FAILED` when broker discovery fails, even though final command
 `status` is `"ok"`. Inspect this nested status: no broker feed was verified, and
-cached broker entries are not returned. Successful discovery reports
+cached broker entries are not returned. `discovery.reason` is bounded:
+`UNTRUSTED_ORIGIN`, `DESKTOP_INTERFACE_UNAVAILABLE`, `CATALOG_REJECTED`,
+`CATALOG_CHANGED` or `UNKNOWN` (no raw error text). Successful discovery reports
 `data.discovery.status:"ok"`.
 
 Current source lets explicit `feed:"default"` calls to `chart.open` and

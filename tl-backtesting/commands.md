@@ -1,6 +1,6 @@
 # tl-backtesting command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 List account-local reusable strategy setups, not result history. No source or execution.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -24,6 +25,7 @@ Compatibility alias: `simulation.presetList`. Same validation, grants, cancellat
 Read an owned complete setup including local Python source. Does not load a draft or run code.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -37,6 +39,7 @@ Compatibility alias: `simulation.presetGet`. Same validation, grants, cancellati
 Save a complete account-local setup. No strategy execution, chart changes or result-history writes. Requires a top-level retry ID.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -53,6 +56,7 @@ Compatibility alias: `simulation.presetSave`. Same validation, grants, cancellat
 Delete an owned reusable setup only. Current drafts, source libraries and existing runs are untouched. Requires a top-level retry ID.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -67,6 +71,7 @@ Compatibility alias: `simulation.presetDelete`. Same validation, grants, cancell
 Discover simulation-only order, accounting, Python signal and causality limits. No broker execution.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -77,6 +82,7 @@ Compatibility alias: `simulation.capabilities`. Same validation, grants, cancell
 Search/page the three active local backtest/paper runs. Larger saved history is available through libraryList.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -91,6 +97,7 @@ Compatibility alias: `simulation.list`. Same validation, grants, cancellation, r
 Search/page IndexedDB saved snapshots: max 100 runs / 100 MB per account. No source/candles. Active local workspace stays synchronous and limited to three runs.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -106,6 +113,7 @@ Compatibility alias: `simulation.libraryList`. Same validation, grants, cancella
 Save a stopped active run into larger local IndexedDB history. No silent eviction or cloud writes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -121,6 +129,7 @@ Compatibility alias: `simulation.librarySave`. Same validation, grants, cancella
 Copy stopped legacy active runs safely into IndexedDB without deleting originals or overwriting existing saved snapshots.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 Parameters: `{}`.
@@ -132,6 +141,7 @@ Compatibility alias: `simulation.libraryMigrate`. Same validation, grants, cance
 Restore one saved snapshot to a free active slot. Never overwrites active work or starts execution; running sessions restore paused.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -146,6 +156,7 @@ Compatibility alias: `simulation.libraryRestore`. Same validation, grants, cance
 Explicitly remove a saved snapshot only; active run and cloud layout are untouched.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -160,6 +171,7 @@ Compatibility alias: `simulation.libraryDelete`. Same validation, grants, cancel
 Edit a saved snapshot's display name, notes and tags only. Immutable run evidence, active work and cloud layout are unchanged.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -175,6 +187,7 @@ Compatibility alias: `simulation.libraryUpdate`. Same validation, grants, cancel
 Read one locally saved snapshot's full payload, summary and display metadata so it can be backed up to the cloud or exported to a file. Active work, chart and cloud layout are unchanged.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -187,6 +200,7 @@ Compatibility alias: `simulation.libraryExport`. Same validation, grants, cancel
 Import a run payload from a cloud backup or exported file as a NEW local saved snapshot, so saved history survives a browser change. Never overwrites active work; a run already saved on this device is rejected. Requires the local indicator grant and retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -202,6 +216,7 @@ Compatibility alias: `simulation.libraryImport`. Same validation, grants, cancel
 Compare 2-4 same-sample saved snapshots. Metrics/assumptions are byte-bounded; follow nextOffset until null.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -216,6 +231,7 @@ Compatibility alias: `simulation.compare`. Same validation, grants, cancellation
 Read saved options, effective preview options, preview owner/ID/validity, active date selection and range handle IDs. Never executes a strategy.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -226,6 +242,7 @@ Compatibility alias: `simulation.getChartOptions`. Same validation, grants, canc
 Save account-local chart appearance/date selection, or preview/apply/cancel appearance edits without strategy execution. Preview does not persist; competing settings owners are refused. Runtime disposal clears agent previews; cancellation after a save is not rollback.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -242,6 +259,7 @@ Compatibility alias: `simulation.setChartOptions`. Same validation, grants, canc
 Start a Python or Pine strategy() backtest on captured closed candles. Returns preparing; poll get. Pine preserves its own fills, fees, quantity and equity without re-simulation; Python uses the shared signal engine. Requires local indicator/backtesting grant/retry key.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **quota, code, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -255,7 +273,7 @@ Local indicator/backtesting grant required.
 | `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |
 | `bars` | 2-20000, default20000; Python sequential max/default250. |
 | `range` | Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period. |
-| `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
+| `sessionSchedule` | Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles. |
 | `versionSuffix` | Optional short version label appended to the run title (e.g. "aggressive" → "Name - aggressive") so different parameter variants stay distinguishable on the chart legend and in history. |
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
 | `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
@@ -267,14 +285,16 @@ Compatibility alias: `simulation.run`. Same validation, grants, cancellation, ru
 Read status, accounting, pending orders, prefix-safe position analytics and paged ledger/equity/optimization. Analytics details: first 25 rows each with totals/truncation. Optional explicit regular-sampling assumptions enable annualized risk statistics. No source or raw candles.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Owned run ID. |
-| `section` | trades\|events\|equity\|optimization, default trades. Legacy research is accepted; both return section:research and the existing research summary, with top-level paged rows. |
+| `section` | trades\|events\|equity\|optimization\|candidateChecks, default trades. Legacy research is accepted; both return section:research and the existing research summary. candidateChecks pages all retained compact check reports; full frozen plans/accounts remain in stopped exports. |
 | `offset` | Nonnegative page offset. |
 | `limit` | 1-100, default 50; optimization pages use nextOffset until null. |
-| `risk` | Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual}; omitted means no annualization. |
+| `risk` | Optional explicit {samplesPerYear,expectedIntervalMs,riskFreeRateAnnual,samplingBasis?:regular\|sessionBars,sessionSchedule?}. sessionBars requires a user calendar and complete observed 1-240 minute grid. No inferred 252 or invented gap returns. |
+| `attemptIndex` | Optional nonnegative zero-based retained attempt index; only with section optimization/research. Latest remains the backwards research alias. |
 
 Compatibility alias: `simulation.get`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
@@ -283,6 +303,7 @@ Compatibility alias: `simulation.get`. Same validation, grants, cancellation, ru
 Read a full owned local export in bounded JSON-text chunks, including pinned source/candles. Run must be stopped; keep expectedRevision fixed and concatenate text by offset.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -298,6 +319,7 @@ Compatibility alias: `simulation.export`. Same validation, grants, cancellation,
 Request cancellation of an active backtest. Poll get for terminal status; partial results are not a completed run.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -310,6 +332,7 @@ Compatibility alias: `simulation.cancel`. Same validation, grants, cancellation,
 Restore the run's feed/symbol/interval, wait for native history, then focus its fills. Restores replay cutoff for replay runs; clears cutoff for batch. No provider fallback or removal of user drawings.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -325,6 +348,7 @@ Compatibility alias: `simulation.show`. Same validation, grants, cancellation, r
 Detach this run's chart overlays only. Retains the run, trades, source and saved history; use show to add it again. Does not stop paper execution or alter replay time.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -338,6 +362,7 @@ Compatibility alias: `simulation.removeFromChart`. Same validation, grants, canc
 Open the displayed run's native in-chart settings dialog. Visibility, arrows, lines, labels and risk-level controls do not rerun or delete optimization.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -351,6 +376,7 @@ Compatibility alias: `simulation.showSettings`. Same validation, grants, cancell
 Explicitly delete one local, non-running simulation; cloud layouts and Python sources remain unchanged.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -365,6 +391,7 @@ Compatibility alias: `simulation.delete`. Same validation, grants, cancellation,
 Apply a Python or TLScript-Pine strategy to the chart like an indicator and immediately run it. Only one strategy applies at a time: every apply (edited source, new inputs/parameters or a different script) replaces the applied one in place, cancels any in-flight run of the old version and reruns, keeping the auto-rerun choice. It reruns on chart symbol/timeframe change (newest run wins). The Backtesting panel shows the latest live run; the previous result stays dimmed until the rerun settles.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **quota, code, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -382,7 +409,7 @@ Local indicator/backtesting grant required.
 | `bars` | 2-20000, default20000; Python sequential max/default250. |
 | `range` | Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period. |
 | `strategyMode` | Python: vectorized (default) or sequential. Pine: vectorized only. |
-| `sessionSchedule` | Optional user-assumption schedule for subsequent paper branches; does not synthesize backtest candles. |
+| `sessionSchedule` | Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles. |
 
 Compatibility alias: `simulation.applyStrategy`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
@@ -391,6 +418,7 @@ Compatibility alias: `simulation.applyStrategy`. Same validation, grants, cancel
 Remove the strategy currently applied to the chart. Its last backtest run and saved history are retained.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 Parameters: `{}`.
@@ -402,6 +430,7 @@ Compatibility alias: `simulation.removeStrategy`. Same validation, grants, cance
 Read the strategy currently applied to the chart, if any, including liveRunId (newest run, null until a rerun is accepted), previousRunId (last completed result kept while rerunning), runContext ({symbol,resolution} being computed), status (applied/running/error), error and autoRerun.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -412,6 +441,7 @@ Compatibility alias: `simulation.appliedStrategy`. Same validation, grants, canc
 Enable or disable automatic recomputation of the applied strategy when the chart symbol/timeframe changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -419,3 +449,24 @@ Local indicator/backtesting grant required.
 | `enabled` | Boolean; false disables auto-rerun. |
 
 Compatibility alias: `simulation.setStrategyAutoRerun`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
+## `backtesting.compareView`
+
+Read/export the complete reviewed compatible saved-run equity/drawdown/position paths with exact samples, axes, timezone, theme, legend and strong manifests. Local self-contained JSON/SVG/HTML, not native chart image capture. No execution.
+
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runIds` | 2-4 distinct saved IDs. |
+| `theme` | light\|dark, default light. |
+| `timeZone` | Explicit IANA timezone, default UTC. |
+| `format` | json\|svg\|html, default json. |
+| `viewId` | Pinned view ID for subsequent chunks. |
+| `offset` | 0-25165824 UTF-16 code units; begin at 0. |
+| `chunkSize` | 1-16000, default16000. |
+
+Compatibility alias: `simulation.compareView`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.

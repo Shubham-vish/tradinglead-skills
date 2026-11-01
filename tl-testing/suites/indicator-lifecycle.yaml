@@ -1,0 +1,1397 @@
+version: 1
+suite:
+  id: "indicator-lifecycle"
+  name: "Indicator-grant lifecycles and error paths"
+  description: "Creates only AI TEST research reports, Python sources, chart instances, native studies and Pine backtests on the current chart, verifies revisions/history/library round-trips, and deletes exactly the captured IDs in teardown. Panels opened by Studio saves are restored from the setup read. All other tests are unknown-ID / invalid-input paths that must fail before any change. Never touches existing user runs, presets or scripts."
+  requires:
+    grants: ["allowAgentIndicators"]
+    signIn: true
+
+tests:
+  - id: life.research-report
+    name: "AI TEST research report: create, update with revision guard, show, delete"
+    category: workflow
+    tags: ["research"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: create
+        type: research.create
+        params: {"title": "AI TEST report {{run.id}}", "html": "<h1>AI TEST</h1><p>automated report - safe to delete</p>"}
+        idempotencyKey: "ai-test-{{run.id}}-research-create-researchreport"
+    execute:
+      type: research.update
+      params: {"id": "{{steps.create.data.id}}", "expectedRevision": "{{steps.create.data.revision}}", "title": "AI TEST report v2 {{run.id}}", "html": "<h1>AI TEST</h1><p>v2</p>"}
+      idempotencyKey: "ai-test-{{run.id}}-research-update-researchreport"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.id
+          equals: "{{steps.create.data.id}}"
+        - path: data.revision
+          equals: 2
+        - path: data.title
+          equals: "AI TEST report v2 {{run.id}}"
+        - path: data.persisted
+          equals: true
+      state:
+        - label: "stored HTML is the replacement"
+          type: research.get
+          params: {"id": "{{steps.create.data.id}}"}
+          assertions:
+          - path: data.html
+            equals: "<h1>AI TEST</h1><p>v2</p>"
+          - path: data.revision
+            equals: 2
+        - label: "stale revision is rejected"
+          type: research.update
+          params: {"id": "{{steps.create.data.id}}", "expectedRevision": 1, "title": "AI TEST stale", "html": "<p>x</p>"}
+          idempotencyKey: "ai-test-{{run.id}}-research-stale-researchreport"
+          assertions:
+          - path: status
+            equals: "error"
+          - path: code
+            oneOf: ["REVISION_CONFLICT", "INVALID_PARAMS"]
+        - label: "show selects the report"
+          type: research.show
+          params: {"id": "{{steps.create.data.id}}"}
+          assertions:
+          - path: data.selectedId
+            equals: "{{steps.create.data.id}}"
+        - label: "listed exactly once"
+          type: research.list
+          params: {}
+          assertions:
+          - path: data.reports
+            contains: {"id": "{{steps.create.data.id}}"}
+    teardown:
+      - id: delete
+        type: research.delete
+        params: {"id": "{{steps.create.data.id}}", "expectedRevision": "{{steps.execute.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-research-delete-researchreport"
+      - id: restoreSidebar
+        type: workspace.openSidebar
+        params: {"panel": "{{steps.sidebarBefore.data.sidebar.panel}}", "expanded": "{{steps.sidebarBefore.data.sidebar.expanded}}"}
+      - id: sidebarRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.sidebar.panel", "equals": "{{steps.sidebarBefore.data.sidebar.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.research-create-invalid
+    name: "Research create rejects an empty title"
+    category: contract
+    tags: ["research", "errors"]
+    execute:
+      type: research.create
+      params: {"title": "", "html": "<p>x</p>"}
+      idempotencyKey: "ai-test-{{run.id}}-research-bad-researchcreateinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.research-delete-unknown
+    name: "Deleting an unknown report fails"
+    category: contract
+    tags: ["research", "errors"]
+    execute:
+      type: research.delete
+      params: {"id": "ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-research-del-missing-researchdeleteunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.research-show-unknown
+    name: "Showing an unknown report fails"
+    category: contract
+    tags: ["research", "errors"]
+    execute:
+      type: research.show
+      params: {"id": "ai-test-missing"}
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.python-source-history
+    name: "AI TEST Python source: save, revise, list history, restore revision 1, delete"
+    category: workflow
+    tags: ["python"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: save
+        type: pythonIndicators.save
+        params: {"title": "AI TEST py {{run.id}}", "source": "def calculate(bars, params):\n    return {\"title\": \"AI TEST close\", \"overlay\": True, \"plots\": [{\"id\": \"close\", \"title\": \"Close\", \"color\": \"#22c55e\", \"values\": [bar[\"close\"] for bar in bars]}]}\n"}
+        idempotencyKey: "ai-test-{{run.id}}-py-save-pythonsourcehistory"
+      - id: save2
+        type: pythonIndicators.save
+        params: {"title": "AI TEST py {{run.id}}", "source": "def calculate(bars, params):\n    return {\"title\": \"AI TEST close\", \"overlay\": True, \"plots\": [{\"id\": \"close\", \"title\": \"Close\", \"color\": \"#22c55e\", \"values\": [bar[\"close\"] for bar in bars]}]}\n# v2\n", "id": "{{steps.save.data.id}}", "expectedRevision": "{{steps.save.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-py-save2-pythonsourcehistory"
+    execute:
+      type: pythonIndicators.restore
+      params: {"id": "{{steps.save.data.id}}", "revision": 1, "expectedRevision": "{{steps.save2.data.revision}}"}
+      idempotencyKey: "ai-test-{{run.id}}-py-restore-pythonsourcehistory"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.id
+          equals: "{{steps.save.data.id}}"
+        - path: data.revision
+          equals: 3
+        - path: data.executed
+          equals: false
+        - path: data.persisted
+          equals: true
+      state:
+        - label: "history lists three newest-first revisions"
+          type: pythonIndicators.history
+          params: {"id": "{{steps.save.data.id}}"}
+          assertions:
+          - path: data.versions.length
+            equals: 3
+          - path: data.versions.0.revision
+            equals: 3
+        - label: "restored source is revision 1 text"
+          type: pythonIndicators.get
+          params: {"id": "{{steps.save.data.id}}"}
+          assertions:
+          - path: data.source
+            equals: "def calculate(bars, params):\n    return {\"title\": \"AI TEST close\", \"overlay\": True, \"plots\": [{\"id\": \"close\", \"title\": \"Close\", \"color\": \"#22c55e\", \"values\": [bar[\"close\"] for bar in bars]}]}\n"
+          - path: data.revision
+            equals: 3
+    teardown:
+      - id: delete
+        type: pythonIndicators.delete
+        params: {"id": "{{steps.save.data.id}}", "expectedRevision": "{{steps.execute.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-py-delete-pythonsourcehistory"
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.python-save-invalid
+    name: "Saving empty Python source is rejected"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.save
+      params: {"title": "AI TEST empty", "source": ""}
+      idempotencyKey: "ai-test-{{run.id}}-py-save-bad-pythonsaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.python-delete-unknown
+    name: "Deleting an unknown Python source fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.delete
+      params: {"id": "ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-py-del-missing-pythondeleteunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.python-restore-unknown
+    name: "Restoring an unknown Python source fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.restore
+      params: {"id": "ai-test-missing", "revision": 1, "expectedRevision": 2}
+      idempotencyKey: "ai-test-{{run.id}}-py-restore-missing-pythonrestoreunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.python-visibility
+    name: "Applied AI TEST Python instance hides and the chart instance reflects it"
+    category: state
+    tags: ["python", "chart"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: apply
+        type: pythonIndicators.apply
+        params: {"source": "def calculate(bars, params):\n    return {\"title\": \"AI TEST close\", \"overlay\": True, \"plots\": [{\"id\": \"close\", \"title\": \"Close\", \"color\": \"#22c55e\", \"values\": [bar[\"close\"] for bar in bars]}]}\n"}
+        idempotencyKey: "ai-test-{{run.id}}-py-apply-pythonvisibility"
+    execute:
+      type: pythonIndicators.setVisibility
+      params: {"instanceId": "{{steps.apply.data.instanceId}}", "visible": false}
+      idempotencyKey: "ai-test-{{run.id}}-py-hide-pythonvisibility"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.visible
+          equals: false
+        - path: data.instanceId
+          equals: "{{steps.apply.data.instanceId}}"
+      state:
+        - label: "applied list reports the hidden instance"
+          type: pythonIndicators.applied
+          params: {}
+          assertions:
+          - path: data.indicators
+            contains: {"instanceId": "{{steps.apply.data.instanceId}}", "visible": false}
+    teardown:
+      - id: remove
+        type: pythonIndicators.remove
+        params: {"instanceId": "{{steps.apply.data.instanceId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-py-remove-pythonvisibility"
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.python-settings-roundtrip
+    name: "Unchanged Python style snapshot round-trips without executing Python"
+    category: state
+    tags: ["python", "chart"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+      - id: apply
+        type: pythonIndicators.apply
+        params: {"source": "def calculate(bars, params):\n    return {\"title\": \"AI TEST close\", \"overlay\": True, \"plots\": [{\"id\": \"close\", \"title\": \"Close\", \"color\": \"#22c55e\", \"values\": [bar[\"close\"] for bar in bars]}]}\n"}
+        idempotencyKey: "ai-test-{{run.id}}-py-apply-pythonsettingsroundtrip"
+      - id: gs
+        kind: poll
+        type: pythonIndicators.getSettings
+        params: {"instanceId": "{{steps.apply.data.instanceId}}"}
+        until: {"path": "status", "equals": "ok"}
+        intervalMs: 1000
+        timeoutMs: 15000
+    execute:
+      type: pythonIndicators.setSettings
+      params: {"instanceId": "{{steps.apply.data.instanceId}}", "settings": "{{steps.gs.data}}", "expected": "{{steps.gs.data}}"}
+      idempotencyKey: "ai-test-{{run.id}}-py-settings-pythonsettingsroundtrip"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.plots.0.id
+          equals: "close"
+        - path: data.visible
+          equals: true
+      state:
+        - label: "settings unchanged"
+          type: pythonIndicators.getSettings
+          params: {"instanceId": "{{steps.apply.data.instanceId}}"}
+          assertions:
+          - path: data
+            equals: "{{steps.gs.data}}"
+    teardown:
+      - id: remove
+        type: pythonIndicators.remove
+        params: {"instanceId": "{{steps.apply.data.instanceId}}"}
+        idempotencyKey: "ai-test-{{run.id}}-py-remove-pythonsettingsroundtrip"
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.python-settings-stale
+    name: "setSettings with a mismatched expected snapshot fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.setSettings
+      params: {"instanceId": "ai-test-missing", "settings": {"alias": "x", "visible": true, "plots": []}, "expected": {"alias": "", "visible": true, "plots": []}}
+      idempotencyKey: "ai-test-{{run.id}}-py-settings-missing-pythonsettingsstale"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: life.python-remove-unknown
+    name: "pythonIndicators.remove on an unknown instance fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.remove
+      params: {"instanceId": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-py-remove-missing-pythonremoveunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: life.python-setvisibility-unknown
+    name: "pythonIndicators.setVisibility on an unknown instance fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.setVisibility
+      params: {"instanceId": "ai-test-missing", "visible": false}
+      idempotencyKey: "ai-test-{{run.id}}-py-setvisibility-missing-pythonsetvisibilityunkno"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: life.python-showsettings-unknown
+    name: "pythonIndicators.showSettings on an unknown instance fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.showSettings
+      params: {"instanceId": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-py-showsettings-missing-pythonshowsettingsunknow"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: life.python-showinputs-unknown
+    name: "pythonIndicators.showInputs on an unknown instance fails"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.showInputs
+      params: {"instanceId": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-py-showinputs-missing-pythonshowinputsunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PYTHON_INDICATOR_NOT_FOUND"
+
+  - id: life.python-apply-empty
+    name: "Applying empty Python source is rejected"
+    category: contract
+    tags: ["python", "errors"]
+    execute:
+      type: pythonIndicators.apply
+      params: {"source": ""}
+      idempotencyKey: "ai-test-{{run.id}}-py-apply-bad-pythonapplyempty"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.native-study
+    name: "AI TEST native RSI: apply with inputs, hide by exact entity, remove"
+    category: state
+    tags: ["indicators", "chart"]
+    setup:
+      - id: apply
+        type: studies.apply
+        params: {"name": "Relative Strength Index", "inputs": {"length": 21}}
+        idempotencyKey: "ai-test-{{run.id}}-study-apply-nativestudy"
+    execute:
+      type: studies.setVisibility
+      params: {"entityId": "{{steps.apply.data.entityId}}", "name": "Relative Strength Index", "expectedVisible": true, "visible": false}
+      idempotencyKey: "ai-test-{{run.id}}-study-hide-nativestudy"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.entityId
+          equals: "{{steps.apply.data.entityId}}"
+        - path: data.visible
+          equals: false
+      state:
+        - label: "applied list shows the hidden study"
+          type: studies.applied
+          params: {"limit": 50}
+          assertions:
+          - path: data.studies
+            contains: {"entityId": "{{steps.apply.data.entityId}}", "visible": false}
+    teardown:
+      - id: remove
+        type: studies.remove
+        params: {"entityId": "{{steps.apply.data.entityId}}", "name": "Relative Strength Index", "expectedVisible": false}
+        idempotencyKey: "ai-test-{{run.id}}-study-remove-nativestudy"
+
+  - id: life.native-study-unknown
+    name: "Applying an unknown native study fails"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: studies.apply
+      params: {"name": "AI TEST no such study"}
+      idempotencyKey: "ai-test-{{run.id}}-study-apply-bad-nativestudyunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "NATIVE_STUDY_NOT_FOUND"
+
+  - id: life.native-study-vis-unknown
+    name: "Changing visibility of an unknown study fails"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: studies.setVisibility
+      params: {"entityId": "ai-test-missing", "name": "Relative Strength Index", "expectedVisible": true, "visible": false}
+      idempotencyKey: "ai-test-{{run.id}}-study-vis-bad-nativestudyvisunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "NATIVE_STUDY_NOT_FOUND"
+
+  - id: life.native-study-remove-unknown
+    name: "Removing an unknown study fails"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: studies.remove
+      params: {"entityId": "ai-test-missing", "name": "Relative Strength Index", "expectedVisible": true}
+      idempotencyKey: "ai-test-{{run.id}}-study-rm-bad-nativestudyremoveunknown"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "NATIVE_STUDY_NOT_FOUND"
+
+  - id: life.study-templates-list
+    name: "Study templates list is bounded"
+    category: contract
+    tags: ["indicators"]
+    execute:
+      kind: poll
+      type: studyTemplates.manage
+      params: {"action": "list", "limit": 5}
+      idempotencyKey: "ai-test-{{run.id}}-tpl-list-studytemplateslist"
+      until: {"path": "status", "equals": "ok"}
+      intervalMs: 1000
+      timeoutMs: 30000
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.items
+          type: "array"
+        - path: data.items.length
+          lte: 5
+        - path: data.total
+          gte: 0
+        - path: data.truncated
+          type: "boolean"
+
+  - id: life.study-templates-apply-unconfirmed
+    name: "Applying a study template without confirm is rejected"
+    category: contract
+    tags: ["indicators", "errors"]
+    execute:
+      type: studyTemplates.manage
+      params: {"action": "apply", "name": "AI TEST missing"}
+      idempotencyKey: "ai-test-{{run.id}}-tpl-apply-bad-studytemplatesapplyuncon"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.pine-openeditor-invalid
+    name: "indicators.openEditor with an unknown target or invalid input fails and leaves the bottom panel unchanged"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: indicators.openEditor
+      params: {"id": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-pine-openeditor-bad-pineopeneditorinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INDICATOR_NOT_FOUND"
+      state:
+        - label: "bottom panel is unchanged"
+          kind: poll
+          type: workspace.getState
+          params: {}
+          until: {"path": "data.panels.bottom", "equals": "{{steps.sidebarBefore.data.panels.bottom}}"}
+          intervalMs: 500
+          timeoutMs: 5000
+          assertions:
+          - path: data.panels.indicatorStudio.visible
+            equals: "{{steps.sidebarBefore.data.panels.indicatorStudio.visible}}"
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.pine-applypurchased-invalid
+    name: "indicators.applyPurchased with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.applyPurchased
+      params: {"shareId": ""}
+      idempotencyKey: "ai-test-{{run.id}}-pine-applypurchased-bad-pineapplypurchasedinvali"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.pine-publishpaid-invalid
+    name: "indicators.publishPaid with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.publishPaid
+      params: {"id": "ai-test-missing", "expectedRevision": 1, "amountMinor": 0, "termDays": 30, "visibility": "link"}
+      idempotencyKey: "ai-test-{{run.id}}-pine-publishpaid-bad-pinepublishpaidinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.pine-save-invalid
+    name: "indicators.save with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.save
+      params: {"source": ""}
+      idempotencyKey: "ai-test-{{run.id}}-pine-save-bad-pinesaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.pine-opendraft-invalid
+    name: "indicators.openDraft with an unknown target or invalid input fails and leaves the bottom panel unchanged"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    setup:
+      - id: sidebarBefore
+        type: workspace.getState
+        params: {}
+    execute:
+      type: indicators.openDraft
+      params: {"source": "   "}
+      idempotencyKey: "ai-test-{{run.id}}-pine-opendraft-bad-pineopendraftinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+      state:
+        - label: "bottom panel is unchanged"
+          kind: poll
+          type: workspace.getState
+          params: {}
+          until: {"path": "data.panels.bottom", "equals": "{{steps.sidebarBefore.data.panels.bottom}}"}
+          intervalMs: 500
+          timeoutMs: 5000
+          assertions:
+          - path: data.panels.indicatorStudio.visible
+            equals: "{{steps.sidebarBefore.data.panels.indicatorStudio.visible}}"
+    teardown:
+      - id: restoreBottom
+        type: workspace.setPanel
+        params: {"panel": "{{steps.sidebarBefore.data.panels.bottom.panel}}", "expanded": "{{steps.sidebarBefore.data.panels.bottom.expanded}}"}
+      - id: bottomRestored
+        kind: poll
+        type: workspace.getState
+        params: {}
+        until: {"path": "data.panels.bottom.panel", "equals": "{{steps.sidebarBefore.data.panels.bottom.panel}}"}
+        intervalMs: 500
+        timeoutMs: 10000
+
+  - id: life.pine-delete-invalid
+    name: "indicators.delete with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.delete
+      params: {"id": "ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-pine-delete-bad-pinedeleteinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "REVISION_CONFLICT"
+
+  - id: life.pine-update-invalid
+    name: "indicators.update with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.update
+      params: {"instanceId": "ai-test-missing", "source": "//@version=5\nindicator(\"x\")\nplot(close)"}
+      idempotencyKey: "ai-test-{{run.id}}-pine-update-bad-pineupdateinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: life.pine-setvisibility-invalid
+    name: "indicators.setVisibility with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.setVisibility
+      params: {"instanceId": "ai-test-missing", "visible": false}
+      idempotencyKey: "ai-test-{{run.id}}-pine-setvisibility-bad-pinesetvisibilityinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: life.pine-showsettings-invalid
+    name: "indicators.showSettings with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.showSettings
+      params: {"instanceId": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-pine-showsettings-bad-pineshowsettingsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: life.pine-showinputs-invalid
+    name: "indicators.showInputs with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.showInputs
+      params: {"instanceId": "ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-pine-showinputs-bad-pineshowinputsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: life.pine-setsettings-invalid
+    name: "indicators.setSettings with an unknown target or invalid input fails"
+    category: contract
+    tags: ["indicators", "pine", "errors"]
+    execute:
+      type: indicators.setSettings
+      params: {"instanceId": "ai-test-missing", "settings": {}, "expected": {}}
+      idempotencyKey: "ai-test-{{run.id}}-pine-setsettings-bad-pinesetsettingsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "PINE_INDICATOR_NOT_FOUND"
+
+  - id: life.pine-retry-restores
+    name: "Retrying Pine restores is safe and reports chart readiness"
+    category: contract
+    tags: ["indicators", "pine"]
+    execute:
+      type: indicators.retryRestores
+      params: {}
+      idempotencyKey: "ai-test-{{run.id}}-pine-retry-pineretryrestores"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.retryRequested
+          equals: true
+        - path: data.chart
+          exists: true
+
+  - id: life.chart-options-same
+    name: "Re-saving the current backtest visibility leaves options unchanged"
+    category: state
+    tags: ["backtesting"]
+    setup:
+      - id: co
+        type: backtesting.getChartOptions
+        params: {}
+    execute:
+      type: backtesting.setChartOptions
+      params: {"options": {"visible": "{{steps.co.data.options.visible}}"}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-options-chartoptionssame"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.options.visible
+          equals: "{{steps.co.data.options.visible}}"
+        - path: data.options.scope
+          equals: "{{steps.co.data.options.scope}}"
+      state:
+        - label: "options re-read equal"
+          type: backtesting.getChartOptions
+          params: {}
+          assertions:
+          - path: data.options
+            equals: "{{steps.co.data.options}}"
+
+  - id: life.chart-options-invalid
+    name: "Chart options reject a non-boolean markers value"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.setChartOptions
+      params: {"options": {"markers": "x"}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-options-bad-chartoptionsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.backtest-library
+    name: "AI TEST backtest: export, save to library, update metadata, export saved copy, then delete both"
+    category: workflow
+    tags: ["backtesting", "library", "slow"]
+    setup:
+      - id: history
+        type: backtesting.list
+        params: {"offset": 0, "limit": 5}
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST SMA cross\", overlay=true, initial_capital=100000)\nfastLen = input.int(10, \"Fast\", minval=2)\nslowLen = input.int(30, \"Slow\", minval=3)\nfast = ta.sma(close, fastLen)\nslow = ta.sma(close, slowLen)\nif ta.crossover(fast, slow)\n    strategy.entry(\"Long\", strategy.long)\nif ta.crossunder(fast, slow)\n    strategy.close(\"Long\")\n", "bars": 300, "range": null, "versionSuffix": "AI TEST {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-run-backtestlibrary"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+        until: {"path": "data.status", "oneOf": ["completed", "failed", "cancelled", "interrupted"]}
+        intervalMs: 2000
+        timeoutMs: 180000
+      - id: export
+        type: backtesting.export
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.done.data.revision}}"}
+      - id: save
+        type: backtesting.librarySave
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.done.data.revision}}", "expectedLibraryRevision": 0}
+        idempotencyKey: "ai-test-{{run.id}}-bt-lib-save-backtestlibrary"
+    execute:
+      type: backtesting.libraryUpdate
+      params: {"runId": "{{steps.run.data.runId}}", "expectedLibraryRevision": "{{steps.save.data.libraryRevision}}", "metadata": {"name": "AI TEST lib {{run.id}}", "notes": "automated - safe to delete", "tags": ["ai-test"]}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-lib-update-backtestlibrary"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.runId
+          equals: "{{steps.run.data.runId}}"
+        - path: data.libraryRevision
+          equals: 2
+        - path: data.bytes
+          gt: 0
+      state:
+        - label: "saved copy exports the same run"
+          type: backtesting.libraryExport
+          params: {"runId": "{{steps.run.data.runId}}"}
+          assertions:
+          - path: data.libraryRevision
+            equals: 2
+          - path: data.summary.runId
+            equals: "{{steps.run.data.runId}}"
+          - path: data.bytes
+            gt: 0
+        - label: "library lists the saved run"
+          type: backtesting.libraryList
+          params: {"limit": 25}
+          assertions:
+          - path: data.rows
+            contains: {"runId": "{{steps.run.data.runId}}", "libraryRevision": 2}
+        - label: "restoring an already-active run is refused"
+          type: backtesting.libraryRestore
+          params: {"runId": "{{steps.run.data.runId}}", "expectedLibraryRevision": 2}
+          idempotencyKey: "ai-test-{{run.id}}-bt-lib-restore-backtestlibrary"
+          assertions:
+          - path: status
+            equals: "error"
+          - path: code
+            equals: "REVISION_CONFLICT"
+        - label: "optimization preview counts candidates without running"
+          type: backtesting.researchPreview
+          params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.done.data.revision}}", "mode": "sweep", "grid": {"fastLen": [5, 10], "slowLen": [30]}}
+          assertions:
+          - path: data.total
+            equals: 2
+          - path: data.candidates.length
+            equals: 2
+    teardown:
+      - id: libDelete
+        type: backtesting.libraryDelete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedLibraryRevision": "{{steps.execute.data.libraryRevision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-lib-delete-backtestlibrary"
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: deleteRun
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-delete-backtestlibrary"
+
+  - id: life.backtest-export
+    name: "Active run export pages bounded JSON text"
+    category: contract
+    tags: ["backtesting", "slow"]
+    setup:
+      - id: history
+        type: backtesting.list
+        params: {"offset": 0, "limit": 5}
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST SMA cross\", overlay=true, initial_capital=100000)\nfastLen = input.int(10, \"Fast\", minval=2)\nslowLen = input.int(30, \"Slow\", minval=3)\nfast = ta.sma(close, fastLen)\nslow = ta.sma(close, slowLen)\nif ta.crossover(fast, slow)\n    strategy.entry(\"Long\", strategy.long)\nif ta.crossunder(fast, slow)\n    strategy.close(\"Long\")\n", "bars": 300, "range": null, "versionSuffix": "AI TEST {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-run-backtestexport"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+        until: {"path": "data.status", "oneOf": ["completed", "failed", "cancelled", "interrupted"]}
+        intervalMs: 2000
+        timeoutMs: 180000
+    execute:
+      type: backtesting.export
+      params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.done.data.revision}}", "offset": 0}
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.runId
+          equals: "{{steps.run.data.runId}}"
+        - path: data.format
+          equals: "tradinglead-simulation-v1"
+        - path: data.total
+          gt: 0
+        - path: data.text
+          type: "string"
+    teardown:
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: deleteRun
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-delete-backtestexport"
+
+  - id: life.backtest-measure
+    name: "Optimization measurement times one candidate without writing results"
+    category: contract
+    tags: ["backtesting", "optimization", "slow"]
+    setup:
+      - id: history
+        type: backtesting.list
+        params: {"offset": 0, "limit": 5}
+      - id: run
+        type: backtesting.run
+        params: {"language": "pine", "source": "//@version=5\nstrategy(\"AI TEST SMA cross\", overlay=true, initial_capital=100000)\nfastLen = input.int(10, \"Fast\", minval=2)\nslowLen = input.int(30, \"Slow\", minval=3)\nfast = ta.sma(close, fastLen)\nslow = ta.sma(close, slowLen)\nif ta.crossover(fast, slow)\n    strategy.entry(\"Long\", strategy.long)\nif ta.crossunder(fast, slow)\n    strategy.close(\"Long\")\n", "bars": 300, "range": null, "versionSuffix": "AI TEST {{run.id}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-run-backtestmeasure"
+      - id: done
+        kind: poll
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+        until: {"path": "data.status", "oneOf": ["completed", "failed", "cancelled", "interrupted"]}
+        intervalMs: 2000
+        timeoutMs: 180000
+    execute:
+      type: backtesting.researchMeasure
+      params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.done.data.revision}}", "mode": "sweep", "grid": {"fastLen": [5, 10], "slowLen": [30]}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-measure-backtestmeasure"
+    assert:
+      response:
+        - path: status
+          equals: "ok"
+        - path: data.status
+          oneOf: ["running", "completed"]
+        - path: data.sourceRevision
+          equals: "{{steps.done.data.revision}}"
+        - path: data.cost
+          type: "string"
+      state:
+        - label: "measurement finishes"
+          kind: poll
+          type: backtesting.get
+          params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+          until: {"path": "data.researchMeasurement.status", "oneOf": ["completed", "failed", "cancelled"]}
+          intervalMs: 2000
+          timeoutMs: 120000
+          assertions:
+          - path: data.researchMeasurement.status
+            equals: "completed"
+    teardown:
+      - id: latest
+        type: backtesting.get
+        params: {"runId": "{{steps.run.data.runId}}", "limit": 1}
+      - id: deleteRun
+        type: backtesting.delete
+        params: {"runId": "{{steps.run.data.runId}}", "expectedRevision": "{{steps.latest.data.revision}}"}
+        idempotencyKey: "ai-test-{{run.id}}-bt-delete-backtestmeasure"
+
+  - id: life.bt-practice-invalid
+    name: "backtesting.practice with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.practice
+      params: {"config": "ai-test-invalid"}
+      idempotencyKey: "ai-test-{{run.id}}-bt-practice-bad-btpracticeinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_SIMULATION"
+
+  - id: life.bt-replay-invalid
+    name: "backtesting.replay with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.replay
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-bt-replay-bad-btreplayinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-forward-invalid
+    name: "backtesting.forward with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.forward
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-bt-forward-bad-btforwardinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-pause-invalid
+    name: "backtesting.pause with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.pause
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-pause-bad-btpauseinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-resume-invalid
+    name: "backtesting.resume with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.resume
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-resume-bad-btresumeinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-step-invalid
+    name: "backtesting.step with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.step
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-step-bad-btstepinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-back-invalid
+    name: "backtesting.back with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.back
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-back-bad-btbackinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-order-invalid
+    name: "backtesting.order with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.order
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "order": {"side": "buy", "type": "market", "quantity": 1}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-order-bad-btorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-cancelorder-invalid
+    name: "backtesting.cancelOrder with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.cancelOrder
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-cancelorder-bad-btcancelorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-replaceorder-invalid
+    name: "backtesting.replaceOrder with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.replaceOrder
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-replaceorder-bad-btreplaceorderinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-protect-invalid
+    name: "backtesting.protect with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.protect
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "protection": {"stopLoss": 1}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-protect-bad-btprotectinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-close-invalid
+    name: "backtesting.close with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.close
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-close-bad-btcloseinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-showsettings-invalid
+    name: "backtesting.showSettings with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.showSettings
+      params: {"runId": "sim-ai-test-missing"}
+      idempotencyKey: "ai-test-{{run.id}}-bt-showsettings-bad-btshowsettingsinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-research-invalid
+    name: "backtesting.research with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.research
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "sweep", "grid": {"fastLen": [5, 10]}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-research-bad-btresearchinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-optimizemeasure-invalid
+    name: "backtesting.optimizeMeasure with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.optimizeMeasure
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "mode": "sweep", "grid": {"fastLen": [5, 10]}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-optimizemeasure-bad-btoptimizemeasureinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-researchrerun-invalid
+    name: "backtesting.researchRerun with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.researchRerun
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "researchId": "x", "candidate": 1, "confirmed": true}
+      idempotencyKey: "ai-test-{{run.id}}-bt-researchrerun-bad-btresearchreruninvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-optimizererun-invalid
+    name: "backtesting.optimizeRerun with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.optimizeRerun
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "researchId": "x", "candidate": 1, "confirmed": true}
+      idempotencyKey: "ai-test-{{run.id}}-bt-optimizererun-bad-btoptimizereruninvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-librarysave-invalid
+    name: "backtesting.librarySave with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.librarySave
+      params: {"runId": "sim-ai-test-missing", "expectedRevision": 1, "expectedLibraryRevision": 0}
+      idempotencyKey: "ai-test-{{run.id}}-bt-librarysave-bad-btlibrarysaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "SIMULATION_NOT_FOUND"
+
+  - id: life.bt-libraryupdate-invalid
+    name: "backtesting.libraryUpdate with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryUpdate
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1, "metadata": {"name": "x"}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-libraryupdate-bad-btlibraryupdateinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: life.bt-librarydelete-invalid
+    name: "backtesting.libraryDelete with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryDelete
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-librarydelete-bad-btlibrarydeleteinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: life.bt-libraryrestore-invalid
+    name: "backtesting.libraryRestore with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryRestore
+      params: {"runId": "sim-ai-test-missing", "expectedLibraryRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-libraryrestore-bad-btlibraryrestoreinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "BACKTEST_LIBRARY_NOT_FOUND"
+
+  - id: life.bt-libraryimport-invalid
+    name: "backtesting.libraryImport with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.libraryImport
+      params: {"run": {}, "summary": {}}
+      idempotencyKey: "ai-test-{{run.id}}-bt-libraryimport-bad-btlibraryimportinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-presetdelete-invalid
+    name: "backtesting.presetDelete with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.presetDelete
+      params: {"id": "ai-test-missing", "expectedRevision": 1}
+      idempotencyKey: "ai-test-{{run.id}}-bt-presetdelete-bad-btpresetdeleteinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-presetsave-invalid
+    name: "backtesting.presetSave with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.presetSave
+      params: {"name": ""}
+      idempotencyKey: "ai-test-{{run.id}}-bt-presetsave-bad-btpresetsaveinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-applystrategy-invalid
+    name: "backtesting.applyStrategy with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.applyStrategy
+      params: {"language": "pine", "source": ""}
+      idempotencyKey: "ai-test-{{run.id}}-bt-applystrategy-bad-btapplystrategyinvalid"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"
+
+  - id: life.bt-setstrategyautorerun-invalid
+    name: "backtesting.setStrategyAutoRerun with an unknown run or invalid input fails without side effects"
+    category: contract
+    tags: ["backtesting", "errors"]
+    execute:
+      type: backtesting.setStrategyAutoRerun
+      params: {"enabled": "x"}
+      idempotencyKey: "ai-test-{{run.id}}-bt-setstrategyautorerun-bad-btsetstrategyautorerunin"
+    assert:
+      response:
+        - path: status
+          equals: "error"
+        - path: code
+          equals: "INVALID_PARAMS"

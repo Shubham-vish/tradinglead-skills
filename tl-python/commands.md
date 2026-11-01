@@ -1,6 +1,6 @@
 # tl-python command reference
 
-Source-only snapshot from an isolated frontend registry; installed Desktop was not ready. Rediscover live availability before use.
+Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Use explicit tab targeting and inspect the final JSON status. Do not guess IDs or grant permissions.
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
@@ -10,6 +10,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 Discover automatic isolated Python runtime, readiness, result schema and example. No script approval dialog; unrestricted host execution is not supported.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -18,6 +19,7 @@ Parameters: `{}`.
 Refresh this account's Python source metadata with a device cache and explicit cloud-sync state. No code executes.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -26,6 +28,7 @@ Parameters: `{}`.
 Read saved Python source and parameters. No code executes.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -36,6 +39,7 @@ Retry key: **not required**. External local-assistant access is still required.
 List retained Python revision metadata, without source or execution.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -46,6 +50,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Restore a retained Python revision as a new local revision. No execution. Indicator grant and retry key required.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -59,6 +64,7 @@ Local indicator/backtesting grant required.
 Delete saved Python source/history, not applied chart instances. Indicator grant and retry key required.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -71,6 +77,7 @@ Local indicator/backtesting grant required.
 Save Python source/settings to this account with a device cache, without execution or syntax validation. Returns cloud confirmation or retained-local offline/conflict state. Indicator grant and retry key required. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -89,6 +96,7 @@ Local indicator/backtesting grant required.
 Read Python chart-instance state and provenance without raw result arrays or source.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 Parameters: `{}`.
 
@@ -97,6 +105,7 @@ Parameters: `{}`.
 Execute isolated Python and attach/update native plots. Requires ready isolation, indicator grant and retry key; no script approval dialog. External AI calls show the result in Studio by default. Inspect data.studio: presentation errors do not undo the completed operation.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **code, write, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -115,6 +124,7 @@ Local indicator/backtesting grant required.
 Remove a Python instance, owned drawings and applied-layout snapshot, not saved source. Indicator grant and retry key required.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -127,6 +137,7 @@ Local indicator/backtesting grant required.
 Show/hide an applied Python study and its owned drawings without running Python.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -140,6 +151,7 @@ Local indicator/backtesting grant required.
 Open managed Python settings with actual plot names, colors, styles and visibility. Opening or applying styles does not run Python; Inputs explicitly recalculates.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -152,6 +164,7 @@ Local indicator/backtesting grant required.
 Open typed Python calculation inputs. Opening never executes code; the user must explicitly Apply & recalculate.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
@@ -164,6 +177,7 @@ Local indicator/backtesting grant required.
 Validate Python syntax with the editor's isolated AST checker. Does not execute imports, fetch candles, save source or certify strategy correctness. Unavailable runtime is an error, not a valid result.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **code**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -174,6 +188,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Read named applied plot settings without source or execution. Keep the current (not defaults) snapshot for setSettings.expected.
 
 Retry key: **not required**. External local-assistant access is still required.
+Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
@@ -186,6 +201,7 @@ Retry key: **not required**. External local-assistant access is still required.
 Apply named appearance without executing source. Requires unchanged expected snapshot, indicator grant and retry key. Re-read settings after a conflict; no saved-source or backtest changes.
 
 Retry key: **required**. External local-assistant access is still required.
+Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 Local indicator/backtesting grant required.
 
 | Parameter | Contract |
