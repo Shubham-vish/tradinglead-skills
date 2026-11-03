@@ -1,6 +1,6 @@
 ---
 name: tl-paper-trading
-description: Use TradingLead's manual replay practice, backtest-derived replay and forward paper sessions: simulated orders, protection, partial closes and pause/resume. Not strategy research, simulator development, standalone chart playback or live broker orders.
+description: "Use TradingLead's manual replay practice, backtest-derived replay and forward paper sessions: simulated orders, protection, partial closes and pause/resume. Not strategy research, simulator development, standalone chart playback or live broker orders."
 ---
 
 # Replay and forward paper execution
