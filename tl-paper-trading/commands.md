@@ -7,7 +7,7 @@ Do not infer grant permissions from `mutates`: Desktop discovery can omit struct
 
 ## `backtesting.practice`
 
-Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture; multi-stock sessions keep one shared interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.
+Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture or backtesting.setInterval; multi-stock sessions keep one shared interval. Adding/switching stocks requires explicit chart confirmation or backtesting.addInstrument. No strategy or real orders.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -129,6 +129,7 @@ Local indicator/backtesting grant required.
 | `expectedRevision` | Current run revision. |
 | `order` | {side:buy\|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?} |
 | `symbol` | Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument). |
+| `alignToNextClose` | Optional boolean (manual replay). When this stock has no candle closing at the shared clock (PAPER_MARKET_CLOSED), first step the shared clock to its next close, then fill there. Rejected unchanged with PAPER_ALIGN_INTERRUPTED if those steps would fill orders or trigger protection; returns aligned:{steps,from,clock}. |
 
 Compatibility alias: `simulation.order`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
@@ -201,6 +202,43 @@ Local indicator/backtesting grant required.
 | `all` | Optional boolean: close every position in this replay account atomically at current closes. Cannot combine with symbol or quantity; stale markets reject the entire request. |
 
 Compatibility alias: `simulation.close`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
+## `backtesting.addInstrument`
+
+Add (or switch to) a stock in a manual practice session, exactly like the chart's Continue replay confirmation: captures that stock's candles up to the shared replay clock on the session's feed/interval, keeps the clock, balance and positions, then shows it on the chart. Same feed and account currency only; up to 10 instruments. Never reveals candles after the clock.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+Local indicator/backtesting grant required.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Manual practice replay ID. |
+| `expectedRevision` | Current run revision. |
+| `symbol` | Instrument ticker on the session's feed. |
+| `feed` | Optional; must equal the session's feed (other feeds are rejected, never switched). |
+
+Compatibility alias: `simulation.addInstrument`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
+## `backtesting.setInterval`
+
+Change a single-stock manual practice session's execution interval, exactly like the guarded native interval recapture: recaptures the same symbol at the new interval up to the replay clock (coarser candles that straddle the clock stay hidden until they close) and carries balance, position and ledger. Multi-stock sessions, pending orders and open positions overlapping the new candle are rejected unchanged.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+Local indicator/backtesting grant required.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Manual practice replay ID. |
+| `expectedRevision` | Current run revision. |
+| `interval` | Chart interval such as 1, 5, 15, 60, 240, 1D/D, 1W/W or 1M/M. |
+
+Compatibility alias: `simulation.setInterval`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
 ## `backtesting.paperPreflight`
 

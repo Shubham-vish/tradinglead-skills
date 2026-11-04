@@ -61,12 +61,33 @@ sessions rebased this way report `analytics: null` with a reason (balance and
 ledger stay valid). Multi-stock sessions keep one fixed interval.
 
 Direct practice can share one balance/clock across up to 10 same-feed/currency
-stocks, with one net position per stock and no FX conversion. **Adding a ticker**
-uses the native Continue replay confirmation, not a public add-instrument
-command. Likewise interval recapture is a guarded native chart transition, not
-an invented `backtesting.setInterval`. `show`/order actions can address an
-already captured `symbol`; they cannot add uncaptured history. Do not automate
-past a pending Continue/Stop/Cancel decision.
+stocks, with one net position per stock and no FX conversion. **Adding a ticker**:
+prefer `backtesting.addInstrument {runId,expectedRevision,symbol,feed?}` (same
+rules as the native Continue replay confirmation; keeps clock/balance and shows
+the stock). **Interval**: `backtesting.setInterval {runId,expectedRevision,interval}`
+mirrors the guarded native recapture (single-stock only; `PAPER_MULTISTOCK_INTERVAL`,
+`PAPER_PENDING_WORK`, `PAPER_INTERVAL_OVERLAP`; unchanged interval returns
+`changed:false`). Both are advertised only to Desktop builds that negotiate the
+compact catalog; confirm they appear in the live capability list, otherwise fall
+back to the native UI. Both require a paused manual practice session that the chart
+currently shows (`SIMULATION_CONTEXT_CHANGED`/`REPLAY_UNAVAILABLE` otherwise);
+addInstrument also rejects `PAPER_CONTEXT_MISMATCH` (other feed),
+`PAPER_INSTRUMENT_LIMIT` (10) and `PAPER_CURRENCY_MISMATCH`, and returns
+`added` plus `chart` (`drawn:false,error` if the chart could not show it). `show`/order actions can address an already captured `symbol`;
+they cannot add uncaptured history. Do not automate past a pending native
+Continue/Stop/Cancel decision **unless** the user explicitly asked to trade
+multiple stocks in this session; then clicking **Continue replay** for that
+stock is allowed. Otherwise ask; never click Stop/Cancel.
+
+A newly added stock (or one rebased to a coarser interval) may have no candle
+closing at the shared clock; market orders are then rejected
+`PAPER_MARKET_CLOSED` (message names the next close). Either `step` first, or
+send the order with `alignToNextClose:true`: the clock steps to that stock's next
+close (shared clock, at most 50 steps) and fills there, reported as
+`aligned:{steps,from,clock}`; it never fills at a stale price. If a fill/event
+happens while aligning it fails `PAPER_ALIGN_INTERRUPTED` with nothing changed.
+The toolbar one-tap Buy/Sell does this automatically. Coarser recapture
+(e.g. 1h→1D) keeps the candle straddling the clock hidden until it closes.
 
 `backtesting.back` with `{runId,expectedRevision}` undoes the last Next/Play
 step **and subsequent actions**, restoring ledger, orders, exposure and balance.
@@ -80,6 +101,20 @@ practice from the saved feed. Inspect `paper.history`, `canStep` and
 `canLoadMore`: waiting/retry is not confirmed exhaustion. Candle windows roll
 at 5,000 while balance, orders and ledger remain; full-history analytics then
 become unavailable. Backtest-derived replay remains frozen.
+The toolbar **Next** pages in later candles exactly like `step` (it pauses
+playback first); if a UI click is still disabled, check `paper.canStep` and use
+the command.
+
+### Native replay toolbar and paper widget (UI input)
+
+- Floating widget buttons (Buy/Sell/P&L/SL/TP/Details) shift and resize after
+  fills when SL/TP appear. `ui-inspect` (or re-screenshot) before **every**
+  click; never reuse coordinates. A reused Buy coordinate has placed a Short.
+  Prefer `order`/`close` commands when exact side matters, and verify with `get`.
+- Playback auto-pauses on order fills and the Play button is a toggle. Prefer
+  `chart.replayControl {action:"play"|"pause"}`: explicit and idempotent
+  (no-op when already in that state; returns `playing`,`changed`), also for
+  paper sessions. If clicking, read `replay.playing` first.
 
 ## Forward paper
 

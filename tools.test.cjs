@@ -64,6 +64,20 @@ test("optimizer commands and aliases belong exactly to strategy optimization", (
 	assert.equal(ownerFor("backtesting.researchPreviewExtra"), "tl-backtesting");
 });
 
+test("native input and recording discovery refreshes references without allowing arbitrary controls", () => {
+	const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "command-catalog.json"), "utf8"));
+	const extended = { ...catalog, desktopActions: [
+		{ action: "ui-drag", description: "Move an inspected target." },
+		{ action: "record-start", description: "Record the selected tab." },
+	] };
+	const documents = references(extended);
+	assert.match(documents.get("tl-desktop/commands.md"), /`ui-drag`/);
+	assert.match(documents.get("tl-desktop/commands.md"), /`record-start`/);
+	assert.throws(() => references({ ...extended, desktopActions: [
+		...extended.desktopActions, { action: "executeScript", description: "Arbitrary code." },
+	] }), /Unknown Desktop control/);
+});
+
 test("workspace UI commands are owned by exactly one domain skill", () => {
 	const owners = {
 		"workspace.openSidebar": "tl-desktop", "workspace.setTheme": "tl-desktop",

@@ -275,6 +275,7 @@ Local indicator/backtesting grant required.
 | `range` | Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period. |
 | `sessionSchedule` | Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles. |
 | `versionSuffix` | Optional short version label appended to the run title (e.g. "aggressive" → "Name - aggressive") so different parameter variants stay distinguishable on the chart legend and in history. |
+| `shareId` | Pine only: accessible shared strategy ID instead of source/saved id. Visible or code-hidden. Access is checked on every run; uses the latest accessible published revision. |
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
 | `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
 
@@ -403,6 +404,7 @@ Local indicator/backtesting grant required.
 | `parameters` | Optional Python JSON parameters. |
 | `title` | Optional display title (defaults to the strategy's own name). |
 | `version` | Optional short version label shown after the name (e.g. "aggressive") so different parameter variants stay distinguishable on the chart legend. |
+| `shareId` | Pine only: accessible shared strategy ID instead of source/saved id. Visible or code-hidden. Access is checked on every run; uses the latest accessible published revision. |
 | `inputs` | Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs. |
 | `pineSettings` | Pine only: explicit overrides {initial_capital,default_qty_type:fixed\|cash\|percent_of_equity,default_qty_value,commission_type:percent\|cash_per_contract\|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added. |
 | `config` | Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings. |

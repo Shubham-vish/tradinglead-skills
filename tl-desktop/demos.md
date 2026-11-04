@@ -29,6 +29,32 @@ storage or tour-seen flags change, and reloading the page clears it.
 Rects use CSS px relative to the app viewport. Multiply by `viewport.dpr` to get
 screenshot pixels. Re-read a rect after any layout change.
 
+## Demo framing checklist
+
+Run before **every** screenshot or recording (native input details are in
+[ui-automation.md](ui-automation.md)):
+
+1. Close open menus (for the interval menu, click the already-selected item).
+2. Hover off the chart, e.g. over the bottom range bar, to hide the crosshair.
+3. Wheel over the chart (`deltaX` pans, `deltaY` zooms; send both) so the
+   latest candle sits about 45-60% across, and trade markers, the position line
+   and P&L label are not under the floating replay toolbar or paper widget.
+4. Collapse panels the shot does not need.
+5. Dismiss or clear stale errors/status text (e.g. an old "No later closed
+   candles found…" message) before shooting.
+6. Call `ui.waitIdle`, take the shot, then **view it** and confirm every key
+   element is visible. Retake if anything important is covered or cropped.
+
+> **Version-dependent:** native `ui-drag` requires Desktop 0.1.12.
+> `replay.setOverlayLayout` (move,
+> hide or collapse the replay toolbar/paper widget), view-only `chart.setView`
+> framing during replay, `demo.prepare` `hideCrosshair`/`hideWarnings`/
+> `tradeLabelScale`, and stable `paper.*`/`replay.*` target ids
+> require the newer hosted frontend; use them only once they appear in the live
+> `commands` list. Until then, use wheel framing;
+> `chart.setView visibleRange` returns `REPLAY_ACTIVE`. Split-layout panes are
+> not replay-synchronized: a second pane can show future candles in a recording.
+
 ## Target ids
 
 | Area | Ids |

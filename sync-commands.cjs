@@ -11,7 +11,7 @@ const MAX_CATALOG_ENTRIES = 256;
 const MAX_CATALOG_ALIASES = 128;
 const MAX_CATALOG_BYTES = 128 * 1024;
 const EFFECTS = new Set(["navigate", "panel", "quota", "code", "write", "network", "ui", "none"]);
-const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "back", "order", "cancelOrder", "replaceOrder", "protect", "close", "paperPreflight", "paperParity"]);
+const paper = new Set(["practice", "replay", "forward", "pause", "resume", "step", "back", "order", "cancelOrder", "replaceOrder", "protect", "close", "paperPreflight", "paperParity", "addInstrument", "setInterval"]);
 const optimization = new Set(["optimize", "optimizePreview", "optimizeMeasure", "optimizeRerun", "optimizeReport", "optimizeReportGet", "optimizeResume", "optimizeChecks", "optimizeValidateSymbols", "research", "researchPreview", "researchMeasure", "researchRerun"]);
 const legacyOptimization = /^backtesting\.research(?:Preview|Measure|Rerun)?$/;
 const canonicalType = type => {
@@ -23,7 +23,7 @@ function ownerFor(type) {
 	const [family, action] = canonical.split(".");
 	if (family === "backtesting") return optimization.has(action) ? "tl-strategy-optimization" : paper.has(action) ? "tl-paper-trading" : "tl-backtesting";
 	const owner = {
-		workspace: "tl-desktop", ui: "tl-desktop", demo: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts", studyTemplates: "tl-charts",
+		workspace: "tl-desktop", ui: "tl-desktop", demo: "tl-desktop", replay: "tl-desktop", chart: "tl-charts", studies: "tl-charts", drawingTemplates: "tl-charts", studyTemplates: "tl-charts",
 		drawings: "tl-charts", layout: "tl-charts", grid: "tl-charts", feeds: "tl-charts",
 		watchlists: "tl-markets", symbol: "tl-markets", peers: "tl-markets", indices: "tl-markets",
 		heatmap: "tl-markets", intelligence: "tl-markets", futures: "tl-markets", universe: "tl-markets",
@@ -65,7 +65,9 @@ function validateCatalog(catalog) {
 		if (type.startsWith("simulation.") && !names.has(type.replace(/^simulation\./, "backtesting."))) throw new Error(`Orphan alias: ${type}`);
 	}
 	for (const action of catalog.desktopActions) {
-		if (!["status", "activate", "open-access", "reconnect", "getOrigin", "setOrigin", "screenshot", "logs", "services", "appInfo"].includes(action.action) || typeof action.description !== "string") {
+		if (!["status", "activate", "open-access", "reconnect", "getOrigin", "setOrigin", "screenshot", "logs", "services", "appInfo",
+			"ui-enable", "ui-disable", "ui-status", "ui-inspect", "ui-click", "ui-hover", "ui-drag", "ui-scroll", "ui-type", "ui-key",
+			"record-start", "record-status", "record-stop"].includes(action.action) || typeof action.description !== "string") {
 			throw new Error("Unknown Desktop control; update the connection skill before refreshing.");
 		}
 	}

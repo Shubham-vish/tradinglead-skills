@@ -44,6 +44,28 @@
         "cliApi": 1,
         "bridgeProtocol": 2
       }
+    },
+    {
+      "revision": 5,
+      "file": "bundle-5.json",
+      "sha256": "87ffb14f3d91471f362c885b608ba53976f845cb2a01944692ea2680ef013afd",
+      "requires": {
+        "minDesktop": "0.1.11",
+        "maxDesktopExclusive": "0.2.0",
+        "cliApi": 1,
+        "bridgeProtocol": 2
+      }
+    },
+    {
+      "revision": 6,
+      "file": "bundle-6.json",
+      "sha256": "acb276780bee26fcce14708a93c6e376ddc4f55e6d32035942cd45266b001c52",
+      "requires": {
+        "minDesktop": "0.1.12",
+        "maxDesktopExclusive": "0.2.0",
+        "cliApi": 1,
+        "bridgeProtocol": 2
+      }
     }
   ]
 }

@@ -4,7 +4,7 @@ Generated from a bounded command-catalog snapshot; check the addressed app's liv
 Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-207 canonical commands; 57 compatibility aliases; 10 native Desktop controls.
+210 canonical commands; 59 compatibility aliases; 23 native Desktop controls.
 
 | Registered command | Skill | Retry key | Effects |
 | --- | --- | --- | --- |
@@ -34,6 +34,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `grid.getState` | [tl-charts](tl-charts/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `grid.configure` | [tl-charts](tl-charts/SKILL.md) | Required | panel, write |
 | `grid.open` | [tl-charts](tl-charts/SKILL.md) | Required | navigate, quota, network, write |
+| `replay.setOverlayLayout` | [tl-desktop](tl-desktop/SKILL.md) | Not required (parameterized writes still require it) | panel |
 | `ui.waitIdle` | [tl-desktop](tl-desktop/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `ui.listTargets` | [tl-desktop](tl-desktop/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `ui.getTargetRect` | [tl-desktop](tl-desktop/SKILL.md) | Not required (parameterized writes still require it) | none |
@@ -117,6 +118,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.replaceOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
 | `backtesting.protect` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
 | `backtesting.close` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
+| `backtesting.addInstrument` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
+| `backtesting.setInterval` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `backtesting.show` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, network, write |
 | `backtesting.removeFromChart` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
 | `backtesting.showSettings` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | panel, write |
@@ -170,6 +173,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.replaceOrder` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
 | `simulation.protect` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
 | `simulation.close` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | write |
+| `simulation.addInstrument` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
+| `simulation.setInterval` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `simulation.show` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, network, write |
 | `simulation.removeFromChart` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
 | `simulation.showSettings` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | panel, write |
@@ -273,6 +278,6 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `pythonIndicators.getSettings` | [tl-python](tl-python/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `pythonIndicators.setSettings` | [tl-python](tl-python/SKILL.md) | Required | write |
 
-Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`.
+Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`, `ui-enable`, `ui-disable`, `ui-status`, `ui-inspect`, `ui-click`, `ui-drag`, `ui-hover`, `ui-scroll`, `ui-type`, `ui-key`, `record-start`, `record-stop`, `record-status`.
 
 Non-mutating in the catalog does not mean cost-free or invisible: scans, navigation, reloads and live-feed requests can still have effects.

@@ -84,7 +84,7 @@
     },
     {
       "type": "symbol.details",
-      "description": "Read bounded mounted company/fundamentals without a write grant; expanded changes require write approval and a retry key. No automatic fetch while collapsed.",
+      "description": "Read bounded mounted company/fundamentals without write access; expanded changes require active account write access and a retry key. No automatic fetch while collapsed.",
       "mutates": false,
       "params": {
         "expanded": "Optional boolean; poll after opening"
@@ -119,7 +119,7 @@
     },
     {
       "type": "indices.getState",
-      "description": "Read index catalog/constituents without a write grant; category selection requires write approval and a retry key and opens its index on chart.",
+      "description": "Read index catalog/constituents without write access; category selection requires active account write access and a retry key and opens its index on chart.",
       "mutates": false,
       "params": {
         "category": "Optional published category ID",
@@ -153,7 +153,7 @@
     },
     {
       "type": "watchlists.multiView",
-      "description": "Read mounted Multi Watchlists without a write grant; panels replacement requires write approval and a retry key.",
+      "description": "Read mounted Multi Watchlists without write access; panels replacement requires active account write access and a retry key.",
       "mutates": false,
       "params": {
         "panels": "Optional array of {type:category|watchlist|flaglist,name}; [] closes all cards"
@@ -177,6 +177,9 @@
       "description": "Set native view; ranges request positioning, not verified history. Symbol/interval: chart.open. Date: guarded navigator.",
       "mutates": true,
       "params": {
+        "rightOffset": "Optional -10000..10000 bars.",
+        "barSpacing": "Optional 0.5..100 CSS px.",
+        "scrollToRealtime": "Optional true: latest revealed bar during replay, never enables live.",
         "chartType": "Optional named chart type.",
         "priceScale": "{mode?:normal|percent|log,autoScale?:boolean}",
         "visibleRange": "{preset:5y|1y|6m|3m|1m|5d|1d} OR {from,to} epoch seconds",
@@ -410,6 +413,18 @@
       ]
     },
     {
+      "type": "replay.setOverlayLayout",
+      "description": "Dock/hide replay overlays in this tab session only. Does not change replay, orders or chart history.",
+      "mutates": false,
+      "params": {
+        "toolbar": "Optional top-left|top-right|bottom-left|bottom-right|hidden",
+        "widget": "Optional same corners|hidden|collapsed"
+      },
+      "effects": [
+        "panel"
+      ]
+    },
+    {
       "type": "ui.waitIdle",
       "description": "Wait until visually settled: chart history/replay/feed discovery done, no busy spinners or finite animations, fonts loaded, 2 stable frames. Returns {idle,waitedMs,pending}; TIMEOUT lists pending.",
       "mutates": false,
@@ -449,6 +464,9 @@
       "description": "Ephemeral presentation mode: hide tours/toasts/banners, optionally freeze clock labels, redact PII, hide cursor. Nothing persisted; no write grant. Returns previous; demo.reset restores.",
       "mutates": false,
       "params": {
+        "hideCrosshair": "Optional boolean; suppress plot hover in presentation mode.",
+        "hideWarnings": "Optional boolean, default true; capacity and transient replay status only.",
+        "tradeLabelScale": "Optional 1..3, default 1; temporary trade label multiplier.",
         "hideTours": "bool, default true",
         "hideToasts": "bool, default true",
         "hideCookieBanner": "bool, default true",
@@ -1041,7 +1059,7 @@
     },
     {
       "type": "backtesting.practice",
-      "description": "Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture; multi-stock sessions keep one shared interval. Switching stocks requires explicit chart confirmation. No strategy or real orders.",
+      "description": "Start manual replay trading from the paused chart cursor. Local-only shared virtual balance and clock, up to 10 same-feed/currency instruments, one net position per instrument. Single-stock execution interval may change through guarded native recapture or backtesting.setInterval; multi-stock sessions keep one shared interval. Adding/switching stocks requires explicit chart confirmation or backtesting.addInstrument. No strategy or real orders.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -1255,6 +1273,7 @@
         "range": "Optional inclusive {from,to} epoch ms, null fetches latest closed source candles up to bars or source exhaustion, omitted uses chart selection. Apply pins this choice for reruns, including symbol/timeframe changes. Zoom never changes the tested period.",
         "sessionSchedule": "Optional user-assumption schedule inherited by paper branches; intraday backtest bars must match pinned hours/grid, including specialSessions. Does not synthesize or filter candles.",
         "versionSuffix": "Optional short version label appended to the run title (e.g. \"aggressive\" → \"Name - aggressive\") so different parameter variants stay distinguishable on the chart legend and in history.",
+        "shareId": "Pine only: accessible shared strategy ID instead of source/saved id. Visible or code-hidden. Access is checked on every run; uses the latest accessible published revision.",
         "inputs": "Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs.",
         "pineSettings": "Pine only: explicit overrides {initial_capital,default_qty_type:fixed|cash|percent_of_equity,default_qty_value,commission_type:percent|cash_per_contract|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added."
       },
@@ -1435,7 +1454,8 @@
         "runId": "Replay/forward ID.",
         "expectedRevision": "Current run revision.",
         "order": "{side:buy|sell,type,quantity,limitPrice?,stopPrice?,stopLoss?,takeProfit?,trailingStopPct?,reduceOnly?}",
-        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument)."
+        "symbol": "Optional captured paper-session instrument; defaults to the displayed instrument (pending orders infer their instrument).",
+        "alignToNextClose": "Optional boolean (manual replay). When this stock has no candle closing at the shared clock (PAPER_MARKET_CLOSED), first step the shared clock to its next close, then fill there. Rejected unchanged with PAPER_ALIGN_INTERRUPTED if those steps would fill orders or trigger protection; returns aligned:{steps,from,clock}."
       },
       "effects": [
         "write"
@@ -1502,6 +1522,43 @@
       "effects": [
         "write"
       ]
+    },
+    {
+      "type": "backtesting.addInstrument",
+      "description": "Add (or switch to) a stock in a manual practice session, exactly like the chart's Continue replay confirmation: captures that stock's candles up to the shared replay clock on the session's feed/interval, keeps the clock, balance and positions, then shows it on the chart. Same feed and account currency only; up to 10 instruments. Never reveals candles after the clock.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Manual practice replay ID.",
+        "expectedRevision": "Current run revision.",
+        "symbol": "Instrument ticker on the session's feed.",
+        "feed": "Optional; must equal the session's feed (other feeds are rejected, never switched)."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "backtesting.setInterval",
+      "description": "Change a single-stock manual practice session's execution interval, exactly like the guarded native interval recapture: recaptures the same symbol at the new interval up to the replay clock (coarser candles that straddle the clock stay hidden until they close) and carries balance, position and ledger. Multi-stock sessions, pending orders and open positions overlapping the new candle are rejected unchanged.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Manual practice replay ID.",
+        "expectedRevision": "Current run revision.",
+        "interval": "Chart interval such as 1, 5, 15, 60, 240, 1D/D, 1W/W or 1M/M."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "backtesting.show",
@@ -1571,6 +1628,7 @@
         "parameters": "Optional Python JSON parameters.",
         "title": "Optional display title (defaults to the strategy's own name).",
         "version": "Optional short version label shown after the name (e.g. \"aggressive\") so different parameter variants stay distinguishable on the chart legend.",
+        "shareId": "Pine only: accessible shared strategy ID instead of source/saved id. Visible or code-hidden. Access is checked on every run; uses the latest accessible published revision.",
         "inputs": "Pine only: typed input values keyed by declared variable ID. Defaults come from the source or saved source inputs.",
         "pineSettings": "Pine only: explicit overrides {initial_capital,default_qty_type:fixed|cash|percent_of_equity,default_qty_value,commission_type:percent|cash_per_contract|cash_per_order,commission_value,slippage:integer ticks,pyramiding:0-100,margin_long:0-100,margin_short:0-100}. Omit to preserve strategy() defaults; no generic brackets or costs are added.",
         "config": "Python only: optional capabilities.config fields. Pine uses its declaration and pineSettings.",
@@ -2099,6 +2157,7 @@
         "range": "See canonical backtesting command.",
         "sessionSchedule": "See canonical backtesting command.",
         "versionSuffix": "See canonical backtesting command.",
+        "shareId": "See canonical backtesting command.",
         "inputs": "See canonical backtesting command.",
         "pineSettings": "See canonical backtesting command."
       },
@@ -2279,7 +2338,8 @@
         "runId": "See canonical backtesting command.",
         "expectedRevision": "See canonical backtesting command.",
         "order": "See canonical backtesting command.",
-        "symbol": "See canonical backtesting command."
+        "symbol": "See canonical backtesting command.",
+        "alignToNextClose": "See canonical backtesting command."
       },
       "effects": [
         "write"
@@ -2346,6 +2406,43 @@
       "effects": [
         "write"
       ]
+    },
+    {
+      "type": "simulation.addInstrument",
+      "description": "Compatibility alias for backtesting.addInstrument. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "symbol": "See canonical backtesting command.",
+        "feed": "See canonical backtesting command."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "simulation.setInterval",
+      "description": "Compatibility alias for backtesting.setInterval. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "interval": "See canonical backtesting command."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "simulation.show",
@@ -2415,6 +2512,7 @@
         "parameters": "See canonical backtesting command.",
         "title": "See canonical backtesting command.",
         "version": "See canonical backtesting command.",
+        "shareId": "See canonical backtesting command.",
         "inputs": "See canonical backtesting command.",
         "pineSettings": "See canonical backtesting command.",
         "config": "See canonical backtesting command.",
@@ -2748,7 +2846,7 @@
     },
     {
       "type": "chart.replayControl",
-      "description": "Control native manual Bar Replay only; select opens the chart's notice and candle picker for user interaction. Other actions require an active native cursor, never paper replay. Requires local write approval and retry key. Inspect chart.getState.replay afterward.",
+      "description": "Control native manual Bar Replay; select opens the chart's notice and candle picker for user interaction. Other actions require an active native cursor. play/pause are idempotent (no-op when already in that state; response has playing and changed) and also drive an open paper session's toolbar playback; other paper actions use backtesting commands. Requires local write approval and retry key. Inspect chart.getState.replay afterward.",
       "mutates": true,
       "params": {
         "action": "select|play|pause|step|speed|end",
@@ -3771,6 +3869,58 @@
     {
       "action": "appInfo",
       "description": "Read app version, Electron, build channel, dev mode, origin, agent protocol and per-tab catalog registration (entries, hash, rejected)."
+    },
+    {
+      "action": "ui-enable",
+      "description": "Start prompt-free UI control on this active chart tab without approval dialogs, floating control windows or a time limit. Stop through ui-disable or Help > Stop AI control and recording. Ordinary unmarked controls are supported; automationScope is informational. Requires local assistant access and an account. Protected controls remain blocked. params: {}. Retry key required."
+    },
+    {
+      "action": "ui-disable",
+      "description": "Revoke UI control and stop recording on this tab. params: {}. Retry key required."
+    },
+    {
+      "action": "ui-status",
+      "description": "Read UI-control state for this explicit tab. expiresAt is null; control has no time limit."
+    },
+    {
+      "action": "ui-inspect",
+      "description": "List up to 200 visible non-sensitive controls with CSS selectors, frame paths and viewport rectangles. params: {selector?,frames?:CSS[]}. Requires ui-enable; never returns input values. automationScope:false is not a blocker."
+    },
+    {
+      "action": "ui-click",
+      "description": "Native left/right click or double-click. params: {selector OR x,y,frames?,button?:left|right,clickCount?:1|2}. CSS-pixel coordinates; explicit retry key and active UI control required."
+    },
+    {
+      "action": "ui-drag",
+      "description": "Native pointer down, interpolated moves and up. params: {from:CSS selector|{x,y},to:{x,y}|{dx,dy},frames?:CSS[],steps?:1..120 (12),holdMs?:0..5000 (0),button?:left|right}. Coordinates are top-level viewport CSS pixels, including with frames. Same protected-target and control rules as ui-click; retry key required."
+    },
+    {
+      "action": "ui-hover",
+      "description": "Move the pointer over a visible target. params: {selector OR x,y,frames?}. Retry key and active UI control required."
+    },
+    {
+      "action": "ui-scroll",
+      "description": "Native wheel at a target, including nested scroll containers. params: {selector OR x,y,frames?,deltaY?,deltaX?}; at least one delta, missing delta is 0, deltas -2000..2000. Retry key and active UI control required."
+    },
+    {
+      "action": "ui-type",
+      "description": "Insert Unicode text into a selected editable target. params: {selector OR x,y,frames?,text,replace?:boolean}; max 16000 characters. No credentials or file inputs. Retry key and active UI control required."
+    },
+    {
+      "action": "ui-key",
+      "description": "Press a safe navigation/edit key at a focusable target, or with no selector/x,y (or a non-focusable target) at the page's currently focused element, e.g. Escape to close a menu (result windowLevel:true). params: {selector OR x,y (optional),frames?,key:Enter|Escape|Tab|Backspace|Delete|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|PageUp|PageDown,shift?:boolean}. No OS shortcuts. Retry key and active UI control required."
+    },
+    {
+      "action": "record-start",
+      "description": "Record only this visible chart tab to local high-bitrate WebM, no audio or approval dialog. Requires local assistant access and an account; a visible Stop & save controller is shown. params: {durationMs?:1000..600000,fps?:1..60 (30),scale?:0.25..4|\"native\" (device pixel ratio),selector?:CSS crop}. Default60s, max64MiB. Requested fps is capture/encoder target, not guaranteed throughput. Returns recordingId; auto-stops on duration/tab/crop changes. Retry key required."
+    },
+    {
+      "action": "record-stop",
+      "description": "Stop/finalize a recording. params: {recordingId}. Retry key required. Poll record-status until completed; failed captures are explicit."
+    },
+    {
+      "action": "record-status",
+      "description": "Read recording progress/completion/private file path. params: {recordingId}. Explicit tab required."
     }
   ]
 }

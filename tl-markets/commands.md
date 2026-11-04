@@ -80,7 +80,7 @@ Effects: **panel, network, write**. These are possible consequences, not grants;
 
 ## `symbol.details`
 
-Read bounded mounted company/fundamentals without a write grant; expanded changes require write approval and a retry key. No automatic fetch while collapsed.
+Read bounded mounted company/fundamentals without write access; expanded changes require active account write access and a retry key. No automatic fetch while collapsed.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -113,7 +113,7 @@ Effects: **network, write**. These are possible consequences, not grants; option
 
 ## `indices.getState`
 
-Read index catalog/constituents without a write grant; category selection requires write approval and a retry key and opens its index on chart.
+Read index catalog/constituents without write access; category selection requires active account write access and a retry key and opens its index on chart.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **navigate, write, quota, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -143,7 +143,7 @@ Effects: **panel, write**. These are possible consequences, not grants; optional
 
 ## `watchlists.multiView`
 
-Read mounted Multi Watchlists without a write grant; panels replacement requires write approval and a retry key.
+Read mounted Multi Watchlists without write access; panels replacement requires active account write access and a retry key.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **panel, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.

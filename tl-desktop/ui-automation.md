@@ -20,7 +20,7 @@ UI control requires an active, visible, ready `/charts` tab and local assistant
 access. **Check the native `ui-enable` description, not this skill's version:**
 
 - **Desktop 0.1.11+ prompt-free implementation:** the
-  description says "without approval dialogs or a time limit". `ui-enable`
+  description says "without approval dialogs". `ui-enable`
   starts control without a human dialog; `expiresAt:null` means no timeout.
   An active account is required, but no separate cloud-write checkbox.
   The matching frontend enables authenticated workspace writes automatically.
@@ -28,10 +28,13 @@ access. **Check the native `ui-enable` description, not this skill's version:**
   approval are still required; approval lasts ten minutes. Do not claim a
   skill update removed those native dialogs or approve them programmatically.
 
-Closing the visible AI control window stops control. The person can also use
+Desktop 0.1.12 has **no floating AI control window**. On older builds, closing
+that window stops control. On all supported builds the person can use
 **Help > Stop AI control and recording** or **Ctrl/Cmd+Shift+Escape**.
-Tab/account/navigation changes and pausing access invalidate control. Inspect the
+Tab/account/full-page navigation changes and pausing access invalidate control. Inspect the
 new context before starting again; never undo an explicit user pause or Stop.
+In 0.1.12, same-origin SPA/chart and catalog changes retain control; wait for
+`ui-status` to report `ready:true` before input resumes.
 
 `ui-inspect` reports `automationScope` per control. **It is informational on
 Desktop 0.1.10 and prompt-free builds: false or absent is NOT a blocker.**
@@ -61,7 +64,7 @@ bounded in-memory cache, not a durable transaction log.
 ```bash
 tradinglead desktop ui-click --tab TAB_ID --params '{"selector":"ACTUAL_CSS"}' --key click-1
 tradinglead desktop ui-hover --tab TAB_ID --params '{"x":400,"y":250}' --key hover-1
-tradinglead desktop ui-scroll --tab TAB_ID --params '{"selector":"ACTUAL_SCROLL_CONTAINER","deltaY":400}' --key scroll-1
+tradinglead desktop ui-scroll --tab TAB_ID --params '{"selector":"ACTUAL_SCROLL_CONTAINER","deltaX":0,"deltaY":400}' --key scroll-1
 tradinglead desktop ui-type --tab TAB_ID --params '{"selector":"ACTUAL_INPUT","text":"new text","replace":true}' --key type-1
 tradinglead desktop ui-key --tab TAB_ID --params '{"selector":"ACTUAL_INPUT","key":"Enter"}' --key key-1
 tradinglead desktop ui-disable --tab TAB_ID --key disable-session-1
@@ -74,12 +77,25 @@ visible same-origin frames. Covered, hidden, disabled, ambiguous, transformed
 frame or cross-origin targets are rejected rather than guessed.
 
 - Click: `button:"left"|"right"` and `clickCount:1|2`; defaults left/single.
-- Scroll: `deltaY` and optional `deltaX`, each -2000..2000; positive down/right.
+- Scroll: `deltaX` and `deltaY`, each -2000..2000; positive down/right. On
+  0.1.11 **send both** (use 0 for the unused axis): a missing delta fails with
+  a misleading "Wheel deltas must be between -2000 and 2000". In 0.1.12,
+  at least one axis is required and the omitted axis defaults to zero.
 - Type: nonempty Unicode `text`, maximum 16000 characters; `replace` defaults
   false. Use enabled text inputs, textareas or contenteditable editors.
 - Key: `Enter`, `Escape`, `Tab`, `Backspace`, `Delete`, `ArrowLeft`, `ArrowRight`,
   `ArrowUp`, `ArrowDown`, `Home`, `End`, `PageUp`, `PageDown`; optional `shift`.
+  In 0.1.12 the target is optional: `{"key":"Escape"}` uses the currently
+  focused page/frame after checking it is not protected. A non-focusable target
+  also falls back to existing focus and reports `windowLevel:true`; it does not
+  imply focus moved to the supplied target. Older builds need a focusable target.
   No system shortcuts, clipboard commands, file-picker input or arbitrary keys.
+- Drag (0.1.12+): `from` is an inspected CSS selector or `{x,y}`; `to` is
+  absolute `{x,y}` or relative `{dx,dy}`, in top-level CSS pixels. Optional
+  `frames`, `button:"left"|"right"`, `steps:1..120` (default 12) and
+  `holdMs:0..5000`. Example: `{"from":"ACTUAL_HANDLE","to":{"dx":120,"dy":40}}`.
+  The whole path must remain visible and unprotected. The app releases the
+  mouse on failure; inspect the resulting position before retrying.
 - `--params-file file.json` avoids shell quoting and command-line text exposure.
 
 Input results say `dispatched:true, verified:false`. **Do not claim a saved
@@ -130,11 +146,46 @@ an overlay. Do not press Escape blindly: it can discard an unsaved dialog.
 | Hidden, covered or ambiguous target | Inspect again, close only a known safe overlay, or scroll the correct container; never pick a random match. |
 | Human-only target or unsupported frame | Ask the person to operate it; no marker injection or protection bypass. |
 | Dispatched input but unchanged UI | Inspect the actual outcome and readiness. Reconcile an uncertain operation with the same key; do not duplicate a potentially saved write. |
+| `UI_FOCUS_FAILED` from `ui-key` | On older builds choose a focusable target or click the known menu item. Desktop 0.1.12 supports protected-focus-checked page keys without a selector. |
+
+### Chart notes and older-build differences
+
+- **Older navigation revokes control.** In 0.1.11, `chart.open` and similar chart navigation
+  (symbol/pane changes) end UI control. Afterwards run
+  `desktop ui-status`; if `enabled:false`, rerun `desktop ui-enable` with a
+  fresh key after verifying context. This needs local access, an account and
+  the access panel closed; do not toggle human-controlled access settings.
+  Desktop 0.1.12 preserves same-origin chart/catalog transitions.
+- **Prompt-free:** unscoped clicks/typing no longer prompt, and `ui-enable`
+  returns `expiresAt:null`.
+- **TradingView iframe.** Chart toolbar, Symbol Search, interval and replay
+  controls live in `#tradingview_xxxx`. Find it with `ui-inspect` (control with
+  role `iframe`), then pass the same `frames` to inspect, click and type, e.g.
+  `ui-inspect {"frames":["#tradingview_ACTUAL"]}`. The id changes on every page
+  load: rediscover it rather than reusing an old one.
+- **Interval dropdown items are not listed** by `ui-inspect`. After opening the
+  menu, take a screenshot and click the item by CSS-pixel coordinates. To close
+  an open interval menu without changing anything, click the already-selected
+  item (0.1.11 has no targetless Escape).
+- **Wheel over the chart canvas**: `deltaX` pans time, `deltaY` zooms. During
+  replay, older frontends require wheel framing because `chart.setView` with
+  `visibleRange` returns `REPLAY_ACTIVE`. Newer frontend catalogs advertise
+  view-only replay framing; read the live descriptor before using it.
+- **Scrolled header toolbar.** If the TradingView header is scrolled sideways
+  and Symbol Search is hidden, wheel over the header with negative `deltaX`
+  (and `deltaY:0`) to scroll it back.
+- **Recording:** 0.1.11 has the older downscaled, at-most-10-FPS path; 0.1.12
+  supports native resolution and a requested 30 FPS by default. Actual frame
+  throughput depends on rendering/encoding; inspect the finished clip.
+
+Native `ui-drag` requires 0.1.12. Replay framing, overlay layout and stable
+targets require a matching hosted frontend; installing Desktop alone does not
+deploy these. Check native capabilities and the tab catalog independently.
 
 ## Record only the selected tab
 
 ```bash
-tradinglead desktop record-start --tab TAB_ID --params '{"durationMs":30000,"fps":5}' --key record-1
+tradinglead desktop record-start --tab TAB_ID --params '{"durationMs":30000,"fps":30,"scale":"native"}' --key record-1
 tradinglead desktop record-status --tab TAB_ID --params '{"recordingId":"RETURNED_ID"}'
 tradinglead desktop record-stop --tab TAB_ID --params '{"recordingId":"RETURNED_ID"}' --key stop-record-1
 ```
@@ -149,9 +200,13 @@ progress bar and a **Stop & save** button. It switches to **Saving...** while
 finalizing, with the button disabled to prevent repeat clicks.
 Closing that window also stops and finalizes. Automatic limits:
 
-- Duration: 1000..600000ms; default 60000ms. FPS: 1..10; default 5.
+- Duration: 1000..600000ms; default 60000ms. On 0.1.12, FPS: 1..60,
+  default 30; `scale:"native"` (default, device pixel ratio) or 0.25..4.
+  Optional top-level `selector` records only its visible clipped bounds.
+  Older builds accept FPS 1..10/default 5, with no scale/crop parameters.
 - Video-only VP8 WebM; no microphone, system audio or whole-desktop capture.
-- At most 1920x1080, aspect ratio preserved; one recording at a time.
+- Native or requested pixel dimensions in 0.1.12; older builds cap at 1920x1080.
+  One recording at a time. Crop/viewport/DPR changes stop and finalize the clip.
 - Maximum 64MiB per clip and 20 recording attempts per app process.
 
 Poll until `state:"completed"` and use the returned local `path`. Files are

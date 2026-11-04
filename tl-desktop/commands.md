@@ -5,6 +5,18 @@ Use explicit tab targeting and inspect the final JSON status. Do not guess IDs o
 
 Do not infer grant permissions from `mutates`: Desktop discovery can omit structured grant metadata. Read [tl-desktop](../tl-desktop/SKILL.md) for the verified local-change versus cloud-watchlist access rules.
 
+## `replay.setOverlayLayout`
+
+Dock/hide replay overlays in this tab session only. Does not change replay, orders or chart history.
+
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+| Parameter | Contract |
+| --- | --- |
+| `toolbar` | Optional top-left\|top-right\|bottom-left\|bottom-right\|hidden |
+| `widget` | Optional same corners\|hidden\|collapsed |
+
 ## `ui.waitIdle`
 
 Wait until visually settled: chart history/replay/feed discovery done, no busy spinners or finite animations, fonts loaded, 2 stable frames. Returns {idle,waitedMs,pending}; TIMEOUT lists pending.
@@ -49,6 +61,9 @@ Effects: **ui**. These are possible consequences, not grants; optional write var
 
 | Parameter | Contract |
 | --- | --- |
+| `hideCrosshair` | Optional boolean; suppress plot hover in presentation mode. |
+| `hideWarnings` | Optional boolean, default true; capacity and transient replay status only. |
+| `tradeLabelScale` | Optional 1..3, default 1; temporary trade label multiplier. |
 | `hideTours` | bool, default true |
 | `hideToasts` | bool, default true |
 | `hideCookieBanner` | bool, default true |
@@ -145,5 +160,18 @@ Run `node cli.cjs desktop ACTION --tab ACTUAL_TAB_ID` from the Desktop repositor
 - `logs`: Read-only, redacted tail of Desktop diagnostics. params: { kind: "events"|"bars", tail?: 1-200 (default 50) }.
 - `services`: Read feed registry, sidecar (no credentials), Python indicator runtime and updater status.
 - `appInfo`: Read app version, Electron, build channel, dev mode, origin, agent protocol and per-tab catalog registration (entries, hash, rejected).
+- `ui-enable`: Start prompt-free UI control on this active chart tab without approval dialogs, floating control windows or a time limit. Stop through ui-disable or Help > Stop AI control and recording. Ordinary unmarked controls are supported; automationScope is informational. Requires local assistant access and an account. Protected controls remain blocked. params: {}. Retry key required.
+- `ui-disable`: Revoke UI control and stop recording on this tab. params: {}. Retry key required.
+- `ui-status`: Read UI-control state for this explicit tab. expiresAt is null; control has no time limit.
+- `ui-inspect`: List up to 200 visible non-sensitive controls with CSS selectors, frame paths and viewport rectangles. params: {selector?,frames?:CSS[]}. Requires ui-enable; never returns input values. automationScope:false is not a blocker.
+- `ui-click`: Native left/right click or double-click. params: {selector OR x,y,frames?,button?:left|right,clickCount?:1|2}. CSS-pixel coordinates; explicit retry key and active UI control required.
+- `ui-drag`: Native pointer down, interpolated moves and up. params: {from:CSS selector|{x,y},to:{x,y}|{dx,dy},frames?:CSS[],steps?:1..120 (12),holdMs?:0..5000 (0),button?:left|right}. Coordinates are top-level viewport CSS pixels, including with frames. Same protected-target and control rules as ui-click; retry key required.
+- `ui-hover`: Move the pointer over a visible target. params: {selector OR x,y,frames?}. Retry key and active UI control required.
+- `ui-scroll`: Native wheel at a target, including nested scroll containers. params: {selector OR x,y,frames?,deltaY?,deltaX?}; at least one delta, missing delta is 0, deltas -2000..2000. Retry key and active UI control required.
+- `ui-type`: Insert Unicode text into a selected editable target. params: {selector OR x,y,frames?,text,replace?:boolean}; max 16000 characters. No credentials or file inputs. Retry key and active UI control required.
+- `ui-key`: Press a safe navigation/edit key at a focusable target, or with no selector/x,y (or a non-focusable target) at the page's currently focused element, e.g. Escape to close a menu (result windowLevel:true). params: {selector OR x,y (optional),frames?,key:Enter|Escape|Tab|Backspace|Delete|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|PageUp|PageDown,shift?:boolean}. No OS shortcuts. Retry key and active UI control required.
+- `record-start`: Record only this visible chart tab to local high-bitrate WebM, no audio or approval dialog. Requires local assistant access and an account; a visible Stop & save controller is shown. params: {durationMs?:1000..600000,fps?:1..60 (30),scale?:0.25..4|"native" (device pixel ratio),selector?:CSS crop}. Default60s, max64MiB. Requested fps is capture/encoder target, not guaranteed throughput. Returns recordingId; auto-stops on duration/tab/crop changes. Retry key required.
+- `record-stop`: Stop/finalize a recording. params: {recordingId}. Retry key required. Poll record-status until completed; failed captures are explicit.
+- `record-status`: Read recording progress/completion/private file path. params: {recordingId}. Explicit tab required.
 
 These controls cannot grant access. Discover them using `node cli.cjs desktop capabilities`.

@@ -186,14 +186,15 @@ one, use this **inspect -> one action -> verify** loop:
    `desktop status --tab ID`. Keep that chart tab visible. Do not change feeds,
    accounts or tabs just to make a target accessible.
 2. Read native capabilities, then use `desktop ui-enable --tab ID --key KEY`.
-   If its description says "without approval dialogs or a time limit", control
+   If its description says "without approval dialogs", control
    starts without a dialog or timeout (Desktop 0.1.11+).
    Installed 0.1.9/0.1.10 still require initial human approval and both
    write grants; never click their permission controls or approve yourself.
 3. Use `desktop ui-inspect --tab ID` to obtain actual selectors, viewport
    rectangles and `automationScope`. Prefer a unique selector over coordinates.
    Never invent a selector from a screenshot or reuse stale positions.
-4. Send one `desktop ui-click`, `ui-hover`, `ui-scroll`, `ui-type` or `ui-key`
+4. Send one `desktop ui-click`, `ui-hover`, `ui-scroll`, `ui-type`, `ui-key` or
+   (Desktop 0.1.12+) `ui-drag`
    with an explicit tab and a fresh operation key. These are native **desktop**
    actions, not `exec` commands. Right-click uses `"button":"right"`;
    double-click uses `"clickCount":2`. Use `"replace":true` to replace text
@@ -208,9 +209,17 @@ one, use this **inspect -> one action -> verify** loop:
    domain state. An uncertain retry uses the **same key and parameters**;
    a genuinely new action uses a new key. Stop on protected targets or revoked
    consent instead of searching for a bypass.
-7. Finish with `desktop ui-disable --tab ID --key KEY`. Tab/account/navigation
-   changes and Pause/Stop revoke control. Only legacy 0.1.9/0.1.10 sessions expire
+7. Finish with `desktop ui-disable --tab ID --key KEY`. Tab/account/full-page navigation
+   changes and Pause/Stop revoke control. Desktop 0.1.12 retains control through
+   same-origin chart/catalog refreshes; wait for `ui-status.ready:true` before
+   input. Only legacy 0.1.9/0.1.10 sessions expire
    after ten minutes; prompt-free sessions return `expiresAt:null`.
+
+Desktop 0.1.12 opens **no floating AI control window**. The person can stop
+control through Help > Stop AI control and recording or Cmd/Ctrl+Shift+Escape.
+It also supports drag paths, keys sent to the focused page without a selector,
+and either-axis scrolling; see the reference for exact fields. Reinspect before
+dragging and verify afterward; never use drag to bypass a protected target.
 
 The reference gives exact fields, iframe targeting and recovery codes.
 **Desktop 0.1.10 and prompt-free builds:** ordinary controls, including
@@ -220,7 +229,7 @@ not require marker edits or another website deployment to click. The
 0.1.9 shell still asks for additional human confirmation on unmarked controls;
 skills alone cannot remove those prompts. Version 0.1.10 advertises "without
 per-action prompts"; prompt-free builds advertise "without approval dialogs
-or a time limit".
+or a time limit" (0.1.12 additionally mentions no floating control window).
 Login, broker setup, credentials, purchases, AI permissions and
 Practice Labs stay human-only. Native OS shortcuts, cross-origin frames, file
 pickers, clipboard automation and arbitrary JavaScript are not available.
@@ -231,6 +240,9 @@ separate human consent. It captures only the selected chart tab to a private, vi
 WebM. The person sees a draggable **Stop & save** panel. Stop and wait for
 `state:"completed"` before quitting; keep the returned recording ID and file
 path. No microphone, system audio, desktop-wide capture or automatic uploads.
+Desktop 0.1.12 defaults to 30 FPS/native pixel density, supports 1-60 FPS,
+`scale:"native"|0.25..4` and optional top-level `selector` cropping. Resize or
+crop changes stop capture rather than silently changing the video framing.
 
 ## Demos and screenshots
 
