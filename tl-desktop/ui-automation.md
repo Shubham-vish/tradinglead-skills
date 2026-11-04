@@ -6,7 +6,7 @@ Desktop 0.1.8 and earlier do not contain them. Read
 actions below are absent, a new Desktop build is required; skills cannot add them.
 No MCP, browser-debugging endpoint or arbitrary JavaScript execution is used.
 
-## Connect and get human approval
+## Connect and check the installed access model
 
 Select the intended tab from `tradinglead tabs`, then:
 
@@ -16,22 +16,30 @@ tradinglead desktop ui-status --tab TAB_ID
 tradinglead desktop ui-inspect --tab TAB_ID
 ```
 
-UI control requires an active, visible, ready `/charts` tab, local assistant
-access, both existing write grants, and a **native dialog approved by a person**.
-`ui-enable` cannot grant the underlying permissions. Approval expires after ten
-minutes. Closing the visible AI control window revokes it. The person can also
-use **Help > Stop AI control and recording** or **Ctrl/Cmd+Shift+Escape**.
-Switching tabs, changing accounts, navigating, pausing access or disabling a
-grant invalidates UI consent. Request fresh consent; do not retarget another tab.
+UI control requires an active, visible, ready `/charts` tab and local assistant
+access. **Check the native `ui-enable` description, not this skill's version:**
 
-The current frontend marks chart surfaces, the normal Backtesting/Paper panel
-and source editors as automation areas. `ui-inspect` reports `automationScope`
-per control. **Desktop 0.1.10+** uses the existing
-session approval for ordinary controls even when `automationScope` is false or
-absent. Paper-trading quantity fields, portal dialogs and older unmarked chart
-controls no longer need a separate confirmation for each click/type/key.
-The native `ui-enable` capability description advertises this as "without
-per-action prompts". The installed 0.1.9 release retains the old per-action
+- **Desktop 0.1.11+ prompt-free implementation:** the
+  description says "without approval dialogs or a time limit". `ui-enable`
+  starts control without a human dialog; `expiresAt:null` means no timeout.
+  An active account is required, but no separate cloud-write checkbox.
+  The matching frontend enables authenticated workspace writes automatically.
+- **Installed 0.1.9/0.1.10:** both existing write grants and initial human
+  approval are still required; approval lasts ten minutes. Do not claim a
+  skill update removed those native dialogs or approve them programmatically.
+
+Closing the visible AI control window stops control. The person can also use
+**Help > Stop AI control and recording** or **Ctrl/Cmd+Shift+Escape**.
+Tab/account/navigation changes and pausing access invalidate control. Inspect the
+new context before starting again; never undo an explicit user pause or Stop.
+
+`ui-inspect` reports `automationScope` per control. **It is informational on
+Desktop 0.1.10 and prompt-free builds: false or absent is NOT a blocker.**
+Paper-order tickets, sidebar buttons, bottom-panel tabs and ordinary portal
+dialogs do not need a page marker or per-click confirmation. Do not ask the user
+to add markers or deploy the website merely because this flag is false.
+Version 0.1.10's native description says "without per-action prompts".
+The installed 0.1.9 release retains the old per-action
 confirmation fallback until Desktop itself is updated; never dismiss or approve
 those prompts programmatically, or force markers onto the page.
 Login, purchases, credentials, broker setup, permission controls
@@ -115,8 +123,10 @@ an overlay. Do not press Escape blindly: it can discard an unsaved dialog.
 | --- | --- |
 | Missing native action | Update Desktop; do not substitute `exec` or a debugging endpoint. |
 | `UI_NOT_READY` | Confirm the intended visible `/charts` tab and current readiness; do not reload unsaved work. |
-| `UI_WRITE_PERMISSION_REQUIRED` | The person must enable the existing grants. |
-| `UI_APPROVAL_REQUIRED`, `UI_APPROVAL_DENIED`, `UI_CONTEXT_CHANGED` | Stop; obtain fresh human approval when appropriate. Do not retry approval with new keys in a loop. |
+| `UI_CONTROL_DISABLED` | On prompt-free builds, inspect the intended context and use `ui-enable`; never resume after an explicit user Stop without a new user request. |
+| `UI_ACCOUNT_REQUIRED` | Use an active account with local access enabled; do not change accounts or unpause access automatically. |
+| `UI_CONTEXT_CHANGED` | Inspect the changed tab/account before restarting control; do not replay stale targets. |
+| `UI_WRITE_PERMISSION_REQUIRED`, `UI_APPROVAL_REQUIRED`, `UI_APPROVAL_DENIED` | Legacy build gates. Respect them; current skill text does not upgrade the native app. Do not retry approval in a loop. |
 | Hidden, covered or ambiguous target | Inspect again, close only a known safe overlay, or scroll the correct container; never pick a random match. |
 | Human-only target or unsupported frame | Ask the person to operate it; no marker injection or protection bypass. |
 | Dispatched input but unchanged UI | Inspect the actual outcome and readiness. Reconcile an uncertain operation with the same key; do not duplicate a potentially saved write. |
@@ -129,8 +139,11 @@ tradinglead desktop record-status --tab TAB_ID --params '{"recordingId":"RETURNE
 tradinglead desktop record-stop --tab TAB_ID --params '{"recordingId":"RETURNED_ID"}' --key stop-record-1
 ```
 
-Start requests **separate human consent**; UI-input permission is not required.
-The tab must remain active, visible, trusted, ready and locally accessible.
+On prompt-free builds, `record-start` advertises "no audio or approval dialog";
+it starts only when requested, without another dialog. Older 0.1.9/0.1.10 builds
+still request separate human consent. UI control need not be started first.
+The tab must remain active, visible, trusted, ready and locally accessible;
+prompt-free recording also requires an active account.
 A compact, draggable recording window shows elapsed/limit timers, a duration
 progress bar and a **Stop & save** button. It switches to **Saving...** while
 finalizing, with the button disabled to prevent repeat clicks.
@@ -150,5 +163,5 @@ can lose the current clip; stop and wait for completion before quitting.
 
 Tab/context changes stop capture and finalize already accepted frames with
 `stoppedReason`; they never continue recording another tab. Visible chart/account
-information can appear in an approved clip: arrange/redact the UI beforehand.
+information can appear in a requested clip: arrange/redact the UI beforehand.
 Cross-origin frames and visible credential/consent dialogs are not supported.

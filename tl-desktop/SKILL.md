@@ -1,6 +1,6 @@
 ---
 name: tl-desktop
-description: Start here for any TradingLead automation. Connect and target the right tab, discover commands, handle grants and retries, use human-approved native clicks/right-clicks, scrolling, typing, keys and tab recording, drive workspace panels and theme, and route domain tasks to the owning tl-* skill. Not ContentLead or live broker execution.
+description: Start here for any TradingLead automation. Connect and target the right tab, discover commands and the installed access model, handle retries, use native clicks/right-clicks, scrolling, typing, keys and tab recording, drive workspace panels and theme, and route domain tasks to the owning tl-* skill. Not ContentLead or live broker execution.
 ---
 
 # TradingLead Desktop - connection and workflow router
@@ -185,9 +185,11 @@ one, use this **inspect -> one action -> verify** loop:
 1. Discover the intended tab, activate it only when appropriate, and check
    `desktop status --tab ID`. Keep that chart tab visible. Do not change feeds,
    accounts or tabs just to make a target accessible.
-2. Read native capabilities, then request `desktop ui-enable --tab ID --key KEY`.
-   A person must approve the native prompt. Existing write grants are also
-   required; agents must never click permission controls or approve themselves.
+2. Read native capabilities, then use `desktop ui-enable --tab ID --key KEY`.
+   If its description says "without approval dialogs or a time limit", control
+   starts without a dialog or timeout (Desktop 0.1.11+).
+   Installed 0.1.9/0.1.10 still require initial human approval and both
+   write grants; never click their permission controls or approve yourself.
 3. Use `desktop ui-inspect --tab ID` to obtain actual selectors, viewport
    rectangles and `automationScope`. Prefer a unique selector over coordinates.
    Never invent a selector from a screenshot or reuse stale positions.
@@ -206,21 +208,26 @@ one, use this **inspect -> one action -> verify** loop:
    domain state. An uncertain retry uses the **same key and parameters**;
    a genuinely new action uses a new key. Stop on protected targets or revoked
    consent instead of searching for a bypass.
-7. Finish with `desktop ui-disable --tab ID --key KEY`. Consent also expires
-   after ten minutes and is revoked by tab/account/navigation/grant changes.
+7. Finish with `desktop ui-disable --tab ID --key KEY`. Tab/account/navigation
+   changes and Pause/Stop revoke control. Only legacy 0.1.9/0.1.10 sessions expire
+   after ten minutes; prompt-free sessions return `expiresAt:null`.
 
 The reference gives exact fields, iframe targeting and recovery codes.
-**Desktop 0.1.10+:** session approval covers ordinary controls, including
-unmarked dialogs, without per-action prompts. The
+**Desktop 0.1.10 and prompt-free builds:** ordinary controls, including
+unmarked dialogs, have no per-action prompts. `automationScope:false` is
+informational, not a blocker: paper tickets, sidebar icons and bottom tabs do
+not require marker edits or another website deployment to click. The
 0.1.9 shell still asks for additional human confirmation on unmarked controls;
-skills alone cannot remove those prompts. Updated native `ui-enable` capability
-descriptions explicitly advertise "without per-action prompts".
+skills alone cannot remove those prompts. Version 0.1.10 advertises "without
+per-action prompts"; prompt-free builds advertise "without approval dialogs
+or a time limit".
 Login, broker setup, credentials, purchases, AI permissions and
 Practice Labs stay human-only. Native OS shortcuts, cross-origin frames, file
 pickers, clipboard automation and arbitrary JavaScript are not available.
 
-Recording uses **separate consent**: `desktop record-start`, `record-status` and
-`record-stop`. It captures only the selected chart tab to a private, video-only
+Recording uses `desktop record-start`, `record-status` and `record-stop`.
+Prompt-free builds advertise no approval dialog; legacy 0.1.9/0.1.10 require
+separate human consent. It captures only the selected chart tab to a private, video-only
 WebM. The person sees a draggable **Stop & save** panel. Stop and wait for
 `state:"completed"` before quitting; keep the returned recording ID and file
 path. No microphone, system audio, desktop-wide capture or automatic uploads.
@@ -326,6 +333,10 @@ message as detail:
 ask the user to read the message shown in the app rather than guessing.
 
 Desktop local access is automatic for the active account unless paused.
+The updated frontend source also enables eligible signed-in workspace writes
+automatically, with no separate checkbox or automatic access dialog; website
+deployment is required. Older served frontends still require the cloud-write
+checkbox. Pause remains human-controlled and account/sign-in checks remain.
 Mutations marked `permission:"indicators"` (including `studyTemplates.manage`)
 use `allowAgentIndicators`; other
 mutations use the separate `allowAgentWrites` grant. That includes cloud

@@ -2,8 +2,8 @@
 
 Canonical skill folders live here, not in the ContentLead skill repository.
 Every skill uses the `tl-` prefix. This collection documents the **actual
-TradingLead Desktop command surface**, including bounded, human-approved native
-UI input and tab recording on supported Desktop versions, not unrestricted
+TradingLead Desktop command surface**, including bounded native
+UI input and tab recording with version-specific access rules, not unrestricted
 desktop automation.
 
 | Group | Skill | Responsibility |
@@ -32,7 +32,7 @@ outcome. Load a companion only when that part of the task is needed.
 | Outcome | Primary skill | Add only when needed |
 | --- | --- | --- |
 | Open/switch a panel, theme, or find which skill owns a UI area | `tl-desktop` | The owner from its UI map |
-| Click/right-click, hover, scroll, type, navigate with keys or record the chart tab | `tl-desktop` ([native input](tl-desktop/ui-automation.md)) | Domain skill for result verification; Desktop 0.1.9+ and human approval required |
+| Click/right-click, hover, scroll, type, navigate with keys or record the chart tab | `tl-desktop` ([native input](tl-desktop/ui-automation.md)) | Domain skill for result verification; Desktop 0.1.9+, check native capabilities for legacy approval versus prompt-free control |
 | Open a symbol, change interval/feed, browse history, replay candles | `tl-charts` | `tl-markets` to pick a symbol from a watchlist |
 | Change chart type, scale, range, timezone; compare symbols; screenshot | `tl-charts` | — |
 | Draw, hide, lock or remove chart drawings; reorder favorite drawing tools | `tl-charts` ([drawings](tl-charts/drawings.md)) | — |
