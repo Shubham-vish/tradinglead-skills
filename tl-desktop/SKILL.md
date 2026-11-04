@@ -1,6 +1,6 @@
 ---
 name: tl-desktop
-description: Start here for any TradingLead automation. Connect to TradingLead Desktop, target the right tab, discover commands, handle grants, retry keys and errors, drive the workspace shell (bottom panels, right sidebar panels, light/dark theme, activity) and map every visible workspace UI area to the owning tl-* skill. Not ContentLead and not live broker execution.
+description: Start here for any TradingLead automation. Connect and target the right tab, discover commands, handle grants and retries, use human-approved native clicks/right-clicks, scrolling, typing, keys and tab recording, drive workspace panels and theme, and route domain tasks to the owning tl-* skill. Not ContentLead or live broker execution.
 ---
 
 # TradingLead Desktop - connection and workflow router
@@ -172,7 +172,56 @@ workflow such as `tl-paper-trading` is missing from this agent's available list,
 refresh skill discovery or start a new session. Do not create a duplicate skill
 or replace a correct link merely to change a cached listing.
 
-## Demos and recordings
+## Native clicks, scrolling, typing and recording
+
+**Desktop 0.1.9 or later is required.** Read
+[ui-automation.md](ui-automation.md) before input or recording. Check
+`tradinglead desktop capabilities` on the actual installation: older shells
+cannot acquire these controls through a skill update.
+
+Prefer a domain command for a supported operation. For ordinary UI work without
+one, use this **inspect -> one action -> verify** loop:
+
+1. Discover the intended tab, activate it only when appropriate, and check
+   `desktop status --tab ID`. Keep that chart tab visible. Do not change feeds,
+   accounts or tabs just to make a target accessible.
+2. Read native capabilities, then request `desktop ui-enable --tab ID --key KEY`.
+   A person must approve the native prompt. Existing write grants are also
+   required; agents must never click permission controls or approve themselves.
+3. Use `desktop ui-inspect --tab ID` to obtain actual selectors, viewport
+   rectangles and `automationScope`. Prefer a unique selector over coordinates.
+   Never invent a selector from a screenshot or reuse stale positions.
+4. Send one `desktop ui-click`, `ui-hover`, `ui-scroll`, `ui-type` or `ui-key`
+   with an explicit tab and a fresh operation key. These are native **desktop**
+   actions, not `exec` commands. Right-click uses `"button":"right"`;
+   double-click uses `"clickCount":2`. Use `"replace":true` to replace text
+   rather than append, and `--params-file` for long text.
+5. Inspect again after each action. Scroll the actual nested container in
+   modest increments, then inspect again; hover before looking for hover-only
+   controls. After opening a menu, discover the new item before clicking it.
+   Use bounded polling of the domain state when work is asynchronous, not blind
+   rapid clicks or fixed sleep chains.
+6. `dispatched:true,verified:false` means input was sent, not that it succeeded
+   or saved. Verify through inspection, an authorized screenshot or the relevant
+   domain state. An uncertain retry uses the **same key and parameters**;
+   a genuinely new action uses a new key. Stop on protected targets or revoked
+   consent instead of searching for a bypass.
+7. Finish with `desktop ui-disable --tab ID --key KEY`. Consent also expires
+   after ten minutes and is revoked by tab/account/navigation/grant changes.
+
+The reference gives exact fields, iframe targeting and recovery codes. Older
+or unmarked frontend controls require an additional native human confirmation
+per action. Login, broker setup, credentials, purchases, AI permissions and
+Practice Labs stay human-only. Native OS shortcuts, cross-origin frames, file
+pickers, clipboard automation and arbitrary JavaScript are not available.
+
+Recording uses **separate consent**: `desktop record-start`, `record-status` and
+`record-stop`. It captures only the selected chart tab to a private, video-only
+WebM. The person sees a draggable **Stop & save** panel. Stop and wait for
+`state:"completed"` before quitting; keep the returned recording ID and file
+path. No microphone, system audio, desktop-wide capture or automatic uploads.
+
+## Demos and screenshots
 
 For demo videos and screenshot decks, use these commands:
 
@@ -357,8 +406,9 @@ per-user chart theme.
 
 ## UI map
 
-Every visible workspace area, its owning skill and commands. "UI-only" areas
-have no agent command; ask the person to operate them.
+Every visible workspace area, its owning skill and commands. "UI-only" means
+no dedicated domain command: permitted ordinary controls may use the native
+input workflow above. Human-only areas remain off-limits even with UI consent.
 
 | UI area | Owner | Commands |
 | --- | --- | --- |
@@ -409,6 +459,9 @@ Remaining limits inside covered areas:
 - UI-only: Heatmap error Retry, drawing-template library writes, saved-layout
   rename/delete, the Grid card enlarge dialog, file/clipboard exports and the
   secondary Multi/Indices/Peers grids' own sort/filter state.
+  Discover ordinary controls through native inspection before attempting input.
+  File/clipboard flows and protected controls still require the person; the
+  presence of a generic click action is not permission to bypass those limits.
 
 `workspace.setPanel` opens supported **bottom** panels; it does not select the
 right Research sidebar. Use `research.show` for that. `workspace.getActivity`

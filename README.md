@@ -2,11 +2,13 @@
 
 Canonical skill folders live here, not in the ContentLead skill repository.
 Every skill uses the `tl-` prefix. This collection documents the **actual
-TradingLead Desktop command surface**, not arbitrary UI automation.
+TradingLead Desktop command surface**, including bounded, human-approved native
+UI input and tab recording on supported Desktop versions, not unrestricted
+desktop automation.
 
 | Group | Skill | Responsibility |
 | --- | --- | --- |
-| Start | [tl-desktop](tl-desktop/SKILL.md) | Start here: connection, explicit tab targeting, permissions, retries, workspace shell (bottom panels, right sidebar, theme, activity) and the full UI map |
+| Start | [tl-desktop](tl-desktop/SKILL.md) | Connection, tab targeting, permissions, retries, native clicks/right-clicks, hover/scroll/type/keys, tab recording, workspace shell and the full UI map |
 | Charting | [tl-charts](tl-charts/SKILL.md) | Chart/feed navigation, history, snapshots, native replay, view/scale/range/timezone/legend, Compare, toolbar actions and screenshots, native studies and indicator templates, drawings, drawing templates, split layouts, pane targeting and linking, saved chart layouts, Chart Grid |
 | Markets | [tl-markets](tl-markets/SKILL.md) | Watchlists (Watch grid, select/sort/filter/columns, CSV text, order, flags, favorites, create/add/remove/rename/delete), Multi Watchlists, symbol details, peers and refresh, indices, heatmap, Market Intelligence, Futures, universes, raw candles |
 | Alerts | [tl-alerts](tl-alerts/SKILL.md) | Saved price alerts: list, create, edit (incl. message/expiry), pause/resume, delete, trigger activity and monitoring semantics |
@@ -30,6 +32,7 @@ outcome. Load a companion only when that part of the task is needed.
 | Outcome | Primary skill | Add only when needed |
 | --- | --- | --- |
 | Open/switch a panel, theme, or find which skill owns a UI area | `tl-desktop` | The owner from its UI map |
+| Click/right-click, hover, scroll, type, navigate with keys or record the chart tab | `tl-desktop` ([native input](tl-desktop/ui-automation.md)) | Domain skill for result verification; Desktop 0.1.9+ and human approval required |
 | Open a symbol, change interval/feed, browse history, replay candles | `tl-charts` | `tl-markets` to pick a symbol from a watchlist |
 | Change chart type, scale, range, timezone; compare symbols; screenshot | `tl-charts` | — |
 | Draw, hide, lock or remove chart drawings; reorder favorite drawing tools | `tl-charts` ([drawings](tl-charts/drawings.md)) | — |
