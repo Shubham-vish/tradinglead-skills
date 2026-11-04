@@ -209,9 +209,13 @@ one, use this **inspect -> one action -> verify** loop:
 7. Finish with `desktop ui-disable --tab ID --key KEY`. Consent also expires
    after ten minutes and is revoked by tab/account/navigation/grant changes.
 
-The reference gives exact fields, iframe targeting and recovery codes. Older
-or unmarked frontend controls require an additional native human confirmation
-per action. Login, broker setup, credentials, purchases, AI permissions and
+The reference gives exact fields, iframe targeting and recovery codes.
+**Desktop 0.1.10+:** session approval covers ordinary controls, including
+unmarked dialogs, without per-action prompts. The
+0.1.9 shell still asks for additional human confirmation on unmarked controls;
+skills alone cannot remove those prompts. Updated native `ui-enable` capability
+descriptions explicitly advertise "without per-action prompts".
+Login, broker setup, credentials, purchases, AI permissions and
 Practice Labs stay human-only. Native OS shortcuts, cross-origin frames, file
 pickers, clipboard automation and arbitrary JavaScript are not available.
 

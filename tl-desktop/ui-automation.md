@@ -26,10 +26,15 @@ grant invalidates UI consent. Request fresh consent; do not retarget another tab
 
 The current frontend marks chart surfaces, the normal Backtesting/Paper panel
 and source editors as automation areas. `ui-inspect` reports `automationScope`
-per control. Other controls, including those on an older website without these
-markers, need **an additional native confirmation for each click/type/key**.
-This compatibility fallback is intentional, not a reason to force a marker
-onto the page. Login, purchases, credentials, broker setup, permission controls
+per control. **Desktop 0.1.10+** uses the existing
+session approval for ordinary controls even when `automationScope` is false or
+absent. Paper-trading quantity fields, portal dialogs and older unmarked chart
+controls no longer need a separate confirmation for each click/type/key.
+The native `ui-enable` capability description advertises this as "without
+per-action prompts". The installed 0.1.9 release retains the old per-action
+confirmation fallback until Desktop itself is updated; never dismiss or approve
+those prompts programmatically, or force markers onto the page.
+Login, purchases, credentials, broker setup, permission controls
 and Guided Practice Labs remain human-operated. Visible credential dialogs,
 unsupported frames and protected targets fail explicitly.
 
