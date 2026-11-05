@@ -115,6 +115,10 @@ the command.
   `chart.replayControl {action:"play"|"pause"}`: explicit and idempotent
   (no-op when already in that state; returns `playing`,`changed`), also for
   paper sessions. If clicking, read `replay.playing` first.
+- `chart.replayControl {action:"speed",speed}` (0.1..200 bars/sec) also sets
+  paper playback speed (virtual only; returns `speed`). `step`/`back`/`end`
+  still return `PAPER_REPLAY_ACTIVE`; use `backtesting.step`/`back`. The UI
+  Next button stays clickable while playing and pauses on the in-flight step.
 
 ## Forward paper
 

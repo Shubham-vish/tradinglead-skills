@@ -27,7 +27,7 @@ Effects: **navigate, quota, network, write**. These are possible consequences, n
 | `barSpacing` | Optional 0.5..100 CSS px. |
 | `scrollToRealtime` | Optional true: latest revealed bar during replay, never enables live. |
 | `chartType` | Optional named chart type. |
-| `priceScale` | {mode?:normal\|percent\|log,autoScale?:boolean} |
+| `priceScale` | {mode?:normal\|percent\|log,autoScale?:boolean,range?:{from,to} prices; range turns autoScale off; replay-safe} |
 | `visibleRange` | {preset:5y\|1y\|6m\|3m\|1m\|5d\|1d} OR {from,to} epoch seconds |
 | `goToDate` | UTC date, offset ISO timestamp, or epoch seconds. |
 | `timezone` | Available timezone ID from viewState. |
@@ -289,7 +289,7 @@ Effects: **navigate, quota, network**. These are possible consequences, not gran
 
 ## `chart.replayControl`
 
-Control native manual Bar Replay; select opens the chart's notice and candle picker for user interaction. Other actions require an active native cursor. play/pause are idempotent (no-op when already in that state; response has playing and changed) and also drive an open paper session's toolbar playback; other paper actions use backtesting commands. Requires local write approval and retry key. Inspect chart.getState.replay afterward.
+Control native manual Bar Replay; select opens the chart's notice and candle picker for user interaction. Other actions require an active native cursor. play/pause are idempotent (no-op when already in that state; response has playing and changed) and also drive an open paper session's toolbar playback; speed also sets paper playback cadence (virtual only; returns speed); other paper actions use backtesting commands. Requires local write approval and retry key. Inspect chart.getState.replay afterward.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **navigate, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.

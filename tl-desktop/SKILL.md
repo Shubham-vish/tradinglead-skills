@@ -244,6 +244,33 @@ Desktop 0.1.12 defaults to 30 FPS/native pixel density, supports 1-60 FPS,
 `scale:"native"|0.25..4` and optional top-level `selector` cropping. Resize or
 crop changes stop capture rather than silently changing the video framing.
 
+### UI automation & recording (Playwright-style)
+
+Builds that list `ui-query` in `desktop capabilities` add Playwright-like
+commands for scripted promo videos:
+
+- `ui-query`, `ui-wait-for`, `ui-wait-idle`
+- `ui-move`, `ui-press`, `ui-screenshot`
+- `ui-set-viewport`, `ui-reset-viewport`
+- `ui-cursor` (a visible fake pointer with presets `reel|subtle|off` and a keystroke pill), `ui-highlight` (`style:"reel"`)
+- `ui-chart-point` (time/price to CSS x,y)
+- `ui-mouse-leave` (clear crosshair/tooltips), `ui-wait-stable` (wait for pixels to settle), `ui-press {"global":true}` (window-level keys)
+- smooth upgrades of ui-click/hover/drag/scroll/type
+- `record-start` with `"engine":"screencast"`: constant-frame-rate MP4 at native pixels, optional `clip`/target crop, reel cursor on by default, plus a `<video>.events.json` sidecar (clicks, keys, `record-mark` cues in video pixels) for placing zooms and SFX
+- builds listing `ui-run`: `ui-run` (an in-process batch of steps with sequential or `at`-timed timelines and an optional screencast wrapper; prefer it for gap-free recordings), `ui-fill`/`ui-select`/`ui-check`/`ui-upload` (forms), `ui-expect` (retrying assertions), `ui-trace-start`/`ui-trace-stop` (trace folder with screenshots and a static viewer); see [ui-automation.md](ui-automation.md#batches-forms-assertions-and-traces-ui-run)
+- builds listing `ui-codegen-start`: `ui-dialog`/`ui-dialog-wait`/`ui-dialog-respond` (JS dialogs), `ui-download-wait`, `ui-popup-wait`, `ui-wait-request`/`ui-wait-response`, `ui-route`/`ui-unroute` (paper demo-data mocks; never auth, payment or broker/order URLs) and `ui-codegen-start`/`ui-codegen-stop` (record the person's own clicks/typing into ready-to-run `ui-run` steps); see [ui-automation.md](ui-automation.md#dialogs-downloads-popups-network-and-record-mode)
+
+Targets can be `selector`, `text`, `role`+`name` or `testId`. `--tab` defaults
+to the active tab. The consent and retry-key rules above still apply.
+
+```bash
+tradinglead desktop ui-cursor --params '{"show":true}'
+tradinglead desktop ui-click --params '{"text":"Indicators","moveDurationMs":500}' --key k1
+tradinglead desktop ui-screenshot --params '{"path":"step1.png"}'
+```
+
+See [ui-automation.md](ui-automation.md#playwright-style-automation-and-promo-recording).
+
 ## Demos and screenshots
 
 For demo videos and screenshot decks, use these commands:

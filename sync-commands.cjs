@@ -67,7 +67,12 @@ function validateCatalog(catalog) {
 	for (const action of catalog.desktopActions) {
 		if (!["status", "activate", "open-access", "reconnect", "getOrigin", "setOrigin", "screenshot", "logs", "services", "appInfo",
 			"ui-enable", "ui-disable", "ui-status", "ui-inspect", "ui-click", "ui-hover", "ui-drag", "ui-scroll", "ui-type", "ui-key",
-			"record-start", "record-status", "record-stop"].includes(action.action) || typeof action.description !== "string") {
+			"ui-move", "ui-query", "ui-wait-for", "ui-wait-idle", "ui-press", "ui-screenshot", "ui-set-viewport", "ui-reset-viewport",
+			"ui-cursor", "ui-highlight", "ui-chart-point", "ui-mouse-leave", "ui-wait-stable",
+			"ui-run", "ui-fill", "ui-select", "ui-check", "ui-upload", "ui-expect", "ui-trace-start", "ui-trace-stop",
+			"ui-dialog", "ui-dialog-wait", "ui-dialog-respond", "ui-download-wait", "ui-popup-wait", "ui-wait-request", "ui-wait-response",
+			"ui-route", "ui-unroute", "ui-codegen-start", "ui-codegen-stop",
+			"record-start", "record-status", "record-stop", "record-mark"].includes(action.action) || typeof action.description !== "string") {
 			throw new Error("Unknown Desktop control; update the connection skill before refreshing.");
 		}
 	}

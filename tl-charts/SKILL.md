@@ -148,7 +148,9 @@ mounted favorite drawing tools in order, `membershipEditable:false`).
 - `chartType`: `bars`, `candles`, `line`, `area`, `line-break`, `heikin-ashi`,
   `hollow-candles`, `baseline`, `high-low`, `columns`, `line-with-markers`,
   `stepline`, `hlc-area`.
-- `priceScale`: `{mode?: normal|log|percent, autoScale?: boolean}`.
+- `priceScale`: `{mode?: normal|log|percent, autoScale?: boolean, range?: {from, to}}`.
+  `range` fixes the price axis (view-only, allowed in replay/paper, e.g. to keep
+  SL/TP lines in frame); not with `autoScale:true`. Send `autoScale:true` to release it.
 - `visibleRange`: `{preset: 5y|1y|6m|3m|1m|5d|1d}` (keeps the current
   resolution) **or** `{from, to}` epoch seconds. Not with `goToDate`.
 - `goToDate`: a completed UTC date `YYYY-MM-DD`, a whole-second ISO timestamp

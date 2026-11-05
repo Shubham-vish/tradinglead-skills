@@ -68,10 +68,18 @@ Run before **every** screenshot or recording (native input details are in
 | Paper trading | `paper.panel`, `paper.controls`, `paper.summary`, `paper.trades`, `paper.equity`, `paper.ledger` |
 | Indicator Studio | `studio.panel`, `studio.editor`, `studio.run`, `studio.aiAccess` |
 | Agent access | `agent.access` |
+| Replay/paper overlays | `paper.buy`, `paper.sell`, `paper.sl`, `paper.tp`, `paper.pnl`, `paper.details`, `replay.playPause`, `replay.back`, `replay.next`, `replay.speed`, `replay.end`, `replay.trade` (see the contract doc for the full list) |
+| Layout picker | `chart.layoutMenu`, `chart.layout.single\|columns\|rows\|grid`, `chart.layout.focus`, `chart.layout.link.symbol\|interval` |
+| Side panel tabs | `sidebar.<panel>`, e.g. `sidebar.watchlists`, `sidebar.scanner`, `sidebar.alerts`, `sidebar.research` |
+| Practice dialogs | `replay.practiceStart`, `replay.practiceBalance`, `replay.practiceNew`, `replay.practiceManage`, `replay.practiceBack`, `replay.practiceClose`, `paper.sessionContinue` |
+| Replay symbol switch | `replay.switchDialog`, `replay.switchContinue`, `replay.switchLive`, `replay.switchStay`, `replay.switchRemember`, `replay.switchClose` |
+| Native "Replay bars" confirm | `replay.confirmDialog`, `replay.confirmYes`, `replay.confirmNo` (inside the chart frame) |
 
 Notes on ids:
 
-- Elements outside the chart frame that carry `data-demo-id` take precedence over frame targets with the same id.
+- Elements outside the chart frame that carry `data-demo-id` take precedence over native frame aliases with the same id. App-rendered controls inside the frame (e.g. header `replay.next`) are listed too, with `frame:true`; use `nth` when both copies are visible.
+- `replay.setOverlayLayout {toolbar:"hidden"}` unmounts the floating toolbar, so only the live header replay controls match. `corner` restores the last/default corner for `toolbar` or `widget`.
+- `demo.prepare {hideCrosshair:true}` also clears an already pinned crosshair on every call.
 - `chart.symbolSearch`, `chart.indicators` and `chart.timezone` always come from the TradingView frame. `chart.interval` may also come from it.
 - Redaction-only entries use the id `redact.<kind>`, where kind is `initials`, `name`, `contact`, `account`, `brokerProfile` or `balance`. Their label is the kind, never the PII text.
 
