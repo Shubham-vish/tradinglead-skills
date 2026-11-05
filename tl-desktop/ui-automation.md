@@ -493,3 +493,207 @@ tradinglead desktop ui-codegen-start --key rec-1    # the person demonstrates th
 tradinglead desktop ui-codegen-stop --key rec-2     # -> run.params is a ready ui-run batch
 ```
 
+
+## Demo browser (any website)
+
+Builds whose `desktop capabilities` list **`demo-browser-open`** add a separate
+app window for recording polished demos of **any https website** (tabId
+`demo:main`). There is no per-site prompt.
+
+- **Isolated session:** it uses its own persistent partition `persist:tl-demo`.
+  The TradingLead login, broker tokens and app cookies are never reachable from it.
+- **Logins persist:** the person can sign in by hand inside the window, and that
+  login survives app restarts.
+- **No app APIs in the page:** there is no preload, and contextIsolation,
+  sandbox and nodeIntegration-off are all on.
+- **No chart tab needed:** it works without a `/charts` tab, trusted origin or
+  account. Do not use it for TradingLead itself; chart tabs keep their own rules.
+
+| Action | Params → result |
+| --- | --- |
+| `demo-browser-open` | `{url?, width?, height?, timeoutMs?}`. `url` defaults to `about:blank`; a bare host gets `https://`. `width` 320–3840 and `height` 240–2160 go together and set the **page viewport** in CSS px. `timeoutMs` is 0–60000 (default 15000). Creates/shows/focuses the window and loads the URL. → status fields + `{created, timedOut, loadError?}` |
+| `demo-browser-navigate` | `{url, timeoutMs?}` → status + `{timedOut, loadError?}` |
+| `demo-browser-history` | `{direction:"back"\|"forward"\|"reload"\|"stop"}` → status + `{dispatched, direction}` (`UI_NO_HISTORY` if there is nowhere to go) |
+| `demo-browser-status` | `{}` (read, no key) → `{tabId, open, visible, focused, url, title, loading, canGoBack, canGoForward, bounds:{x,y,width,height}, contentSize:{width,height}, partition, lastBlocked?:{url, reason, at}}` |
+| `demo-browser-close` | `{}` → `{tabId, closed, open:false, note}`. Ends control and recording. Logins stay. |
+| `demo-browser-clear-session` | `{confirm:true}` (required) → status + `{cleared:true}`. Wipes cookies, storage and cache of the demo partition only, which logs the person out of every demo site. Only call this when asked. |
+
+These actions only address `demo:main`. With the CLI, omit `--tab` (it
+defaults to `demo:main`); any other tab gets `INVALID_REQUEST`. Mutations
+need `--key`. `navigate`, `history` and `status` are allowed as `ui-run` steps.
+`ui-enable`, `ui-status` and `ui-disable` still need an explicit
+`--tab demo:main`.
+
+**URL policy**: `https://` is allowed for any host. `http://` is allowed only for localhost, `*.localhost`, `127.x`,
+`::1`, `10.x`, `172.16–31.x` and `192.168.x`. `about:blank` is also allowed. Everything else is refused with
+`UI_URL_BLOCKED`: `file:`, `javascript:`, `data:`, `blob:`, `chrome:`, `devtools:`, `view-source:`, other `about:`
+pages and URLs with embedded credentials.
+- The same check runs on in-page navigations and main-frame redirects. A blocked
+  one stays on the current page and shows up in `lastBlocked`.
+- `window.open` and `target=_blank` load in the **same window**. No popup
+  windows are created.
+- A site's "Leave page?" (`beforeunload`) prompt never blocks navigate, close or
+  app quit here. If a navigation is still cancelled, it returns
+  `loadError:"NAVIGATION_CANCELLED"`.
+- Single page: there are no demo tabs.
+
+**Control**: `ui-enable --tab demo:main` needs no trusted origin. It gives full interaction: clicks, typing, scroll,
+`ui-run`, `ui-cursor` (badge/frame/ripple), `ui-highlight`, `ui-set-viewport`, screenshots and
+`record-start/mark/status`.
+- Off-origin links are ordinary clicks here. Navigation is guarded by the URL
+  policy above.
+- Control and an active recording **survive page loads**, including cross-site
+  ones, and the agent cursor is redrawn.
+- Control is revoked when the page reaches a refused URL, when the window is
+  closed, hidden or minimised, and on `ui-disable`, Help > Stop AI control or
+  Ctrl/Cmd+Shift+Escape.
+- The page guards still apply. Password, OTP, credential, card, payment,
+  sign-in and broker controls are human-only (`UI_HUMAN_ONLY`), and their values
+  are never read. The person signs in by hand.
+
+**Denied by default**: every permission request (camera, mic, geolocation, notifications, clipboard-read, MIDI…),
+screen/device pickers (HID/serial/USB) and **downloads**. Downloads are cancelled, so `ui-download-wait` won't see a
+file here. Media does not autoplay without a gesture.
+
+**Viewport**: prefer `demo-browser-open {width,height}`. It sizes the real window content, so it persists across page
+loads. `ui-set-viewport` emulation also works, but a full navigation resets it.
+
+**Worked example** (CLI; HTTP callers POST the same `{action, tabId, params, idempotencyKey}` to
+`/api/desktop` using `~/.tradinglead-desktop/api.json` for the port and token):
+
+```bash
+tradinglead desktop demo-browser-open --params '{"url":"https://www.wikipedia.org","width":1280,"height":720}' --key d1
+tradinglead desktop ui-enable --tab demo:main --key d2
+tradinglead desktop ui-cursor --tab demo:main --params '{"show":true,"preset":"reel","badge":true,"frame":true}'
+tradinglead desktop ui-run --tab demo:main --key d3 --params '{
+  "record":{"path":"site-demo.mp4","fps":30,"leadInMs":300,"tailMs":600},
+  "steps":[{"action":"ui-click","params":{"selector":"#searchInput"},"waitAfterMs":300},
+           {"action":"ui-type","params":{"selector":"#searchInput","text":"Screen recording"},"waitAfterMs":300},
+           {"action":"mark","params":{"label":"zoom-here"}},
+           {"action":"ui-click","params":{"selector":"button[type=submit]"},"waitAfterMs":2000},
+           {"action":"ui-scroll","params":{"deltaY":300},"waitAfterMs":500}]}'
+# → {..., recording:{recordingId,...}}
+tradinglead desktop record-status --tab demo:main --params '{"recordingId":"rec-..."}'
+# poll until state:"completed" → {path:"~/.tradinglead-desktop/recordings/site-demo.mp4", eventsPath:".../site-demo.events.json", ...}
+```
+
+The events sidecar has the same format as on chart tabs (`t` seconds, `x`/`y` in
+video pixels, `mark` cues).
+
+### Scraping and network capture (Demo browser)
+
+These five actions work on **`demo:main` only** (the CLI default for them); any
+other tab gets `INVALID_REQUEST`. Each one needs `ui-enable --tab demo:main`.
+- **Denylist:** every action reuses the `ui-route` denylist:
+  - auth/session/token/OTP
+  - payment providers (Razorpay, Stripe, Cashfree, PayU, PayPal, …)
+  - identity providers and sign-in hosts
+  - broker logins and APIs (Fyers, Zerodha/Kite, Upstox, Angel/SmartAPI, Dhan,
+    Alpaca, …) and order/trade endpoints
+  - TradingLead/ContentLead account, key and agent-access paths
+- **Output:** files are private (mode 0600) and never overwritten
+  (`UI_PATH_EXISTS`). A bare name goes to `~/.tradinglead-desktop/captures` or
+  `~/.tradinglead-desktop/scrapes`. An absolute path must be new, inside your
+  home folder, and not in a hidden or system folder.
+- **Recommended flow:** capture first to find the site's JSON API. Then call that
+  API with `ui-page-fetch`. Use `ui-scrape` only when the data exists only in
+  the HTML. Respect the site's terms and robots rules, and keep the polite
+  delays.
+
+| Action | Params → result |
+| --- | --- |
+| `ui-network-capture-start` | `{urlIncludes?\|urlRegex? (≤300), resourceTypes?:["document","xhr","fetch","script","stylesheet","image","media","font","websocket","eventsource","manifest","ping","preflight","other",…], bodies?:true, maxBodyBytes?:1024..5242880 (1048576), maxEntries?:1..20000 (5000), websocket?:false, path? (.jsonl)}` → `{captureId, path, running:true}`. Not a mutation: no retry key, and it works while paused. One capture at a time (`UI_BUSY`). |
+| `ui-network-capture-status` | `{captureId}` (read) → `{captureId, running, path, entries, requests, websocketFrames, denied, bodies, bytes, droppedPending, startedAt, stoppedAt?, stoppedReason?, harPath?}` |
+| `ui-network-capture-stop` | `{captureId, har?:false}` → final status. `har:true` also writes `<name>.har` (HAR 1.2, same redactions) next to the JSONL and adds `harPath`. This also works after an auto-stop. |
+| `ui-page-fetch` | `{url (absolute, or relative to the page), method?:"GET"\|"POST"\|"PUT"\|"PATCH"\|"DELETE"\|"HEAD"\|"OPTIONS", headers?:{…}(≤50), body?:string\|JSON (≤1 MB; not for GET/HEAD), responseType?:"json"\|"text", timeoutMs?:1000..120000 (30000), path?}` → `{url, status, statusText, ok, redirected, headers, contentType, size, body? (≤256 KB inline; parsed JSON), bodyTruncated?, jsonError?, bodyOmitted?, path?}`. `path` saves the full raw body (≤50 MB). Its extension must be one of .json/.txt/.html/.csv/.xml/.jsonl/.js/.md/.bin. |
+| `ui-scrape` | `{item, fields:{name:{selector?, attr?:"text"\|"href"\|"src"\|"value"\|<attr>, all?}} (1..50), next?:{selector}\|{scroll:true, settleMs?:1500}\|{urls:[…≤100]}, maxPages?:1..100 (5), maxItems?:1..50000 (1000), waitFor?, delayMs?:300..60000 (800), timeoutMs?:1000..60000 (15000/page), format?:"jsonl"\|"csv"\|"json", path?, dedupeBy?}` → `{path, format, items, pages, stoppedReason, protectedSkipped, duplicates, urls, sample (first 5)}` |
+
+**Capture** writes one JSONL line per finished request with these fields: `{type:"request", ts, method, url, status,
+statusText, mimeType, resourceType, requestHeaders, responseHeaders, postData?, body?, bodyTruncated?, bodySize?,
+bodyOmitted?, timing:{startedAt, durationMs, ttfbMs, dnsMs, connectMs, sslMs, sendMs, waitMs, receiveMs}, fromCache,
+fromServiceWorker, encodedDataLength, protocol, redirectedTo?, failed?:{errorText, canceled}}`.
+- **WebSocket:** `websocket:true` adds `websocket`, `websocket-frame` (text
+  payload only, ≤16 KB, truncated) and `websocket-closed` lines.
+- **Bodies:** stored by default for JSON/text `xhr`, `fetch` and `document`
+  responses, and for any type you list in `resourceTypes`. Otherwise
+  `bodyOmitted` is `"type"`, `"binary"`, `"disabled"` or `"unavailable"`.
+- **Redaction:** these headers become `"REDACTED"`:
+  - `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization` and
+    `x-csrf*`/`x-xsrf*`
+  - token, api-key, session and signature headers
+
+  So do secret-looking query values (`token`, `key`, `sig`, `code`, `session`,
+  `password`…) and password/OTP/card keys inside JSON or form post data.
+  **Response bodies are kept as-is**, so treat the files as private.
+- **Denylisted URLs:** metadata only: `denied:true` and `bodyOmitted:"denied"`,
+  with no headers and no post data.
+- **Navigation:** a capture keeps running across page loads, including
+  cross-site ones.
+- **Auto-stop:** a capture stops by itself with a `stoppedReason`. A manual stop
+  gives `stopped`. The auto-stop reasons are:
+  - `control-ended` (ui-disable, or control lost)
+  - `window-closed`
+  - `max-entries`
+  - `max-bytes` (200 MB file cap)
+  - `write-failed`
+  - `attach-failed`
+
+**Page fetch** runs `fetch(url, {credentials:"include"})` in the page's main world, so the person's login cookies and
+the site's CORS rules apply exactly as they do for the site's own scripts.
+- **URL rules:** the URL must pass the Demo browser URL policy
+  (`UI_URL_BLOCKED`) and must not be on the denylist (`UI_URL_DENIED`). A
+  redirect to a denylisted URL drops the body (`bodyOmitted:"denied"`).
+- **Refused headers:** `Cookie`, `Authorization`, `Proxy-Authorization` and
+  `Set-Cookie`.
+- **Errors:** `UI_TIMEOUT`, `UI_FETCH_FAILED` (network/CORS) and
+  `UI_RESPONSE_TOO_LARGE` (over 50 MB with `path`).
+- **Page scripts:** the page's own scripts could observe or patch `fetch`, so
+  only use sites you trust.
+
+**Scrape** reads each field inside every `item`. A field without `selector` reads the item itself; `all:true` returns a list.
+- **Protected values:** password/OTP/card values (protected fields) are never
+  read. They come back as `null` and are counted in `protectedSkipped`.
+- **`next` modes:**
+  - **`{selector}`:** a link loads through the URL policy and the denylist. A
+    button is clicked like `ui-click`, and the scraper waits for the URL, the
+    item count or the first item to change.
+  - **`{scroll:true}`:** scrolls to the bottom and stops when no new items
+    appear.
+  - **`{urls}`:** visits exactly those pages, in order.
+- **Pacing:** `delayMs` (minimum 300 ms) is applied between pages. `waitFor`
+  waits for a selector on each page.
+- **Output:**
+  - CSV quotes fields RFC-4180 style and joins lists with `" | "`.
+  - Formula-like values get a `'` prefix. These are values that start with `=`,
+    `+`, `@`, or a `-` that isn't part of a number.
+  - `dedupeBy` drops repeats of that field. Scroll mode always drops identical
+    rows.
+- **`stoppedReason`:** one of:
+  - `max-items`, `max-pages`
+  - `no-next`, `next-disabled`, `next-protected`, `next-denied`, `next-blocked`,
+    `next-repeat`, `next-no-change`
+  - `no-new-items`, `urls-done`, `wait-timeout`, `control-lost`
+
+  A failure after some items keeps the partial file and reports `error:<code>`.
+- **Steps:** `ui-page-fetch` and `ui-scrape` also work as `ui-run` steps.
+
+```bash
+tradinglead desktop demo-browser-open --params '{"url":"https://shop.example.com"}' --key s1
+tradinglead desktop ui-enable --tab demo:main --key s2
+tradinglead desktop ui-network-capture-start --params '{"resourceTypes":["xhr","fetch"],"path":"shop.jsonl"}'
+# browse or scroll the site (ui-scroll / ui-click --tab demo:main), then:
+tradinglead desktop ui-network-capture-stop --params '{"captureId":"cap-…","har":true}'
+# → {path:"~/.tradinglead-desktop/captures/shop.jsonl", harPath:".../shop.har", requests, denied, bodies, …}
+tradinglead desktop ui-page-fetch --params '{"url":"/api/products?page=2","responseType":"json"}' --key s3
+# → {status:200, ok:true, headers:{…, "set-cookie":"REDACTED"}, body:{items:[…]}}
+tradinglead desktop ui-scrape --key s4 --params '{"item":".product","fields":{"title":{"selector":"h2"},"url":{"selector":"a","attr":"href"},"price":{"selector":".price"}},"next":{"selector":"a.next"},"maxPages":10,"format":"csv","path":"products.csv","dedupeBy":"url"}'
+# → {path:"~/.tradinglead-desktop/scrapes/products.csv", items:87, pages:10, stoppedReason:"max-pages", sample:[…]}
+```
+
+**Limits:**
+- **Not captured:** requests from cross-origin iframes (OOPIFs) and from workers.
+- **Small buffers:** `ui-wait-idle`/`ui-wait-response` while a capture runs may
+  re-enable Network with small buffers. Bodies over that limit then come back as
+  `bodyOmitted:"unavailable"`.
+- **Scrape scope:** only the main document is scraped. There are no iframes and
+  no shadow-DOM item selectors.

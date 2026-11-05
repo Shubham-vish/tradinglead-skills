@@ -4,7 +4,7 @@ Generated from a bounded command-catalog snapshot; check the addressed app's liv
 Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-210 canonical commands; 59 compatibility aliases; 56 native Desktop controls.
+210 canonical commands; 59 compatibility aliases; 67 native Desktop controls.
 
 | Registered command | Skill | Retry key | Effects |
 | --- | --- | --- | --- |
@@ -278,6 +278,6 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `pythonIndicators.getSettings` | [tl-python](tl-python/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `pythonIndicators.setSettings` | [tl-python](tl-python/SKILL.md) | Required | write |
 
-Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`, `ui-enable`, `ui-disable`, `ui-status`, `ui-inspect`, `ui-click`, `ui-drag`, `ui-hover`, `ui-move`, `ui-scroll`, `ui-type`, `ui-key`, `record-start`, `record-stop`, `record-status`, `record-mark`, `ui-query`, `ui-wait-for`, `ui-wait-idle`, `ui-press`, `ui-screenshot`, `ui-set-viewport`, `ui-reset-viewport`, `ui-cursor`, `ui-highlight`, `ui-mouse-leave`, `ui-wait-stable`, `ui-chart-point`, `ui-run`, `ui-fill`, `ui-select`, `ui-check`, `ui-upload`, `ui-expect`, `ui-trace-start`, `ui-trace-stop`, `ui-dialog`, `ui-dialog-wait`, `ui-dialog-respond`, `ui-download-wait`, `ui-popup-wait`, `ui-wait-request`, `ui-wait-response`, `ui-route`, `ui-unroute`, `ui-codegen-start`, `ui-codegen-stop`.
+Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`, `ui-enable`, `ui-disable`, `ui-status`, `ui-inspect`, `ui-click`, `ui-drag`, `ui-hover`, `ui-move`, `ui-scroll`, `ui-type`, `ui-key`, `record-start`, `record-stop`, `record-status`, `record-mark`, `ui-query`, `ui-wait-for`, `ui-wait-idle`, `ui-press`, `ui-screenshot`, `ui-set-viewport`, `ui-reset-viewport`, `ui-cursor`, `ui-highlight`, `ui-mouse-leave`, `ui-wait-stable`, `ui-chart-point`, `ui-run`, `ui-fill`, `ui-select`, `ui-check`, `ui-upload`, `ui-expect`, `ui-trace-start`, `ui-trace-stop`, `ui-dialog`, `ui-dialog-wait`, `ui-dialog-respond`, `ui-download-wait`, `ui-popup-wait`, `ui-wait-request`, `ui-wait-response`, `ui-route`, `ui-unroute`, `ui-codegen-start`, `ui-codegen-stop`, `demo-browser-open`, `demo-browser-navigate`, `demo-browser-history`, `demo-browser-close`, `demo-browser-status`, `demo-browser-clear-session`, `ui-network-capture-start`, `ui-network-capture-status`, `ui-network-capture-stop`, `ui-page-fetch`, `ui-scrape`.
 
 Non-mutating in the catalog does not mean cost-free or invisible: scans, navigation, reloads and live-feed requests can still have effects.

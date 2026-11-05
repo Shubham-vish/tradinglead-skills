@@ -72,6 +72,8 @@ function validateCatalog(catalog) {
 			"ui-run", "ui-fill", "ui-select", "ui-check", "ui-upload", "ui-expect", "ui-trace-start", "ui-trace-stop",
 			"ui-dialog", "ui-dialog-wait", "ui-dialog-respond", "ui-download-wait", "ui-popup-wait", "ui-wait-request", "ui-wait-response",
 			"ui-route", "ui-unroute", "ui-codegen-start", "ui-codegen-stop",
+			"demo-browser-open", "demo-browser-navigate", "demo-browser-history", "demo-browser-close", "demo-browser-status", "demo-browser-clear-session",
+			"ui-network-capture-start", "ui-network-capture-status", "ui-network-capture-stop", "ui-page-fetch", "ui-scrape",
 			"record-start", "record-status", "record-stop", "record-mark"].includes(action.action) || typeof action.description !== "string") {
 			throw new Error("Unknown Desktop control; update the connection skill before refreshing.");
 		}
