@@ -263,6 +263,8 @@ top-level CSS pixels.
 | `ui-reset-viewport` | none | key |
 | `ui-cursor` | **show**, `preset:reel\|subtle\|off`, `style:arrow\|dot\|ring`, `size`, `color`, `ripple`, `rippleColor` (#FFD43B), `rippleSize` (56), `pressScale`, `keys:true` (keystroke pill), `badge` (opt-in: `true` or `{text:"AI" (1-24 chars plain text), color:#rrggbb}`; off by default and in every preset), `frame:true` (thin glowing viewport frame; default off) | read |
 | `ui-highlight` | target or `rect`, `label`, `color`, `style:box\|reel` (reel = yellow glow box + bold label; labels stay inside the viewport and flip below near the top), `spotlight:true` (dim the rest), `durationMs` (0 keeps it), or `{clear:true}` | read |
+| `ui-select-text` | **text** (or `whole:true` on a target), `to`, `occurrence`, `ignoreCase`, `mode:drag\|instant`, `durationMs`, scope target, or `{clear:true}`; selection only (verified native drag, Range fallback), no overlay | key |
+| `ui-highlight-text` | **text**, `to`, `occurrence`, `all`, `style:marker\|underline\|box\|reel` (marker = highlight colour only, underline = underline only), `color`, `label`, `spotlight`, `animate`, `durationMs` (0 keeps it), or `{clear:true}`. The cursor parks off the text and off links (no hover popups); badge and label settle in blank space | read |
 | `record-mark` | **label**, `data` (small JSON) while a screencast records; adds a cue to the events sidecar | read |
 | `ui-chart-point` | `time` (unix s/ms or ISO) and/or `price`, `paneIndex`, `chartIndex` (split-chart cell); or `x,y` for the reverse lookup | read |
 
