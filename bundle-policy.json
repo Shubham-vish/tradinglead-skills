@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 7,
+  "revision": 8,
   "requires": {
-    "minDesktop": "0.1.15",
+    "minDesktop": "0.1.16",
     "maxDesktopExclusive": "0.2.0",
     "cliApi": 1,
     "bridgeProtocol": 2

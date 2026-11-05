@@ -77,6 +77,17 @@
         "cliApi": 1,
         "bridgeProtocol": 2
       }
+    },
+    {
+      "revision": 8,
+      "file": "bundle-8.json",
+      "sha256": "55791425a5cf2e0a7606b883cbbf310e024e130d277ad175f437151cad0919c4",
+      "requires": {
+        "minDesktop": "0.1.16",
+        "maxDesktopExclusive": "0.2.0",
+        "cliApi": 1,
+        "bridgeProtocol": 2
+      }
     }
   ]
 }

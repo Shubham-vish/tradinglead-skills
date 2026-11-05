@@ -261,8 +261,8 @@ top-level CSS pixels.
 | `ui-screenshot` | target or `clip:{x,y,width,height}`, `format:png\|jpeg`, `quality`, `scale`, `path` -> `{path,bytes,width,height,devicePixelRatio}` | read |
 | `ui-set-viewport` | **width**, **height**, `deviceScaleFactor` (0 = native), or `resizeWindow:true`; emulation clears on reload/full navigation (not same-document routes) and when control ends | key |
 | `ui-reset-viewport` | none | key |
-| `ui-cursor` | **show**, `preset:reel\|subtle\|off`, `style:arrow\|dot\|ring`, `size`, `color`, `ripple`, `rippleColor` (#FFD43B), `rippleSize` (56), `pressScale`, `keys:true` (keystroke pill) | read |
-| `ui-highlight` | target or `rect`, `label`, `color`, `style:box\|reel` (reel = yellow glow box + bold label), `spotlight:true` (dim the rest), `durationMs` (0 keeps it), or `{clear:true}` | read |
+| `ui-cursor` | **show**, `preset:reel\|subtle\|off`, `style:arrow\|dot\|ring`, `size`, `color`, `ripple`, `rippleColor` (#FFD43B), `rippleSize` (56), `pressScale`, `keys:true` (keystroke pill), `badge` (opt-in: `true` or `{text:"AI" (1-24 chars plain text), color:#rrggbb}`; off by default and in every preset), `frame:true` (thin glowing viewport frame; default off) | read |
+| `ui-highlight` | target or `rect`, `label`, `color`, `style:box\|reel` (reel = yellow glow box + bold label; labels stay inside the viewport and flip below near the top), `spotlight:true` (dim the rest), `durationMs` (0 keeps it), or `{clear:true}` | read |
 | `record-mark` | **label**, `data` (small JSON) while a screencast records; adds a cue to the events sidecar | read |
 | `ui-chart-point` | `time` (unix s/ms or ISO) and/or `price`, `paneIndex`, `chartIndex` (split-chart cell); or `x,y` for the reverse lookup | read |
 
@@ -294,7 +294,7 @@ page's cursor overlay is captured; the OS cursor is not. Params:
 - `durationMs` / `maxDurationMs` (safety stop, up to 600000)
 - `maxWidth`/`maxHeight` (default: viewport × devicePixelRatio, i.e. native pixels), `quality` 1-100, `everyNthFrame`, `keepFrames`
 - `clip:{x,y,width,height}` (CSS px) **or** a target (`target`, `selector`, `text`, ...) to crop the video to a region
-- `cursor`: `true` (default) shows the reel cursor with yellow click ripples for the recording and restores the previous cursor state afterwards; `false` leaves the overlay alone; an object such as `{"preset":"reel","keys":true}` sets the style
+- `cursor`: `true` (default) shows the reel cursor with yellow click ripples for the recording and restores the previous cursor state afterwards; `false` leaves the overlay alone; an object such as `{"preset":"reel","keys":true}` sets the style (it also accepts `badge` and `frame`)
 
 `record-status` on completion returns `path`, `width`, `height`, `fps`,
 `frameCount`, `videoDurationMs`, `sourceFrames`, `duplicatedFrames`,
@@ -311,6 +311,16 @@ two staggered rings, right-click a dashed square ring, drags hold a ring under
 the cursor while the button is down. `keys:true` (or `showKeys:true` on
 `ui-press`/`ui-type`) shows a pill such as `⌘ K` or `Esc` at the bottom centre
 for ~900ms.
+
+**AI badge and frame (opt-in):** neither is shown unless you ask for it. The
+default cursor and every preset (`reel`, `subtle`, `off`) have no badge and no
+frame. Pass `badge:true` for a small dark pill with a pulsing sparkle and the
+text "AI" that rides just below-right of the tip, in the ripple colour, or
+`badge:{"text":"Agent","color":"#00ff88"}` to change it (1-24 characters of
+plain text). It flips left or up near the viewport edges and bounces briefly
+on each press. `frame:true` adds a thin glowing frame around the viewport
+while the cursor is shown. Both are `pointer-events:none` and disappear with
+`ui-cursor {show:false}`, `ui-disable`, consent loss and navigation.
 
 **Events sidecar (`<video>.events.json`):** every ui action during the
 recording (click, dblclick, press, type, scroll, drag-start/drag-end, hover/move
