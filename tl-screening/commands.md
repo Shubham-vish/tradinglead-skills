@@ -52,13 +52,13 @@ Effects: **panel**. These are possible consequences, not grants; optional write 
 
 | Parameter | Contract |
 | --- | --- |
-| `definition` | Complete preset/custom/sql/classic definition without tickers; use catalog. Classic uses screeners:[{name,parameters}] from the advertised strategy catalog. |
+| `definition` | Complete preset/custom/sql/classic/indicator definition without tickers; use catalog. Classic uses screeners:[{name,parameters}] from the advertised strategy catalog. Indicator (only when catalog.indicator.available) uses script:{language:pine\|python, savedId (account library ID; source is frozen, library unchanged) or source, inputs? keyed by Pine variable ID, strategyMode?:sequential} and condition:{kind:output\|color\|marker\|alert\|strategy per catalog.indicator.condition_kinds_by_language, output? (plot id/exact title; alert title), operator?, value? (number; color hex/rgb()/color.name; alert exact message; strategy long\|short), within_bars:1-100 closed bars}. getState reports sourceBytes, never source. |
 | `universe` | Optional {kind:active\|watchlist\|flag\|category\|symbols,name?,tickers?}. |
 | `expectedRevision` | Required visible draft revision from getState. |
 
 ## `screening.run`
 
-Start the visible preset/custom/SQL/Classic scan once. Consumes allowance, including cache hits. Poll getResults; no automatic retry.
+Start the visible preset/custom/SQL/Classic/indicator scan once. Consumes allowance, including cache hits. Poll getResults; no automatic retry.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **quota, network, panel**. These are possible consequences, not grants; optional write variants still require approval and a retry key.

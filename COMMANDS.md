@@ -4,7 +4,7 @@ Generated from a bounded command-catalog snapshot; check the addressed app's liv
 Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-210 canonical commands; 59 compatibility aliases; 67 native Desktop controls.
+221 canonical commands; 59 compatibility aliases; 67 native Desktop controls.
 
 | Registered command | Skill | Retry key | Effects |
 | --- | --- | --- | --- |
@@ -71,6 +71,10 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `patterns.getResults` | [tl-patterns](tl-patterns/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `patterns.setAnalysis` | [tl-patterns](tl-patterns/SKILL.md) | Not required (parameterized writes still require it) | panel |
 | `patterns.openOccurrence` | [tl-patterns](tl-patterns/SKILL.md) | Not required (parameterized writes still require it) | navigate, quota, network |
+| `execution.read` | [tl-alerts](tl-alerts/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `execution.manage` | [tl-alerts](tl-alerts/SKILL.md) | Required | code, network, write |
+| `notifications.read` | [tl-alerts](tl-alerts/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `notifications.manage` | [tl-alerts](tl-alerts/SKILL.md) | Required | network, write |
 | `research.listCapabilities` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `research.list` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `research.get` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
@@ -277,6 +281,13 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `indicators.setSettings` | [tl-tlscript](tl-tlscript/SKILL.md) | Required | write |
 | `pythonIndicators.getSettings` | [tl-python](tl-python/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `pythonIndicators.setSettings` | [tl-python](tl-python/SKILL.md) | Required | write |
+| `brokers.list` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `brokers.read` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | quota, network |
+| `brokers.trade` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, quota, network, write |
+| `brokers.tradeStatus` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | none |
+| `brokers.signIn` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | ui, network |
+| `brokers.manageAccount` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, network, write |
+| `brokers.chartOverlay` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | write |
 
 Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`, `ui-enable`, `ui-disable`, `ui-status`, `ui-inspect`, `ui-click`, `ui-drag`, `ui-hover`, `ui-move`, `ui-scroll`, `ui-type`, `ui-key`, `record-start`, `record-stop`, `record-status`, `record-mark`, `ui-query`, `ui-wait-for`, `ui-wait-idle`, `ui-press`, `ui-screenshot`, `ui-set-viewport`, `ui-reset-viewport`, `ui-cursor`, `ui-highlight`, `ui-mouse-leave`, `ui-wait-stable`, `ui-chart-point`, `ui-run`, `ui-fill`, `ui-select`, `ui-check`, `ui-upload`, `ui-expect`, `ui-trace-start`, `ui-trace-stop`, `ui-dialog`, `ui-dialog-wait`, `ui-dialog-respond`, `ui-download-wait`, `ui-popup-wait`, `ui-wait-request`, `ui-wait-response`, `ui-route`, `ui-unroute`, `ui-codegen-start`, `ui-codegen-stop`, `demo-browser-open`, `demo-browser-navigate`, `demo-browser-history`, `demo-browser-close`, `demo-browser-status`, `demo-browser-clear-session`, `ui-network-capture-start`, `ui-network-capture-status`, `ui-network-capture-stop`, `ui-page-fetch`, `ui-scrape`.
 

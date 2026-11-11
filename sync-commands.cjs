@@ -5,7 +5,7 @@ const { execFileSync } = require("node:child_process");
 const skillNames = [
 	"tl-desktop", "tl-charts", "tl-markets", "tl-alerts", "tl-screening", "tl-patterns", "tl-research",
 	"tl-tlscript", "tl-python", "tl-backtesting", "tl-strategy-optimization", "tl-strategy-research", "tl-paper-trading",
-	"tl-testing",
+	"tl-portfolio", "tl-testing",
 ];
 const MAX_CATALOG_ENTRIES = 256;
 const MAX_CATALOG_ALIASES = 128;
@@ -27,7 +27,7 @@ function ownerFor(type) {
 		drawings: "tl-charts", layout: "tl-charts", grid: "tl-charts", feeds: "tl-charts",
 		watchlists: "tl-markets", symbol: "tl-markets", peers: "tl-markets", indices: "tl-markets",
 		heatmap: "tl-markets", intelligence: "tl-markets", futures: "tl-markets", universe: "tl-markets",
-		marketData: "tl-markets", alerts: "tl-alerts", patterns: "tl-patterns",
+		marketData: "tl-markets", alerts: "tl-alerts", execution: "tl-alerts", notifications: "tl-alerts", brokers: "tl-portfolio", patterns: "tl-patterns",
 		indicators: "tl-tlscript", pythonIndicators: "tl-python", screener: "tl-screening", providerScreener: "tl-screening",
 		screening: "tl-screening", research: "tl-research",
 	}[family];

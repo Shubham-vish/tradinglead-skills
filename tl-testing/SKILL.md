@@ -1,6 +1,6 @@
 ---
 name: tl-testing
-description: Agent-run testing for TradingLead Desktop. The AI executes real commands through the Desktop bridge CLI, inspects state, captures screenshots and judges pass/fail from YAML suites (smoke, charts, layouts/grid, watchlists/markets, alerts, indicators, backtesting, optimization, screening, patterns, paper trading, workflows, LLM-judged quality), with isolation, cleanup and a standard report. Also lists the local deterministic unit-test commands. Use for "run smoke", "run backtesting tests", "test TradingLead", tag-filtered runs or authoring a new suite. Owns no product commands.
+description: Agent-run testing for TradingLead Desktop. The AI executes real commands through the Desktop bridge CLI, inspects state, captures screenshots and judges pass/fail from YAML suites (smoke, charts, layouts/grid, watchlists/markets, alerts, server alerts and notification channels, indicators, backtesting, optimization, screening, patterns, paper trading, workflows, LLM-judged quality), with isolation, cleanup and a standard report. Also lists the local deterministic unit-test commands. Use for "run smoke", "run backtesting tests", "test TradingLead", tag-filtered runs or authoring a new suite. Owns no product commands.
 ---
 
 # TradingLead agent-run testing
@@ -239,6 +239,7 @@ if a path is missing but the data is clearly present under another name, report
 Suites: [smoke](suites/smoke.yaml), [charts](suites/charts.yaml),
 [layouts-grid](suites/layouts-grid.yaml),
 [watchlists-markets](suites/watchlists-markets.yaml), [alerts](suites/alerts.yaml),
+[server-alerts](suites/server-alerts.yaml),
 [indicators](suites/indicators.yaml), [backtesting](suites/backtesting.yaml),
 [strategy-optimization](suites/strategy-optimization.yaml),
 [screening](suites/screening.yaml), [patterns](suites/patterns.yaml),

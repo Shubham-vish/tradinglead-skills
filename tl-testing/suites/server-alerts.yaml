@@ -1,0 +1,130 @@
+version: 1
+suite:
+  id: server-alerts
+  name: Server alerts and notification channels
+  description: Read-only contracts for hosted server alerts (execution.*) and notification channels (notifications.*), plus guardrails that must reject before anything changes - invalid channel operations and external activation without consent - and opening the Server alerts dialog on a tab. Creates, activates, links, tests and unlinks nothing; it needs the write grant only so the guarded rejections are reached.
+  requires: {"grants": ["allowAgentWrites"], "signIn": true}
+  defaults:
+    fakeRunId: ai-test-missing-run
+tests:
+  - id: server-alerts.capabilities
+    name: Capabilities list data sources and limits
+    category: contract
+    tags: ["server-alerts"]
+    execute:
+      type: execution.read
+      params: {"what": "capabilities"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.capabilities
+          exists: true
+
+  - id: server-alerts.runs-and-groups
+    name: Runs and groups page as arrays
+    category: contract
+    tags: ["server-alerts"]
+    setup:
+      - id: groups
+        type: execution.read
+        params: {"what": "groups", "limit": 5}
+    execute:
+      type: execution.read
+      params: {"what": "runs", "limit": 5}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.runs
+          type: array
+
+  - id: server-alerts.unknown-run
+    name: An unknown run id returns an explicit error
+    category: contract
+    tags: ["server-alerts", "errors"]
+    execute:
+      type: execution.read
+      params: {"what": "run", "id": "{{suite.defaults.fakeRunId}}"}
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          exists: true
+
+  - id: server-alerts.activate-needs-consent
+    name: External activation is refused without the user's consent
+    category: contract
+    tags: ["server-alerts", "errors", "guardrails"]
+    execute:
+      type: execution.manage
+      params: {"operation": "activate", "id": "{{suite.defaults.fakeRunId}}", "expectedRevision": 1, "reviewedDefinitionHash": "0000000000000000000000000000000000000000000000000000000000000000"}
+      idempotencyKey: "ai-test-{{run.id}}-activate-refused"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          equals: USER_CONSENT_REQUIRED
+
+  - id: notifications.status
+    name: Channel status reports reach and scope
+    category: contract
+    tags: ["notifications"]
+    execute:
+      type: notifications.read
+      params: {}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.channels.telegram
+          exists: true
+        - path: data.reach
+          type: array
+        - path: data.scope
+          type: string
+
+  - id: notifications.link-webpush-rejected
+    name: Browser push cannot be linked by an agent
+    category: contract
+    tags: ["notifications", "errors"]
+    execute:
+      type: notifications.manage
+      params: {"operation": "link", "channel": "webpush"}
+      idempotencyKey: "ai-test-{{run.id}}-link-webpush"
+    assert:
+      response:
+        - path: status
+          equals: error
+        - path: code
+          equals: INVALID_PARAMS
+
+  - id: server-alerts.open-runs-tab
+    name: Opening the Alerts sidebar on the Server alerts Runs tab
+    category: visual
+    tags: ["server-alerts", "ui"]
+    execute:
+      type: workspace.openSidebar
+      params: {"panel": "alerts", "section": "serveralerts"}
+    assert:
+      response:
+        - path: status
+          equals: ok
+        - path: data.section
+          equals: serveralerts
+      state:
+        - label: Alerts panel is open
+          kind: poll
+          type: workspace.getState
+          params: {}
+          until: {"path": "data.sidebar.panel", "equals": "alerts"}
+          intervalMs: 500
+          timeoutMs: 10000
+          assertions:
+            - path: data.sidebar.panel
+              equals: alerts
+      visual:
+        screenshot: server-alerts-runs
+        criteria: ["The Server alerts dialog is open on the Runs tab", "No error banner is shown"]

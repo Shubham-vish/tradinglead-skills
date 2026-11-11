@@ -119,7 +119,7 @@ Effects: **panel**. These are possible consequences, not grants; optional write 
 
 | Parameter | Contract |
 | --- | --- |
-| `panel` | peers\|watchlists\|futures\|backtesting\|paper-trading\|intelligence\|indicators; simulation is a legacy alias |
+| `panel` | peers\|watchlists\|futures\|backtesting\|paper-trading\|portfolio\|intelligence\|indicators; simulation is a legacy alias |
 | `expanded` | Optional boolean, default true. |
 | `dock` | Optional bottom\|right, backtesting only: place it and select its tab. right fails DOCK_UNAVAILABLE under 720px. |
 
@@ -134,6 +134,7 @@ Effects: **panel**. These are possible consequences, not grants; optional write 
 | --- | --- |
 | `panel` | watchlists\|indices\|heatmap\|scanner\|grid\|patterns\|alerts\|research\|dataWindow\|paperTrading\|contests |
 | `expanded` | Optional boolean, default true |
+| `section` | Optional, alerts only: serveralerts (Runs) or notifications opens the Server alerts dialog on that tab |
 
 ## `workspace.setTheme`
 

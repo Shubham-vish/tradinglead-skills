@@ -155,7 +155,7 @@ Effects: **navigate, panel, quota, network, write**. These are possible conseque
 
 | Parameter | Contract |
 | --- | --- |
-| `layout` | single\|columns\|rows\|grid |
+| `layout` | single\|columns\|rows\|left\|right\|top\|bottom\|grid |
 | `activePane` | Pane id in layout |
 | `maximize` | bool |
 | `horizontal` | 25-75 |

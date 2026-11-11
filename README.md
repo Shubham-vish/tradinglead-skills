@@ -11,7 +11,7 @@ desktop automation.
 | Start | [tl-desktop](tl-desktop/SKILL.md) | Connection, tab targeting, permissions, retries, native clicks/right-clicks, hover/scroll/type/keys, tab recording, workspace shell and the full UI map |
 | Charting | [tl-charts](tl-charts/SKILL.md) | Chart/feed navigation, history, snapshots, native replay, view/scale/range/timezone/legend, Compare, toolbar actions and screenshots, native studies and indicator templates, drawings, drawing templates, split layouts, pane targeting and linking, saved chart layouts, Chart Grid |
 | Markets | [tl-markets](tl-markets/SKILL.md) | Watchlists (Watch grid, select/sort/filter/columns, CSV text, order, flags, favorites, create/add/remove/rename/delete), Multi Watchlists, symbol details, peers and refresh, indices, heatmap, Market Intelligence, Futures, universes, raw candles |
-| Alerts | [tl-alerts](tl-alerts/SKILL.md) | Saved price alerts: list, create, edit (incl. message/expiry), pause/resume, delete, trigger activity and monitoring semantics |
+| Alerts | [tl-alerts](tl-alerts/SKILL.md) | Chart price alerts (list/create/edit/pause/delete/activity), server alerts (hosted runs and multi-ticker groups: preview, create, pause/resume/stop, history with delivery) and notification channels (Telegram/WhatsApp link, enable/mute, test); end-to-end AI setup recipe |
 | Analysis | [tl-screening](tl-screening/SKILL.md) | Unified Scanner, original strategies/SQL, grid analysis and refinement, Scanned History, saved rules, provider scans, Grid/watchlist handoff |
 | Analysis | [tl-patterns](tl-patterns/SKILL.md) | Historical weekday/IST-window studies, coverage, filtered statistics and dated occurrence navigation |
 | Analysis | [tl-research](tl-research/SKILL.md) | Saved HTML research pages in the right sidebar |
@@ -20,6 +20,7 @@ desktop automation.
 | Strategy | [tl-backtesting](tl-backtesting/SKILL.md) | Python/Pine strategy backtests, applied strategies, saved runs, presets and chart overlays |
 | Strategy | [tl-strategy-optimization](tl-strategy-optimization/SKILL.md) | Strategy Optimizer: parameter sweeps, holdout, walk-forward and detailed offline HTML reports |
 | Strategy | [tl-paper-trading](tl-paper-trading/SKILL.md) | Direct replay-to-trade practice, backtest-derived replay, forward paper and simulated orders |
+| Portfolio | [tl-portfolio](tl-portfolio/SKILL.md) | Real broker accounts (Fyers, Zerodha Kite): holdings, positions, orders, trades, funds, user-confirmed Kite cancel/modify/exit, sign-in and chart overlay; cannot place new orders |
 | Strategy | [tl-strategy-research](tl-strategy-research/SKILL.md) | Deprecated compatibility router to tl-strategy-optimization (no procedure ownership) |
 | Quality | [tl-testing](tl-testing/SKILL.md) | Agent-run testing of TradingLead Desktop: YAML suites of real bridge commands with response/state/visual assertions, isolation and cleanup, reporting, plus the local unit-test commands (owns no commands) |
 
@@ -42,12 +43,14 @@ outcome. Load a companion only when that part of the task is needed.
 | Read/sort/filter/export a watchlist, reorder/flag/star, manage membership | `tl-markets` | `tl-screening` to source symbols from a scan |
 | Company details, peers, indices, heatmap, Intelligence, Futures, raw candles | `tl-markets` | `tl-charts` to open the symbol first |
 | Create, edit, pause or review saved price alerts | `tl-alerts` | `tl-charts` for trendline alerts drawn by a person |
+| Server alerts that run with the app closed, or alerts on Telegram/WhatsApp/push | `tl-alerts` | Activation and browser-push subscribe stay in-app with the user |
 | Screen many stocks | `tl-screening` | `tl-research` to report existing results without rerunning |
 | Review one ticker's historical weekday/time windows | `tl-patterns` | `tl-charts` for requested feed/chart changes; `tl-research` to report existing results |
 | Write or revise a chart indicator | `tl-tlscript` or `tl-python` | `tl-charts` for chart/feed work |
 | Run or explain a Python/Pine strategy backtest | `tl-backtesting` | `tl-python` for Python source/SDK authoring; `tl-tlscript` for Pine language-support discovery, not strategy execution |
 | Sweep parameters or evaluate holdout/walk-forward | `tl-strategy-optimization` | `tl-backtesting` to create/restore the prerequisite completed run |
 | Trade a replay cursor or manage forward paper | `tl-paper-trading` | `tl-backtesting` for a backtest-derived branch or saved-run management; direct practice needs no strategy run |
+| Read real holdings/positions/orders/funds, or cancel/modify/exit a real Kite order | `tl-portfolio` | `tl-paper-trading` for simulated orders; new broker orders cannot be placed |
 | Publish an HTML explanation of existing results | `tl-research` | The result's workflow owner for evidence; reporting does not rerun or optimize a strategy |
 | Test TradingLead itself (run smoke/domain suites, judge results, run unit tests) | `tl-testing` | The domain owner's guide when a failure needs diagnosis |
 
@@ -138,12 +141,13 @@ Each skill's `commands.md` contains exact descriptions, parameter names and
 retry requirements generated from the checked frontend source catalog. `command-catalog.json`
 is a documentation snapshot, **not** a substitute for fresh app capabilities.
 
-The current snapshot has **242 frontend descriptors** (193 canonical commands
-plus 49 compatibility aliases) and 6 native Desktop controls, about 110 KiB of
-catalog JSON. Owned descriptors per skill, including aliases: tl-desktop 5,
-tl-charts 32, tl-markets 20, tl-alerts 6, tl-screening 27, tl-patterns 11,
-tl-research 7, tl-tlscript 24, tl-python 16, tl-backtesting 58,
-tl-strategy-optimization 12, tl-paper-trading 24, tl-strategy-research 0
+The current snapshot has **280 frontend descriptors** (221 canonical commands
+plus 59 compatibility aliases) and 67 native Desktop controls, about 205 KiB of
+catalog JSON. Owned descriptors per skill, including aliases: tl-desktop 12,
+tl-charts 32, tl-markets 20, tl-alerts 10, tl-screening 27, tl-patterns 11,
+tl-research 7, tl-tlscript 24, tl-python 16, tl-backtesting 60,
+tl-strategy-optimization 22, tl-paper-trading 32, tl-portfolio 7,
+tl-strategy-research 0
 (the backtesting, optimization and paper totals include `simulation.*` and
 legacy optimization aliases). Exact ownership is generated in
 [COMMANDS.md](COMMANDS.md).
@@ -196,6 +200,7 @@ read-only suites, and references to undefined earlier steps.
 | Split layouts and Chart Grid | `layout.*` selects the active pane every chart command targets and saves/loads chart layouts; and links symbol/interval from the active pane; `grid.*` opens (explicit symbols or all/filtered/selected scan rows) and configures the cloud-backed Chart Grid incl. theme, width, expand, chart indicators and open page. Crosshair sync is impossible; saved-layout rename/delete and the card enlarge dialog remain UI-only. |
 | Watchlists and market panels | `watchlists.*` (incl. CSV text, manual order, flags, favorite stars), `symbol.details`, `peers.get/configure`, `indices.getState`, `heatmap.*`, `intelligence.*`, `futures.getReport` read/drive mounted panels. Not bulk quotes, live positions, live fundamentals or file/clipboard export; heatmap has no historical periods. |
 | Saved price alerts | `alerts.*` lists/creates/edits/pauses/deletes rules and pages persisted trigger events; optional `message`/`expiresAt` need an Alerts API update that is not yet deployed (production rejects them until then); trendline geometry is UI-only; monitoring and expiry require the signed-in Alerts panel to remain mounted |
+| Server alerts and notifications | `execution.read/manage` preview, create inactive runs/groups (≤100 tickers), pause/resume/stop and read history with per-event delivery; `notifications.read/manage` read reach, create Telegram/WhatsApp link URLs, enable/disable/mute/unlink and test. Activation needs the in-app review (`USER_CONSENT_REQUIRED` externally); linking needs the user to open the link; browser push needs the browser prompt. Both notification commands need the negotiated compact catalog |
 | Backtest overlays, styles and date selection | `backtesting.getChartOptions` / `backtesting.setChartOptions`; display changes do not rerun strategies |
 | Presets and larger saved result history | Python-only reusable presets; separate saved-run library/import/export commands, with their own revisions |
 | Strategy Optimizer: Optimize tab | Python and authoritative Pine frozen-data sweeps/holdout/walk-forward through `backtesting.optimize*`, distinct from HTML reports. Pine needs no Python runtime; rediscover installed availability first. |

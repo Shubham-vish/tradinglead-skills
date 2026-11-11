@@ -316,7 +316,7 @@
       "description": "Change split layout, active pane (retargets chart.* commands), focus/restore, split sizes, fullscreen or pane linking.",
       "mutates": true,
       "params": {
-        "layout": "single|columns|rows|grid",
+        "layout": "single|columns|rows|left|right|top|bottom|grid",
         "activePane": "Pane id in layout",
         "maximize": "bool",
         "horizontal": "25-75",
@@ -542,7 +542,7 @@
       "description": "Replace the visible rules and optionally select a universe, without executing. Read getState first.",
       "mutates": false,
       "params": {
-        "definition": "Complete preset/custom/sql/classic definition without tickers; use catalog. Classic uses screeners:[{name,parameters}] from the advertised strategy catalog.",
+        "definition": "Complete preset/custom/sql/classic/indicator definition without tickers; use catalog. Classic uses screeners:[{name,parameters}] from the advertised strategy catalog. Indicator (only when catalog.indicator.available) uses script:{language:pine|python, savedId (account library ID; source is frozen, library unchanged) or source, inputs? keyed by Pine variable ID, strategyMode?:sequential} and condition:{kind:output|color|marker|alert|strategy per catalog.indicator.condition_kinds_by_language, output? (plot id/exact title; alert title), operator?, value? (number; color hex/rgb()/color.name; alert exact message; strategy long|short), within_bars:1-100 closed bars}. getState reports sourceBytes, never source.",
         "universe": "Optional {kind:active|watchlist|flag|category|symbols,name?,tickers?}.",
         "expectedRevision": "Required visible draft revision from getState."
       },
@@ -552,7 +552,7 @@
     },
     {
       "type": "screening.run",
-      "description": "Start the visible preset/custom/SQL/Classic scan once. Consumes allowance, including cache hits. Poll getResults; no automatic retry.",
+      "description": "Start the visible preset/custom/SQL/Classic/indicator scan once. Consumes allowance, including cache hits. Poll getResults; no automatic retry.",
       "mutates": false,
       "params": {
         "expectedRevision": "Required current visible draft revision.",
@@ -869,6 +869,69 @@
         "quota",
         "network"
       ]
+    },
+    {
+      "type": "execution.read",
+      "description": "Read hosted (server-side) execution, separate from chart alerts: capabilities (readiness, kinds, languages, data sources, limits, groups), a preview, runs, one run, a run's events, groups or one group. what:definition builds, without saving, the exact definition v1 the Cloud alert form would create from a short spec (price level, trend line or Pine/Python script; one ticker or a Pine group up to 100 tickers)",
+      "mutates": false,
+      "params": {
+        "what": "capabilities|preview|runs|run|events|groups|group|definition",
+        "spec": "definition: spec {name, symbol | symbols (1-100, multi-ticker needs a TLScript-Pine script; tickers from watchlists.list), interval (string like '15', '15m', '1h', '1D', or a number of seconds), dataSource? \"provider/source\" from capabilities, adjustment?, lookbackBars? (default 300), frequency? once|once_per_bar, trigger: {type:price, level, direction above|below|either|touch, priceSource? close|wick} | {type:trend, points:[{time,price},{time,price}], direction, priceSource?} | {type:script, language pine|python, source (from indicators.get / pythonIndicators.get), inputs?, pineSettings?, pythonKind? indicator|strategy, target? events (strategy orders / alert() events) | condition, output (condition: plot id or title; a preview result lists plots), direction? above|below|either, level?}}. Returns the definition, its definitionHash, tickers, trading hours and the next steps (preview, then createRun or createGroup); nothing is saved.",
+        "id": "Preview, run or group id (preview, run, events, group)",
+        "limit": "Optional page size: runs/groups 1-20, events 1-100 (1-20 with includeDelivery)",
+        "cursor": "Optional cursor from a previous page",
+        "includeDelivery": "events: true to attach each event's notification outcome (sent = provider accepted, not read)"
+      },
+      "effects": [
+        "network"
+      ]
+    },
+    {
+      "type": "execution.manage",
+      "description": "Change hosted execution. preview: bounded historical preview of a definition v1 (scripts need hostedExecutionConsent:true). createRun: inactive run from a succeeded matching preview. createGroup: inactive multi-ticker group from a template (series.symbol = symbols[0]) plus a succeeded preview per symbol. pause/resume/stop[Group] need expectedRevision. updateGroupSymbols sets membership; added symbols need previews, stay inactive. activate/activateGroup: in-app review with user consent only.",
+      "mutates": true,
+      "params": {
+        "operation": "preview|createRun|activate|pause|resume|stop|createGroup|activateGroup|pauseGroup|resumeGroup|stopGroup|updateGroupSymbols",
+        "definition": "preview/createRun/createGroup: execution definition v1",
+        "previewId": "createRun: succeeded preview id",
+        "symbols": "createGroup/updateGroupSymbols: full unique symbol list",
+        "previews": "createGroup: {symbol: previewId} for every symbol; updateGroupSymbols: exactly the symbols needing a new run (added, selected without a run, or never-activated ones to re-preview); {} for removal only",
+        "hostedExecutionConsent": "preview/createRun/createGroup/updateGroupSymbols: true for kind script (uploads source)",
+        "id": "Run or group id",
+        "expectedRevision": "Run or group revision you reviewed",
+        "reviewedDefinitionHash": "activate/activateGroup: definitionHash the user reviewed"
+      },
+      "effects": [
+        "code",
+        "network",
+        "write"
+      ]
+    },
+    {
+      "type": "notifications.read",
+      "description": "Read where server-alert notifications go: notify enabled, Telegram/WhatsApp link + enabled + mute, browser-push devices, and reach (channels that would receive now). Chart (sidebar) alerts never notify.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "notifications.manage",
+      "description": "Change notification channels. link (telegram|whatsapp) returns a one-time URL the user must open and press Start; poll notifications.read for linked. enable/disable/unlink; mute (telegram, duration 1h|4h|morning = until 9 AM IST) and unmute (telegram); test sends a real test message (5 per 10 min). Browser push subscribe is in-app only.",
+      "mutates": true,
+      "params": {
+        "operation": "link|enable|disable|mute|unmute|unlink|test",
+        "channel": "telegram|whatsapp|webpush (test: optional = all enabled)",
+        "deviceId": "webpush enable/disable/unlink: device id from notifications.read",
+        "duration": "mute only: 1h|4h|morning"
+      },
+      "effects": [
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "research.listCapabilities",
@@ -2757,7 +2820,7 @@
       "description": "Select a /charts bottom panel and expand/minimize it. Right-docked Backtesting toggles only its side panel unless dock is given. Returns expected placement; verify workspace.getState panels.",
       "mutates": false,
       "params": {
-        "panel": "peers|watchlists|futures|backtesting|paper-trading|intelligence|indicators; simulation is a legacy alias",
+        "panel": "peers|watchlists|futures|backtesting|paper-trading|portfolio|intelligence|indicators; simulation is a legacy alias",
         "expanded": "Optional boolean, default true.",
         "dock": "Optional bottom|right, backtesting only: place it and select its tab. right fails DOCK_UNAVAILABLE under 720px."
       },
@@ -2771,7 +2834,8 @@
       "mutates": false,
       "params": {
         "panel": "watchlists|indices|heatmap|scanner|grid|patterns|alerts|research|dataWindow|paperTrading|contests",
-        "expanded": "Optional boolean, default true"
+        "expanded": "Optional boolean, default true",
+        "section": "Optional, alerts only: serveralerts (Runs) or notifications opens the Server alerts dialog on that tab"
       },
       "effects": [
         "panel"
@@ -3827,6 +3891,117 @@
       "effects": [
         "write"
       ]
+    },
+    {
+      "type": "brokers.list",
+      "description": "List broker accounts this Desktop can read (Portfolio panel): Fyers chart-feed login, Fyers Desktop login, Zerodha Kite and extra Fyers accounts, with connected/signed-out state, which can trade (cancel/modify/exit; Kite only) and the chart-overlay switches. Never returns credentials.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.read",
+      "description": "Read live broker data for one account from brokers.list: holdings, positions, orders (status all|open|complete|cancelled|rejected), trades (today's fills) or funds. Rows are normalized like the Portfolio panel with a summary. Uses broker API quota; never places orders.",
+      "mutates": false,
+      "params": {
+        "account": "Required account id from brokers.list (fyers-local, fyers, kite or account:<id>)",
+        "section": "Required holdings|positions|orders|trades|funds",
+        "status": "orders only: all|open|complete|cancelled|rejected (default all)",
+        "symbol": "Optional case-insensitive symbol/name filter, e.g. SBIN",
+        "limit": "Optional 1-500 rows (default 100)"
+      },
+      "effects": [
+        "quota",
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.trade",
+      "description": "Open a real Kite order dialog for the user to approve; nothing is sent until they click. cancel_order/modify_order: open orderId. exit_position: market exit of the whole symbol position. position_order: position ticket for intent exit|add|stop|target (edits a working stop/target unless newOrder). place_order: chart Buy/Sell ticket for a new order (side, orderType, product, quantity, price, triggerPrice prefill it). Then poll brokers.tradeStatus with requestId.",
+      "mutates": true,
+      "params": {
+        "account": "Required kite",
+        "action": "Required cancel_order|modify_order|exit_position|position_order|place_order",
+        "orderId": "cancel_order/modify_order: order_id from brokers.read orders",
+        "quantity": "modify_order: optional proposed total quantity; position_order: optional quantity (exit/stop/target at most the open quantity); place_order: optional quantity (MCX in lots, NFO in units)",
+        "price": "modify_order/position_order/place_order: optional limit price (LIMIT, SL)",
+        "triggerPrice": "modify_order/position_order (stop)/place_order (SL, SL-M): optional trigger price",
+        "symbol": "exit_position/position_order: EXCHANGE:TRADINGSYMBOL from brokers.read positions; place_order: Kite instrument, e.g. NSE:SBIN, NFO:NIFTY26NOVFUT, MCX:GOLDM26DECFUT",
+        "product": "exit_position/position_order: CNC|MIS|NRML|MTF when the symbol has several open positions; place_order: MIS|CNC for equity, MIS|NRML for F&O and MCX",
+        "side": "place_order: Required buy|sell",
+        "intent": "position_order: Required exit|add|stop|target",
+        "orderType": "position_order: optional exit/add MARKET|LIMIT, stop SL|SL-M, target LIMIT; place_order: optional MARKET|LIMIT|SL|SL-M (default MARKET)",
+        "newOrder": "position_order stop/target: optional true to place another order instead of editing the existing one",
+        "waitSeconds": "Optional 0-25 seconds to wait for the user's decision (default 20)"
+      },
+      "effects": [
+        "ui",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.tradeStatus",
+      "description": "Poll a brokers.trade request: pending (dialog still open), dismissed (user declined/closed), ok (broker accepted) or error (broker rejected, with message). cancel=true closes a still-pending dialog without sending anything.",
+      "mutates": false,
+      "params": {
+        "requestId": "Required requestId from brokers.trade",
+        "cancel": "Optional true to dismiss the pending dialog"
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.signIn",
+      "description": "Open the broker's own sign-in window so the user can (re)connect: kite (Zerodha), fyers-local (Fyers chart-feed login) or fyers-account (add a Fyers ID or sign in again to an extra account; Fyers ends sessions daily). The user completes the login; poll brokers.list until connected.",
+      "mutates": false,
+      "params": {
+        "account": "Required kite|fyers-local|fyers-account"
+      },
+      "effects": [
+        "ui",
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.manageAccount",
+      "description": "Rename (nickname) or remove an extra Fyers portfolio account from brokers.list. remove asks the user to confirm in the app and deletes the saved session from this computer.",
+      "mutates": true,
+      "params": {
+        "account": "Required account:<id> from brokers.list",
+        "operation": "Required rename|remove",
+        "label": "rename: nickname up to 40 characters ('' clears)"
+      },
+      "effects": [
+        "ui",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.chartOverlay",
+      "description": "Show or hide broker positions/orders/trades on the chart (Portfolio 'On chart' switch and legend layers). Omit all params to read the current state.",
+      "mutates": false,
+      "params": {
+        "enabled": "Optional boolean master switch",
+        "trades": "Optional boolean trade markers layer",
+        "orders": "Optional boolean working-order lines layer",
+        "positions": "Optional boolean position lines layer"
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
     }
   ],
   "desktopActions": [

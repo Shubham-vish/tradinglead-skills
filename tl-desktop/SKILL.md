@@ -406,7 +406,7 @@ require the Python guide, and direct paper practice does not require a backtest.
 | Start | Connection, tabs, grants, retries, bottom/right panels, theme, activity | this skill |
 | Charting | Chart context, feeds, history, snapshots, replay, view/scale/range, Compare, toolbar actions/screenshot, built-in studies, drawings, drawing templates, split layouts/pane targeting, saved chart layouts, Chart Grid | [tl-charts](../tl-charts/SKILL.md) |
 | Markets | Watchlists (Watch grid, lists, rows, view, membership), symbol details, peers, Multi Watchlists, indices, heatmap, Market Intelligence, Futures, universes, raw candles | [tl-markets](../tl-markets/SKILL.md) |
-| Alerts | Saved price alerts: list/create/edit/enable/delete, trigger activity | [tl-alerts](../tl-alerts/SKILL.md) |
+| Alerts | Chart price alerts, server alerts (hosted runs/groups) and notification channels (Telegram/WhatsApp/push), incl. full AI setup | [tl-alerts](../tl-alerts/SKILL.md) |
 | Analysis | Unified Scanner, original strategies/SQL, grid analysis/refinement, Scanned History, saved rules | [tl-screening](../tl-screening/SKILL.md) |
 | Analysis | Historical Patterns: one ticker across weekdays/IST windows, filters, statistics and dated chart navigation | [tl-patterns](../tl-patterns/SKILL.md) |
 | Analysis | Write/read/edit saved HTML analysis | [tl-research](../tl-research/SKILL.md) |
@@ -414,6 +414,7 @@ require the Python guide, and direct paper practice does not require a backtest.
 | Authoring | Python indicators / strategy authoring | [tl-python](../tl-python/SKILL.md) |
 | Strategy | Run/review Python or Pine backtests, applied strategies, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
 | Strategy | Sweeps / holdout / walk-forward | [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md) |
+| Portfolio | Real broker holdings, positions, orders, trades, funds; user-confirmed Kite cancel/modify/exit; no new orders | [tl-portfolio](../tl-portfolio/SKILL.md) |
 | Strategy | Replay-to-trade direct practice / backtest-derived replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
 | Quality | Run or author agent-executed test suites (smoke, per-domain, workflows, visual/LLM-judged) and local unit tests | [tl-testing](../tl-testing/SKILL.md) |
 
@@ -441,6 +442,9 @@ result's `expected` predicts the state; verify `workspace.getState.panels`
 ```json
 {"type":"workspace.openSidebar","params":{"panel":"alerts","expanded":true}}
 ```
+
+For `alerts` only, `section` opens the Server alerts dialog on a tab:
+`serveralerts` (Runs) or `notifications`.
 
 Panels: `watchlists` (Watch), `indices`, `heatmap`, `scanner` (Scan), `grid`,
 `patterns`, `alerts`, `research`, `dataWindow` (Data), and from **More**
@@ -485,6 +489,7 @@ input workflow above. Human-only areas remain off-limits even with UI consent.
 | Bottom tab: Indicator Studio | tl-tlscript / tl-python | `indicators.*`, `pythonIndicators.*` |
 | Bottom tab: Backtesting | tl-backtesting / tl-strategy-optimization | `backtesting.*` |
 | Bottom tab: Paper | tl-paper-trading | `backtesting.practice`, `backtesting.replay`, `backtesting.order` and related |
+| Bottom tab: Portfolio (real broker accounts) | tl-portfolio | `workspace.setPanel portfolio`, `brokers.*` |
 | Sidebar: Watch (rows, CSV text, order, flags, favorite stars) | tl-markets | `watchlists.*`, `symbol.details` |
 | Sidebar: Indices | tl-markets | `indices.getState` |
 | Sidebar: Heatmap | tl-markets | `heatmap.getState/configure` |
@@ -492,6 +497,8 @@ input workflow above. Human-only areas remain off-limits even with UI consent.
 | Sidebar: Grid (incl. theme, width, expand, chart indicators, open page) | tl-charts ([layouts-grid](../tl-charts/layouts-grid.md)) | `grid.open/getState/configure` |
 | Sidebar: Patterns | tl-patterns | `patterns.*` |
 | Sidebar: Alerts (incl. message/expiry) | tl-alerts | `alerts.*` |
+| Alerts > Server alerts: Runs, history, delivery | tl-alerts | `execution.read/manage`; open with `workspace.openSidebar {"panel":"alerts","section":"serveralerts"}`; **Review & activate** is human-only |
+| Alerts > Server alerts: Notifications | tl-alerts | `notifications.read/manage`; open with `section:"notifications"`; opening the link and browser-push permission are human-only |
 | Sidebar: Research | tl-research | `research.*` |
 | Sidebar: Data (Data Window) | tl-desktop | `workspace.openSidebar dataWindow`; values via `chart.snapshot` |
 | Sidebar: More > Paper / Contests | tl-paper-trading / UI-only | `workspace.openSidebar` `paperTrading` / `contests` |
