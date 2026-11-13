@@ -9,6 +9,20 @@ Start with [tl-desktop](../tl-desktop/SKILL.md). Read `backtesting.capabilities`
 [commands.md](commands.md). Prefer `backtesting.*`; `simulation.*` names are
 compatibility aliases, not a second engine.
 
+The updated chart shows separate Backtest trades, trade labels, positions and protection
+legend rows for both Python and Pine results, including automatic reruns.
+Their eyes toggle layers; gears open focused Style/Visibility settings with
+preview, Apply and Cancel. These are read-only projections of recorded results,
+not new calculations or broker orders. Position entries and stop/target levels
+can be hidden independently. Trade boxes are detached from their candle arrows;
+entry-to-exit paths remain available. Existing viewport/density limits still apply.
+The Trades visibility switch is shared with paper closed trades.
+The separate Trade labels eye hides entry/exit boxes without hiding arrows,
+exact fills, paths or position/protection badges. It remembers the label mode
+(none/selected/all) and appearance. Its gear contains label-only settings;
+preview/Apply/Cancel and Reset styles do not reset arrow/path/level styles.
+The switch is account-local (`tradeLabels`), not a new cloud preference.
+
 Guided synthetic Practice Labs are intentionally human-operated and have no AI
 lesson commands. They are not normal-account backtests or
 `backtesting.practice` paper sessions; never guess a training scope or redirect

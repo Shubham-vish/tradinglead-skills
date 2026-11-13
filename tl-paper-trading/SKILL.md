@@ -21,6 +21,19 @@ Shared appearance preview/apply/cancel uses `backtesting.setChartOptions`;
 see [tl-backtesting](../tl-backtesting/SKILL.md). It changes no paper orders,
 virtual balance or clock.
 
+Updated chart legends separate Paper trades, trade labels, positions, protection and orders,
+each with an eye and focused settings gear. Shared position-label appearance
+is identified in settings. Detached trade boxes retain candle arrows and optional
+entry-to-exit paths. Saved protection badges show the exit side (for example
+Sell SL), quantity and x. Quantity edits and x removal both open review:
+only explicit Update/Remove persists; Cancel leaves the saved level unchanged.
+Never confirm protection removal merely to demonstrate this UI.
+The Trade labels eye hides only entry/exit boxes (compact marker text in compact
+mode), keeping arrows, exact fills, paths, position badges, SL/TP and pending
+orders unchanged. It retains the none/selected/all label mode and appearance.
+The label gear offers focused settings and a label-only style reset with the
+same preview, Apply and Cancel behavior; it never places or modifies a trade.
+
 The separate synthetic **Practice Labs** at `/lab/practice/*` are guided
 human-operated lessons, not `backtesting.practice` paper sessions. Their
 navigation, coach, progress and reset intentionally have no AI commands.
@@ -86,7 +99,8 @@ send the order with `alignToNextClose:true`: the clock steps to that stock's nex
 close (shared clock, at most 50 steps) and fills there, reported as
 `aligned:{steps,from,clock}`; it never fills at a stale price. If a fill/event
 happens while aligning it fails `PAPER_ALIGN_INTERRUPTED` with nothing changed.
-The toolbar one-tap Buy/Sell does this automatically. Coarser recapture
+Older one-tap toolbar builds align automatically; the updated review-first
+paper dialog does not advance the clock implicitly. Coarser recapture
 (e.g. 1h→1D) keeps the candle straddling the clock hidden until it closes.
 
 `backtesting.back` with `{runId,expectedRevision}` undoes the last Next/Play
@@ -107,9 +121,22 @@ the command.
 
 ### Native replay toolbar and paper widget (UI input)
 
-- Floating widget buttons (Buy/Sell/P&L/SL/TP/Details) shift and resize after
-  fills when SL/TP appear. `ui-inspect` (or re-screenshot) before **every**
-  click; never reuse coordinates. A reused Buy coordinate has placed a Short.
+- The updated chart legend has one PAPER Sell / quantity / Buy row. It opens
+  a modal paper ticket, never a broker ticket or an immediate fill while paper
+  replay is mounted. The floating widget keeps Order/P&L/SL/TP/Details without
+  duplicate Buy/Sell. Order opens remembered settings; legend buttons seed the
+  explicitly selected quantity. Confirm the paper heading, side, quantity and
+  revealed-close timing before submitting. Market/limit/stop/stop-limit remain
+  available; opposite-side exposure requires explicit partial/full exit review.
+- Updated paper SL/TP opens a compact floating review ticket using the broker
+  theme. Purple dashed levels are unsaved drafts: dragging updates the linked
+  price/percentage fields, and only Update persists. Dragging a saved level also
+  opens review rather than immediately saving. Cancel/Escape discards the draft.
+  Suggested levels are examples, not recommendations. A demonstration of preview
+  or dragging does not authorize confirming protection or placing another trade.
+- Older builds still have one-tap widget buttons that shift after fills.
+  `ui-inspect` (or re-screenshot) before **every** click; never reuse coordinates.
+  A reused Buy coordinate has placed a Short.
   Prefer `order`/`close` commands when exact side matters, and verify with `get`.
 - Playback auto-pauses on order fills and the Play button is a toggle. Prefer
   `chart.replayControl {action:"play"|"pause"}`: explicit and idempotent
