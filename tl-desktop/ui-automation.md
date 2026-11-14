@@ -448,8 +448,6 @@ actions. All need `ui-enable` on the tab and may omit `--tab`. Waits arm first
 and then run an optional `trigger` step (`ui-click`, `ui-press`, `ui-key`,
 `ui-type`, `ui-hover`, `ui-move`, `ui-scroll` or `ui-drag`), so the event
 caused by that step is never missed. A wait with a trigger needs a retry key.
-Network waits and mocks are internal tools (see the note under *Scraping and
-network capture*); other accounts get `UI_OWNER_ONLY`.
 
 | Action | Params | Read/Write |
 | --- | --- | --- |
@@ -587,12 +585,12 @@ video pixels, `mark` cues).
 
 ### Scraping and network capture (Demo browser)
 
-> **Internal tools.** The network and scraping actions (`ui-wait-request`,
+> **Availability.** The network and scraping actions (`ui-wait-request`,
 > `ui-wait-response`, `ui-route`, `ui-unroute`, `ui-network-capture-start`,
 > `ui-network-capture-status`, `ui-network-capture-stop`, `ui-page-fetch` and
-> `ui-scrape`) are restricted to the TradingLead team account. Desktop checks
-> the signed-in account with the auth server; other accounts get
-> `UI_OWNER_ONLY`.
+> `ui-scrape`) are on for every account in current builds. Older builds limited
+> them to the TradingLead team account and returned `UI_OWNER_ONLY`; run
+> `ui-capabilities` to see what the installed build allows.
 
 These five actions work on **`demo:main` only** (the CLI default for them); any
 other tab gets `INVALID_REQUEST`. Each one needs `ui-enable --tab demo:main`.
