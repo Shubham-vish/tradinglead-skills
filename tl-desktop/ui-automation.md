@@ -148,6 +148,7 @@ an overlay. Do not press Escape blindly: it can discard an unsaved dialog.
 | Hidden, covered or ambiguous target | Inspect again, close only a known safe overlay, or scroll the correct container; never pick a random match. |
 | Human-only target or unsupported frame | Ask the person to operate it; no marker injection or protection bypass. |
 | Dispatched input but unchanged UI | Inspect the actual outcome and readiness. Reconcile an uncertain operation with the same key; do not duplicate a potentially saved write. |
+| `UI_CAPABILITY_OFF` | The shipped capability policy blocks this action group (`details.capability`, `details.reason`: off, restricted, not-yet, expired, outside-window, owner). Run `ui-capabilities` (read-only, never gated) to see each group (observe, control, record, text, codegen, demo-browser, network-capture, scrape, network-mock, eval, os-input, payments), its rule and whether it is allowed now. Owner-rule groups (network capture, scraping, network mocks) need the verified owner account. Do not retry or work around it. |
 | `UI_FOCUS_FAILED` from `ui-key` | On older builds choose a focusable target or click the known menu item. Desktop 0.1.12 supports protected-focus-checked page keys without a selector. |
 
 ### Chart notes and older-build differences
