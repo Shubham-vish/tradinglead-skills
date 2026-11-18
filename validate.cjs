@@ -13,8 +13,9 @@ function markdownFiles(root, directory) {
 function validate(root = __dirname) {
 	const catalog = JSON.parse(fs.readFileSync(path.join(root, "command-catalog.json"), "utf8"));
 	const generated = references(catalog);
+	const normalized = value => value.replace(/\r\n/g, "\n");
 	for (const [file, expected] of generated) {
-		if (fs.readFileSync(path.join(root, file), "utf8") !== expected) throw new Error(`Stale generated reference: ${file}`);
+		if (normalized(fs.readFileSync(path.join(root, file), "utf8")) !== normalized(expected)) throw new Error(`Stale generated reference: ${file}`);
 	}
 	const directories = fs.readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory() && !entry.name.startsWith(".")).map(entry => entry.name);
 	if (directories.some(name => !skillNames.includes(name))) throw new Error("Unexpected folder in the skill collection.");

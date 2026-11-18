@@ -156,10 +156,10 @@ test("tl-testing suites parse and every step matches the command catalog", () =>
 	const broken = [
 		[original.replace("type: drawings.list", "type: drawings.inventedList"), /drawings\.inventedList is not in command-catalog/],
 		[original.replace('{"bars": 5}', '{"bars": 5, "rowsBack": 2}'), /chart\.snapshot has no parameter rowsBack/],
-		[original.replace('      idempotencyKey: "ai-test-{{run.id}}-view-set"\n', ""), /mutating chart\.setView needs an idempotencyKey/],
+		[original.replace(/      idempotencyKey: "ai-test-\{\{run\.id\}\}-view-set"\r?\n/, ""), /mutating chart\.setView needs an idempotencyKey/],
 		[original.replace("{{steps.snap.data.rows.0.0}}", "{{steps.later.data.x}}"), /unknown or later step/],
 		[original.replace("category: contract", "category: vibes"), /needs unique id, name and category/],
-		[original.replace("  id: charts\n", "  id: chart\n"), /suite\.id equal to the file name/],
+		[original.replace(/  id: charts\r?\n/, "  id: chart\n"), /suite\.id equal to the file name/],
 	];
 	for (const [content, error] of broken) {
 		fs.writeFileSync(filename, content);

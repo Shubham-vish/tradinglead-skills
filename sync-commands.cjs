@@ -145,13 +145,14 @@ function references(catalog) {
 function checkReferences(catalog, root = __dirname) {
 	validateCatalog(catalog);
 	const snapshot = JSON.parse(fs.readFileSync(path.join(root, "command-catalog.json"), "utf8"));
+	const normalized = value => value.replace(/\r\n/g, "\n");
 	const contract = ({ version, commands, desktopActions }) => ({ version, commands, desktopActions });
 	const stable = value => JSON.stringify(value, (_key, item) =>
 		item && typeof item === "object" && !Array.isArray(item)
 			? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
 	const changed = stable(contract(catalog)) === stable(contract(snapshot)) ? [] : ["command-catalog.json"];
 	changed.push(...[...references(snapshot)].filter(([file, contents]) =>
-		!fs.existsSync(path.join(root, file)) || fs.readFileSync(path.join(root, file), "utf8") !== contents).map(([file]) => file));
+		!fs.existsSync(path.join(root, file)) || normalized(fs.readFileSync(path.join(root, file), "utf8")) !== normalized(contents)).map(([file]) => file));
 	if (changed.length) throw new Error(`Live catalog drift: ${changed.join(", ")}. Review the addressed app and refresh with sync-commands.cjs --tab TAB_ID.`);
 }
 function main(argv) {
