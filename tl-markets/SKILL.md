@@ -183,19 +183,20 @@ until it settles. It does not scrape upstream sources.
 ## Multi Watchlists
 
 ```json
-{"type":"watchlists.multiView","params":{},"idempotencyKey":"multi-read-001"}
+{"type":"watchlists.multiView","params":{}}
 ```
 
 Returns current panels (max 12), `available` existing lists, `storageError`.
 Passing `panels: [{type, name}]` replaces the layout with existing lists of
 the current account (`WATCHLIST_NOT_FOUND` otherwise); `[]` closes all cards but
-never deletes lists. The layout is device/account-local. Requires a retry key
-even to read.
+never deletes lists. The layout is device/account-local. Reading without
+`panels` needs no write grant or retry key; replacing `panels`, including `[]`,
+requires both.
 
 ## Indices
 
 ```json
-{"type":"indices.getState","params":{"offset":0,"limit":25},"idempotencyKey":"indices-read-001"}
+{"type":"indices.getState","params":{"offset":0,"limit":25}}
 ```
 
 Without `category`, returns the published index catalog (category, ticker,

@@ -79,7 +79,7 @@ Compatibility alias: `simulation.capabilities`. Same validation, grants, cancell
 
 ## `backtesting.list`
 
-Search/page the three active local backtest/paper runs. Larger saved history is available through libraryList.
+Search/page the up to 20 active local backtest/paper runs. Larger saved history is available through libraryList.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.

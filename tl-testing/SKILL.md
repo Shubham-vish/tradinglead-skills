@@ -88,8 +88,9 @@ node cli.cjs cancel --tab TAB --request REQUEST_ID
   read in setup.
 - Never save named chart layouts (no delete command exists), never save Pine
   sources to the library, never start paper/practice orders or forward sessions
-  on a real account. No live broker orders exist in TradingLead; tests must not
-  imply otherwise.
+  on a real account. TradingLead also has real broker order tickets
+  ([tl-portfolio](../tl-portfolio/SKILL.md)); never open or submit one as part of
+  these suites, and never automate the human confirmation button.
 - Run teardown even after a failed assertion. A teardown failure is reported as
   `LEAK` with the leftover ID and name.
 - Suites tagged `costly` (`screening`, `patterns`) consume scan allowance or
@@ -244,7 +245,18 @@ Suites: [smoke](suites/smoke.yaml), [charts](suites/charts.yaml),
 [strategy-optimization](suites/strategy-optimization.yaml),
 [screening](suites/screening.yaml), [patterns](suites/patterns.yaml),
 [paper-trading](suites/paper-trading.yaml), [workflows](suites/workflows.yaml),
-[llm-subjective](suites/llm-subjective.yaml).
+[llm-subjective](suites/llm-subjective.yaml),
+[reads-contract](suites/reads-contract.yaml), [ui-state](suites/ui-state.yaml),
+[market-panels](suites/market-panels.yaml),
+[screening-read](suites/screening-read.yaml),
+[write-grant](suites/write-grant.yaml),
+[indicator-lifecycle](suites/indicator-lifecycle.yaml),
+[simulation-aliases](suites/simulation-aliases.yaml).
+
+These 21 authored suites are not a receipt that every lifecycle has passed.
+Inspect each suite's description and prerequisites: read/error-path coverage
+does not prove successful replay, provider scans, Python strategy execution or
+broker execution.
 
 Order inside a suite is file order; run one suite at a time on one tab, never
 in parallel (pending-command limits return `BUSY`, and chart context is shared).
@@ -296,7 +308,8 @@ Skipped: reason per test (grant, sign-in, costly, not in live catalog)
   arrive; after `chart.open` (which returns `dataReady:false`) poll
   `chart.getState` until `data.dataReady == true`. Suites that call `chart.open` read `chart.getState`
   first and reopen the original symbol/feed/interval in teardown.
-- Read-only lookups are side-effect free: `screening.catalog`/`listUniverses`/
+- These lookups do not select or open panels (network reads can still occur):
+  `screening.catalog`/`listUniverses`/
   `listHistory`/`listSaved` run headlessly when the Scanner is closed and return
   `opensPanel:false`; `screening.getResults`/`getAnalysis`/`cancel` return
   `RUN_NOT_FOUND` without opening it; `patterns.searchSymbols` never opens

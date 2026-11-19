@@ -19,7 +19,7 @@ Desktop (`DESKTOP_REQUIRED` in a browser). The visible panel is
 | See connected accounts and sign-in state | `brokers.list` | Never returns tokens. `fyers-local` means the chart-feed login exists; its session may still be expired. |
 | Holdings, positions, funds | `brokers.read` | Normalized rows plus `summary` (P&L, investment, day P&L). |
 | Orders by status, today's fills | `brokers.read` with `section` orders or trades | Orders carry `group`: open, complete, cancelled, rejected. |
-| Cancel / modify a working order, exit a position | `brokers.trade` then `brokers.tradeStatus` | **Kite only.** The user must click confirm in the app. |
+| Cancel / modify a working order, exit a position | `brokers.trade` then `brokers.tradeStatus` | Use only accounts advertised by the addressed build. The user must click confirm in the app. |
 | Stop loss, target, add to or part-exit a position | `brokers.trade` `position_order` | Opens the position ticket (same as double-clicking the chart position label). |
 | Place a new order | `brokers.trade` `place_order` | Opens the chart Buy/Sell ticket prefilled; the user sends it. |
 | Sign in / reconnect | `brokers.signIn` | Opens the broker's own login window; the user completes it. |
@@ -41,6 +41,14 @@ accounts. Quantities and prices come straight from the broker; report them with
 the `checkedAt` time and do not present them as advice.
 
 ## Order actions (user-confirmed)
+
+The examples below use Kite. Newer source also permits the `fyers` Desktop
+login account, not `fyers-local` or extra `account:<id>` accounts. The bundled
+reference can lag that source change: require the addressed tab's
+`brokers.trade` descriptor and native trading capability before offering FYERS.
+Source support is not proof of installed handlers, broker entitlement or a
+successful live order. Recheck the ticket's account, product and quantity units;
+never apply Kite-specific conventions to another broker without verification.
 
 `brokers.trade` needs AI access with the workspace write grant and a retry key.
 It never sends anything by itself:

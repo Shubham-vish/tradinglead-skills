@@ -65,6 +65,46 @@ Discover current runtime limits for candles, plots and drawings. There is no
 fixed source-character cap; storage, the 2 MiB command/transport budgets and
 runtime limits still apply. Leave room for the complete request envelope.
 
+### Badges with hover levels and tables
+
+Python has the same badge and table primitives as Pine.
+
+- **Badge** drawing (Pine `label.new`):
+  `{"id","shape":"badge","points":[{time,price}],"text","color","style":{"textColor","direction":"down|up|none","fontSize","bold"},"tooltip","levels":[{"price","name","color"}]}`.
+  - `tooltip` (up to 2000 characters) and `levels` (1-20) are badge-only.
+  - Hovering draws one dashed live price line per level, so a badge can
+    highlight one level or several.
+- **Tables** (Pine `table.new`): top-level `"tables"` (at most 20) of
+  `{"id","position":"top_right",...,"rows":[[str|cell|None]],"merges":[{startCol,startRow,endCol,endRow}]}`.
+  - Sizes run from 1-100 rows by 1-100 columns.
+  - Cell keys are `text`, `bgColor`, `textColor`, `size`, `halign`, `valign`,
+    `tooltip`, `bold`, `italic`, `monospace`, `width` and `height`.
+  - Table ids must not reuse plot or drawing ids.
+  - Tables follow the indicator's eye, and a tables-only result is valid.
+- The Desktop SDK provides `badge()`, `level()`, `table()` and `cell()`;
+  `indicator(..., tables=)` and `Strategy.result(..., tables=)` accept them.
+- The `badges-table` capability example shows the plain dictionary form.
+- Strategy plots, drawings, badges and tables also render with the backtest
+  run (frozen to that run).
+- Pine-style visuals share Pine's renderer (indicators and backtests):
+  - plot `style` `"background"` (`bgcolor`) or `"barcolor"`: one bool/number/None
+    per bar, `color`, optional `colors` and `transparency` 0-100.
+  - plot `style` `"shape"` (`plotshape`) or `"char"` (`plotchar`): `shape`
+    (arrow/triangle up/down, circle, cross, xcross, diamond, square, flag,
+    label_up/down) or `char` (1-4), `location` above/below/absolute, `text`,
+    `textColor`, `size`. Pane indicators need `location: "absolute"` prices.
+  - top-level `fills` `{id, plot1, plot2, color, colors, transparency, fillGaps}`
+    between line/linebr/stepline plots.
+  - drawing `shape: "polyline"` (2-1000 points, `closed`, `curved`,
+    `style.backgroundColor`) and top-level `linefills` `{id, line1, line2,
+    color, transparency}` between trend_line/ray/extended_line drawings.
+  - The `pine-visuals` capability example ("Python Pine-style Visuals") uses
+    all of them. Only `arrow_up`/`arrow_down` markers are native chart shapes;
+    other shapes render as anchored text glyphs.
+  - SDK helpers: `bgcolor()`, `barcolor()`, `marker()`, `fill()`,
+    `polyline()`, `linefill()`; pass `fills=`/`linefills=` to `indicator()` or
+    `Strategy.result()`.
+
 Typed `# @input` JSON comments support `int`, `float`, `bool`, `string`, `enum`,
 `color` (`#RRGGBB`) and `null`, plus
 title/group/description/min/max/step/options. Keep domain validation in

@@ -228,8 +228,9 @@ feed status, or claim paper execution validates real exchange fills/margin.
 There is **no account-reset/stats-reset command**. For a fresh virtual balance,
 start a new direct practice session from a paused native replay cursor; the
 old account stays intact and consumes its slot until explicitly removed.
-`back` is bounded rewind, not reset. Playback speed, pause-on-order preference,
-toolbar docking and chart-price picking are native UI controls; exact paper
+`back` is bounded rewind, not reset. Playback speed uses the discovered
+`chart.replayControl` speed action described above. Pause-on-order preference,
+toolbar docking and chart-price picking remain native UI controls; exact paper
 protection values are supported through `protect`, not a guessed pick command.
 Guided Practice Lab reset remains human-only.
 

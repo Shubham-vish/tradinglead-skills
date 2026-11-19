@@ -414,7 +414,7 @@ require the Python guide, and direct paper practice does not require a backtest.
 | Authoring | Python indicators / strategy authoring | [tl-python](../tl-python/SKILL.md) |
 | Strategy | Run/review Python or Pine backtests, applied strategies, presets, saved results, overlays | [tl-backtesting](../tl-backtesting/SKILL.md) |
 | Strategy | Sweeps / holdout / walk-forward | [tl-strategy-optimization](../tl-strategy-optimization/SKILL.md) |
-| Portfolio | Real broker holdings, positions, orders, trades, funds; user-confirmed Kite cancel/modify/exit; no new orders | [tl-portfolio](../tl-portfolio/SKILL.md) |
+| Portfolio | Real broker holdings, positions, orders, trades, funds; discovered user-confirmed order tickets, including new orders; the person submits | [tl-portfolio](../tl-portfolio/SKILL.md) |
 | Strategy | Replay-to-trade direct practice / backtest-derived replay / forward paper / simulated orders | [tl-paper-trading](../tl-paper-trading/SKILL.md) |
 | Quality | Run or author agent-executed test suites (smoke, per-domain, workflows, visual/LLM-judged) and local unit tests | [tl-testing](../tl-testing/SKILL.md) |
 
@@ -429,7 +429,8 @@ require the Python guide, and direct paper practice does not require a backtest.
 
 **Bottom panels** — `workspace.setPanel` with `peers`, `watchlists` (Multi
 Watchlists), `futures`, `backtesting`, `paper-trading`, `intelligence` or
-`indicators` (Indicator Studio); `simulation` is a legacy alias. Send
+`indicators` (Indicator Studio) or `portfolio` (real broker accounts);
+`simulation` is a legacy alias. Send
 `expanded` explicitly. Backtesting may be docked right, independent of the
 bottom tab: pass `dock:"bottom"|"right"` (backtesting only) to place and select
 it deterministically; `dock:"right"` fails with `DOCK_UNAVAILABLE` below 720px.

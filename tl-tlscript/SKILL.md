@@ -162,6 +162,19 @@ Read `editorState.dock` for the actual host mode. `workspace.setPanel` can
 request the bottom indicators panel, but there is no command to choose Studio's
 right/window docking mode.
 
+### Hover price levels on label badges
+
+Add `[level] Name price #RRGGBB` lines to a `label.new` tooltip:
+
+- Name and colour are optional.
+- Up to 20 lines are allowed.
+- Hovering the badge draws one dashed live price line per level, so it can
+  highlight a single level or several.
+- The rest of the tooltip text stays as the hover description.
+- `table.new`/`table.cell` render through the shared table surface.
+- Python offers the same features through `"shape":"badge"` with `levels`,
+  and top-level `tables` (see [tl-python](../tl-python/SKILL.md)).
+
 ### Candle-relative annotation appearance
 
 Rediscover the addressed tab: only use these controls when its

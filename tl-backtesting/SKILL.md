@@ -168,7 +168,7 @@ requires explicit confirmation; preflight alone does not prove parity.
 
 | Store | Workflow |
 | --- | --- |
-| Active runs | `list/get/delete`; up to three active local runs, including an applied strategy's run. Lossless compressed snapshots have a 3 MiB stored budget and 32 Mi character raw limit; legacy raw snapshots remain readable. A fourth `run` fails with `SIMULATION_HISTORY_FULL` |
+| Active runs | `list/get/delete`; up to 20 active local runs, including an applied strategy's run, stored per run in IndexedDB (lossless compression, 32 Mi character raw limit; the old localStorage store is migrated). A 21st `run` fails with `SIMULATION_HISTORY_FULL` |
 | Larger saved snapshots | `libraryList/librarySave/libraryRestore/libraryDelete/libraryMigrate/libraryUpdate`; IndexedDB, bounded to 100 runs / 100 MB per account |
 | Reusable complete setups | `presetList/presetGet/presetSave/presetDelete`; source, parameters, mode, config, bars, range and session assumptions |
 
@@ -257,6 +257,11 @@ Legacy `pine-direction-resimulation-legacy` runs must be rerun first.
   with actual fill markers, not another indicator calculation. Visibility and
   native child removal act on the whole owned group and retain the run.
   Projection metadata discloses bounded omitted open-lot levels.
+- Python strategy runs render the plots, drawings, hover-level badges and
+  tables returned by `Strategy.result(...)` (or the plain result dictionary)
+  through the same frozen strategy-visuals layer as Pine, with no
+  recalculation. They are captured per run, follow its legend eye, and are
+  cleared with it; [tl-python](../tl-python/SKILL.md) documents the schema.
 - Backtests reuse paper trading's arrows, multiline entry/exit labels and native
   open-position price/quantity/P&L rays. `labels:"selected"` shows the selected
   exit candle or latest visible exit; `"all"` includes entry labels. Shared

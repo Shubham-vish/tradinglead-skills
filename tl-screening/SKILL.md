@@ -46,10 +46,11 @@ never substitute sample data for failed account/API access.
 Use the `screening.*` family for actions the user should see in the Scan sidebar.
 These commands call the same controller and API as its buttons, not a parallel
 hidden scanner. Cloud requires real sign-in.
-Open `/charts` first. `screening.getState` connects the visible **Scanner** and
-returns its draft revision, current view, stage summaries and pending refinement.
-`getState` and `show` reopen an already-mounted hidden Scanner; result polling
-does not repeatedly force the sidebar open.
+Open `/charts` first. `screening.getState` reads the **Scanner** without
+opening or selecting its sidebar; an unmounted Scanner returns
+`ready:false,draft:null,opensPanel:false`. Use `screening.show` to open it,
+then read its draft revision, current view, stage summaries and pending
+refinement. Result polling does not repeatedly force the sidebar open.
 Discover the server catalog and available lists. An older running reader may
 offer presets/SQL but not strategy endpoints or history, even when source code
 has been updated. Do not silently substitute another backend or restart services.

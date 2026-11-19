@@ -1143,7 +1143,7 @@
     },
     {
       "type": "backtesting.list",
-      "description": "Search/page the three active local backtest/paper runs. Larger saved history is available through libraryList.",
+      "description": "Search/page the up to 20 active local backtest/paper runs. Larger saved history is available through libraryList.",
       "mutates": false,
       "params": {
         "search": "Optional title/symbol text, max 100 chars.",
