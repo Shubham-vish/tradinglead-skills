@@ -135,6 +135,33 @@ Local indicator/backtesting grant required.
 | `offset` | list only, 0-10000. |
 | `limit` | list only, 1-50. |
 
+## `layout.workspaces`
+
+List account-owned research workspaces and cloud status; local copies remain available offline.
+
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+Parameters: `{}`.
+
+## `layout.workspace`
+
+Save all panes/strategy settings or open an independent copy in a new tab without rerunning backtests. Delete removes only the saved workspace. Results sync separately.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **network, navigate, code, quota, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `action` | save\|open\|delete |
+| `name` | Required for save: 1-80 characters. |
+| `id` | Required for open/delete: workspace ID. |
+| `confirmed` | Required true for delete. |
+
 ## `layout.getState`
 
 Read split-chart layout: active pane, maximized pane, split sizes and each pane's last symbol/feed/interval. chart.*/studies.*/indicators.* always target the active pane.

@@ -286,6 +286,30 @@ plot inferred from a compiled script.
 There is no silent provider/SQL fallback. Local runs expire after 30 minutes
 or reload; an expired job is not an empty successful result.
 
+The current source pipelines up to two tickers, preserves requested result
+ordering, and serializes/paces history requests per provider across same-origin
+tabs. Pine execution shares two same-origin slots with backtests and optimizer
+candidates. One scan is admitted per account/tab; use separate tabs for separate
+scans. These bounds do not coordinate other origins or external broker clients.
+Ten result snapshots are retained in memory. Updated source also stores
+account-scoped scan history (100 scans / 20 MiB, 1 MiB per scan), exact submitted
+source, resolved inputs and result provenance, without raw candle arrays.
+Discover `providerScreener.listHistory`, `deleteHistory` and persisted
+`getResults` in a compact-capable tab. Opening a saved snapshot does not rerun
+it or replace editor source; detached jobs are labelled interrupted.
+
+Updated source accepts `language:"python"` with Python calculate source, typed
+inputs and a scalar plot index. Discover `listCapabilities.languages` first.
+Python needs the available isolated native runtime, protocol >=2 and permission;
+there is no host-Python/browser fallback. Additional datasets are rejected.
+Declaration checks in the form are not execution validation. Per-ticker errors,
+invalid outputs and timeouts must not be interpreted as non-matches.
+Python scans share the bounded execution pool and one Python-scan slot per
+origin. Keep the originating tab open; no detached-job resumption is offered.
+Cloud history requires the updated backend and a current confirmed receipt.
+Installed Desktop and real-provider Python acceptance remain separate from
+source tests; rediscover capabilities before execution.
+
 ## Inspect before saving
 
 Check terminal status, each symbol's errors, source timestamps, missing values,

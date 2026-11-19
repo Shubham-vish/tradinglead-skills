@@ -293,25 +293,26 @@ Parameters: `{}`.
 
 ## `providerScreener.run`
 
-Start a paced local TLScript-Pine scan over 1-50 explicit broker symbols. No SQL/provider fallback or invented symbol metadata. Secondary-data requests are unavailable. Newest candle is conservatively excluded; read each row's actual evaluation timestamp. Consumes provider quota.
+Paced local Pine/Python scan over 1-50 provider symbols. Python requires isolated Desktop runtime. No secondary data or provider fallback. Excludes newest candle; inspect timestamps. Consumes provider quota.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **quota, code, network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
 
 | Parameter | Contract |
 | --- | --- |
+| `language` | Optional pine (default) or python. |
 | `feed` | Explicit registered Desktop history provider. |
 | `tickers` | 1-50 unique canonical tickers. |
-| `source` | Nonempty Pine indicator source; no fixed character cap. Execution and transport limits still apply. |
-| `inputs` | Optional declared Pine string, finite-number or boolean inputs, bounded to 8000 serialized characters. |
+| `source` | Indicator source; execution and transport limits apply. |
+| `inputs` | Optional string, finite-number or boolean inputs, at most 8000 serialized characters. |
 | `interval` | Explicit supported chart resolution. |
-| `plotIndex` | Optional nonnegative safe integer selecting a real numeric plot, default 0. Available plots are discovered from execution, not compilation. |
+| `plotIndex` | Optional nonnegative runtime numeric plot index, default 0. |
 | `condition` | {operator:gt\|gte\|lt\|lte\|eq,value:finite number} |
 | `bars` | Optional 2-1000 history bars, default 500. |
 
 ## `providerScreener.getResults`
 
-Read an owned local scan's progress, matches, explicit errors and candle provenance. Runs expire after 30 minutes/reload; no raw candle arrays are returned.
+Read local progress or an account-owned saved scan. Detached running snapshots are labelled interrupted and never resume automatically. No source or raw candle arrays are returned.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -319,6 +320,30 @@ Effects: **none**. These are possible consequences, not grants; optional write v
 | Parameter | Contract |
 | --- | --- |
 | `runId` | Local provider run ID. |
+
+## `providerScreener.listHistory`
+
+List account-owned saved local scans, recovering cloud copies when available. Up to 100 scans; source is retained privately with each snapshot, not returned in this listing.
+
+Retry key: **not required**. External local-assistant access is still required.
+Effects: **network**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+Parameters: `{}`.
+
+## `providerScreener.deleteHistory`
+
+Explicitly delete a saved scan and queue its cloud deletion. Cancel a scan in its owning tab first. Requires local write permission and an idempotency key.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Saved local provider run ID. |
 
 ## `providerScreener.cancel`
 

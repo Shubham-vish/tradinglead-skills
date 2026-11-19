@@ -59,6 +59,38 @@ immediately.
 
 ## Saved chart layouts
 
+### Saved research workspaces (updated source)
+
+Discover `layout.workspaces` / `layout.workspace` in the addressed tab first;
+these require compact catalog negotiation and are not certified in an installed
+release by this source snapshot. The layout picker's **Saved workspaces** menu
+uses the same actions.
+
+`layout.workspaces` lists account-owned manifests and cloud status.
+`layout.workspace` accepts `action:"save", name:"..."` to save visible panes,
+drawings, indicator definitions and applied strategy/result references.
+`action:"open", id:"..."` opens an independently scoped copy in another tab,
+without running a backtest or replacing the current chart. Updated native
+Desktop tab support is required; browsers must allow the new tab.
+`action:"delete", id:"...", confirmed:true` removes the manifest only.
+All three writes need a retry key and normal write permission.
+
+Results sync separately. Confirm uploads of both manifest and referenced runs
+before relying on another device. A missing result is an explicit restore error.
+Local results are protected from automatic strategy cleanup while locally
+referenced; explicit result deletion can break a workspace.
+Manifest size is limited to 12 MiB. This is not a full Desktop window-session
+restore, an unsaved Studio draft backup, or background-job resumption.
+The standalone History selection is not part of this manifest.
+Missing manifests/results offer Retry or return to the existing local chart,
+without deleting data. Updated native source separately remembers same-device
+research tab identities for a normal same-origin relaunch; explicit URL launches
+override this. This requires the updated Desktop and frontend, not just this
+skill snapshot. Running work warns before close, and unfinished calculations
+are never automatically restarted against fresh history.
+
+### Named single-chart layouts
+
 ```json
 {"type":"layout.getState","params":{"saved":true}}
 ```

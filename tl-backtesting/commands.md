@@ -94,7 +94,7 @@ Compatibility alias: `simulation.list`. Same validation, grants, cancellation, r
 
 ## `backtesting.libraryList`
 
-Search/page IndexedDB saved snapshots: max 100 runs / 100 MB per account. No source/candles. Active local workspace stays synchronous and limited to three runs.
+Search/page IndexedDB saved snapshots: max 100 runs / 100 MB per account. May import account cloud copies when available. No source/candles in the listing. Active history has a separate 20-run retention limit, not a concurrency limit.
 
 Retry key: **not required**. External local-assistant access is still required.
 Effects: **none**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -110,7 +110,7 @@ Compatibility alias: `simulation.libraryList`. Same validation, grants, cancella
 
 ## `backtesting.librarySave`
 
-Save a stopped active run into larger local IndexedDB history. No silent eviction or cloud writes.
+Save a stopped active run into local IndexedDB history and schedule its account cloud copy when signed in. Local success does not confirm cloud storage. No silent eviction.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -153,7 +153,7 @@ Compatibility alias: `simulation.libraryRestore`. Same validation, grants, cance
 
 ## `backtesting.libraryDelete`
 
-Explicitly remove a saved snapshot only; active run and cloud layout are untouched.
+Remove a saved snapshot and schedule deletion of its automatic account cloud copy. The active run and native chart layout are untouched; local deletion does not confirm cloud deletion.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -344,6 +344,24 @@ Local indicator/backtesting grant required.
 
 Compatibility alias: `simulation.show`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
 
+## `backtesting.restoreChartLayout`
+
+Explicitly replace the active pane with a run's captured native layout and indicator definitions as a new unnamed layout. Does not overwrite the original named layout or rerun the backtest. Requires the original feed, no applied strategy/replay/appearance edits, and confirmation to discard the current pane's unsaved view. Returns loadRequested; verify chart.getState, then show the result separately.
+
+Retry key: **required**. External local-assistant access is still required.
+Effects: **navigate, quota, code, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
+Local indicator/backtesting grant required.
+
+Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omit this command; verify live availability and do not substitute private execution.
+
+| Parameter | Contract |
+| --- | --- |
+| `runId` | Owned stopped backtest ID with chartBinding.restoration=snapshot-captured. |
+| `expectedRevision` | Current run revision. |
+| `confirmed` | Must be true after confirming replacement of the current pane. |
+
+Compatibility alias: `simulation.restoreChartLayout`. Same validation, grants, cancellation, runtime and retry identity; prefer the canonical name.
+
 ## `backtesting.removeFromChart`
 
 Detach this run's chart overlays only. Retains the run, trades, source and saved history; use show to add it again. Does not stop paper execution or alter replay time.
@@ -374,7 +392,7 @@ Compatibility alias: `simulation.showSettings`. Same validation, grants, cancell
 
 ## `backtesting.delete`
 
-Explicitly delete one local, non-running simulation; cloud layouts and Python sources remain unchanged.
+Delete one non-running active simulation and schedule deletion of its automatic account cloud copy. Saved History, native chart layouts and script libraries remain unchanged; local deletion does not confirm cloud deletion.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.

@@ -4,7 +4,7 @@ Generated from a bounded command-catalog snapshot; check the addressed app's liv
 Source-only snapshot from an isolated frontend registry; installed Desktop execution is not certified. Rediscover live availability before use.
 Read each skill's workflow and rediscover live capabilities before execution.
 
-221 canonical commands; 59 compatibility aliases; 67 native Desktop controls.
+226 canonical commands; 60 compatibility aliases; 67 native Desktop controls.
 
 | Registered command | Skill | Retry key | Effects |
 | --- | --- | --- | --- |
@@ -28,6 +28,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `drawings.update` | [tl-charts](tl-charts/SKILL.md) | Required | write |
 | `drawings.setMode` | [tl-charts](tl-charts/SKILL.md) | Required | write |
 | `studyTemplates.manage` | [tl-charts](tl-charts/SKILL.md) | Required | write |
+| `layout.workspaces` | [tl-charts](tl-charts/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `layout.workspace` | [tl-charts](tl-charts/SKILL.md) | Required | network, navigate, code, quota, write |
 | `layout.getState` | [tl-charts](tl-charts/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `layout.set` | [tl-charts](tl-charts/SKILL.md) | Required | navigate, panel, quota, network, write |
 | `layout.saved` | [tl-charts](tl-charts/SKILL.md) | Required | navigate, panel, quota, network, write |
@@ -75,6 +77,13 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `execution.manage` | [tl-alerts](tl-alerts/SKILL.md) | Required | code, network, write |
 | `notifications.read` | [tl-alerts](tl-alerts/SKILL.md) | Not required (parameterized writes still require it) | network |
 | `notifications.manage` | [tl-alerts](tl-alerts/SKILL.md) | Required | network, write |
+| `brokers.list` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `brokers.read` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | quota, network |
+| `brokers.trade` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, quota, network, write |
+| `brokers.tradeStatus` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | none |
+| `brokers.signIn` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | ui, network |
+| `brokers.manageAccount` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, network, write |
+| `brokers.chartOverlay` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | write |
 | `research.listCapabilities` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `research.list` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `research.get` | [tl-research](tl-research/SKILL.md) | Not required (parameterized writes still require it) | none |
@@ -125,6 +134,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `backtesting.addInstrument` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `backtesting.setInterval` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `backtesting.show` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, network, write |
+| `backtesting.restoreChartLayout` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, code, network, write |
 | `backtesting.removeFromChart` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
 | `backtesting.showSettings` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | panel, write |
 | `backtesting.delete` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
@@ -180,6 +190,7 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `simulation.addInstrument` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `simulation.setInterval` | [tl-paper-trading](tl-paper-trading/SKILL.md) | Required | navigate, quota, network, write |
 | `simulation.show` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, network, write |
+| `simulation.restoreChartLayout` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | navigate, quota, code, network, write |
 | `simulation.removeFromChart` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
 | `simulation.showSettings` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | panel, write |
 | `simulation.delete` | [tl-backtesting](tl-backtesting/SKILL.md) | Required | write |
@@ -236,6 +247,8 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `providerScreener.listCapabilities` | [tl-screening](tl-screening/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `providerScreener.run` | [tl-screening](tl-screening/SKILL.md) | Not required (parameterized writes still require it) | quota, code, network |
 | `providerScreener.getResults` | [tl-screening](tl-screening/SKILL.md) | Not required (parameterized writes still require it) | none |
+| `providerScreener.listHistory` | [tl-screening](tl-screening/SKILL.md) | Not required (parameterized writes still require it) | network |
+| `providerScreener.deleteHistory` | [tl-screening](tl-screening/SKILL.md) | Required | network, write |
 | `providerScreener.cancel` | [tl-screening](tl-screening/SKILL.md) | Not required (parameterized writes still require it) | write |
 | `watchlists.list` | [tl-markets](tl-markets/SKILL.md) | Not required (parameterized writes still require it) | network |
 | `watchlists.create` | [tl-markets](tl-markets/SKILL.md) | Required | network, write |
@@ -281,13 +294,6 @@ Read each skill's workflow and rediscover live capabilities before execution.
 | `indicators.setSettings` | [tl-tlscript](tl-tlscript/SKILL.md) | Required | write |
 | `pythonIndicators.getSettings` | [tl-python](tl-python/SKILL.md) | Not required (parameterized writes still require it) | none |
 | `pythonIndicators.setSettings` | [tl-python](tl-python/SKILL.md) | Required | write |
-| `brokers.list` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | network |
-| `brokers.read` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | quota, network |
-| `brokers.trade` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, quota, network, write |
-| `brokers.tradeStatus` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | none |
-| `brokers.signIn` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | ui, network |
-| `brokers.manageAccount` | [tl-portfolio](tl-portfolio/SKILL.md) | Required | ui, network, write |
-| `brokers.chartOverlay` | [tl-portfolio](tl-portfolio/SKILL.md) | Not required (parameterized writes still require it) | write |
 
 Native Desktop controls belong to **tl-desktop**: `status`, `activate`, `open-access`, `reconnect`, `getOrigin`, `setOrigin`, `screenshot`, `logs`, `services`, `appInfo`, `ui-enable`, `ui-disable`, `ui-status`, `ui-inspect`, `ui-click`, `ui-drag`, `ui-hover`, `ui-move`, `ui-scroll`, `ui-type`, `ui-key`, `record-start`, `record-stop`, `record-status`, `record-mark`, `ui-query`, `ui-wait-for`, `ui-wait-idle`, `ui-press`, `ui-screenshot`, `ui-set-viewport`, `ui-reset-viewport`, `ui-cursor`, `ui-highlight`, `ui-mouse-leave`, `ui-wait-stable`, `ui-chart-point`, `ui-run`, `ui-fill`, `ui-select`, `ui-check`, `ui-upload`, `ui-expect`, `ui-trace-start`, `ui-trace-stop`, `ui-dialog`, `ui-dialog-wait`, `ui-dialog-respond`, `ui-download-wait`, `ui-popup-wait`, `ui-wait-request`, `ui-wait-response`, `ui-route`, `ui-unroute`, `ui-codegen-start`, `ui-codegen-stop`, `demo-browser-open`, `demo-browser-navigate`, `demo-browser-history`, `demo-browser-close`, `demo-browser-status`, `demo-browser-clear-session`, `ui-network-capture-start`, `ui-network-capture-status`, `ui-network-capture-stop`, `ui-page-fetch`, `ui-scrape`.
 

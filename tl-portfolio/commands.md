@@ -35,7 +35,7 @@ Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omi
 
 ## `brokers.trade`
 
-Open a real Kite order dialog for the user to approve; nothing is sent until they click. cancel_order/modify_order: open orderId. exit_position: market exit of the whole symbol position. position_order: position ticket for intent exit|add|stop|target (edits a working stop/target unless newOrder). place_order: chart Buy/Sell ticket for a new order (side, orderType, product, quantity, price, triggerPrice prefill it). Then poll brokers.tradeStatus with requestId.
+Open a real Kite or Fyers (Desktop login) order dialog for the user to approve; nothing is sent until they click. cancel_order/modify_order: open orderId. exit_position: market exit of the whole symbol position. position_order: position ticket for intent exit|add|stop|target (edits a working stop/target unless newOrder). place_order: chart Buy/Sell ticket for a new order (side, orderType, product, quantity, price, triggerPrice prefill it). Then poll brokers.tradeStatus with requestId.
 
 Retry key: **required**. External local-assistant access is still required.
 Effects: **ui, quota, network, write**. These are possible consequences, not grants; optional write variants still require approval and a retry key.
@@ -44,7 +44,7 @@ Requires Desktop protocol 2 with `catalog.aliases` negotiation. Older shells omi
 
 | Parameter | Contract |
 | --- | --- |
-| `account` | Required kite |
+| `account` | Required kite\|fyers |
 | `action` | Required cancel_order\|modify_order\|exit_position\|position_order\|place_order |
 | `orderId` | cancel_order/modify_order: order_id from brokers.read orders |
 | `quantity` | modify_order: optional proposed total quantity; position_order: optional quantity (exit/stop/target at most the open quantity); place_order: optional quantity (MCX in lots, NFO in units) |

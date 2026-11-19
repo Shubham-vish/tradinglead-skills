@@ -301,6 +301,35 @@
       ]
     },
     {
+      "type": "layout.workspaces",
+      "description": "List account-owned research workspaces and cloud status; local copies remain available offline.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "layout.workspace",
+      "description": "Save all panes/strategy settings or open an independent copy in a new tab without rerunning backtests. Delete removes only the saved workspace. Results sync separately.",
+      "mutates": true,
+      "params": {
+        "action": "save|open|delete",
+        "name": "Required for save: 1-80 characters.",
+        "id": "Required for open/delete: workspace ID.",
+        "confirmed": "Required true for delete."
+      },
+      "effects": [
+        "network",
+        "navigate",
+        "code",
+        "quota",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
       "type": "layout.getState",
       "description": "Read split-chart layout: active pane, maximized pane, split sizes and each pane's last symbol/feed/interval. chart.*/studies.*/indicators.* always target the active pane.",
       "mutates": false,
@@ -934,6 +963,117 @@
       "requiresCompactCatalog": true
     },
     {
+      "type": "brokers.list",
+      "description": "List broker accounts this Desktop can read (Portfolio panel): Fyers chart-feed login, Fyers Desktop login, Zerodha Kite and extra Fyers accounts, with connected/signed-out state, which can trade (cancel/modify/exit; Kite only) and the chart-overlay switches. Never returns credentials.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.read",
+      "description": "Read live broker data for one account from brokers.list: holdings, positions, orders (status all|open|complete|cancelled|rejected), trades (today's fills) or funds. Rows are normalized like the Portfolio panel with a summary. Uses broker API quota; never places orders.",
+      "mutates": false,
+      "params": {
+        "account": "Required account id from brokers.list (fyers-local, fyers, kite or account:<id>)",
+        "section": "Required holdings|positions|orders|trades|funds",
+        "status": "orders only: all|open|complete|cancelled|rejected (default all)",
+        "symbol": "Optional case-insensitive symbol/name filter, e.g. SBIN",
+        "limit": "Optional 1-500 rows (default 100)"
+      },
+      "effects": [
+        "quota",
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.trade",
+      "description": "Open a real Kite or Fyers (Desktop login) order dialog for the user to approve; nothing is sent until they click. cancel_order/modify_order: open orderId. exit_position: market exit of the whole symbol position. position_order: position ticket for intent exit|add|stop|target (edits a working stop/target unless newOrder). place_order: chart Buy/Sell ticket for a new order (side, orderType, product, quantity, price, triggerPrice prefill it). Then poll brokers.tradeStatus with requestId.",
+      "mutates": true,
+      "params": {
+        "account": "Required kite|fyers",
+        "action": "Required cancel_order|modify_order|exit_position|position_order|place_order",
+        "orderId": "cancel_order/modify_order: order_id from brokers.read orders",
+        "quantity": "modify_order: optional proposed total quantity; position_order: optional quantity (exit/stop/target at most the open quantity); place_order: optional quantity (MCX in lots, NFO in units)",
+        "price": "modify_order/position_order/place_order: optional limit price (LIMIT, SL)",
+        "triggerPrice": "modify_order/position_order (stop)/place_order (SL, SL-M): optional trigger price",
+        "symbol": "exit_position/position_order: EXCHANGE:TRADINGSYMBOL from brokers.read positions; place_order: Kite instrument, e.g. NSE:SBIN, NFO:NIFTY26NOVFUT, MCX:GOLDM26DECFUT",
+        "product": "exit_position/position_order: CNC|MIS|NRML|MTF when the symbol has several open positions; place_order: MIS|CNC for equity, MIS|NRML for F&O and MCX",
+        "side": "place_order: Required buy|sell",
+        "intent": "position_order: Required exit|add|stop|target",
+        "orderType": "position_order: optional exit/add MARKET|LIMIT, stop SL|SL-M, target LIMIT; place_order: optional MARKET|LIMIT|SL|SL-M (default MARKET)",
+        "newOrder": "position_order stop/target: optional true to place another order instead of editing the existing one",
+        "waitSeconds": "Optional 0-25 seconds to wait for the user's decision (default 20)"
+      },
+      "effects": [
+        "ui",
+        "quota",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.tradeStatus",
+      "description": "Poll a brokers.trade request: pending (dialog still open), dismissed (user declined/closed), ok (broker accepted) or error (broker rejected, with message). cancel=true closes a still-pending dialog without sending anything.",
+      "mutates": false,
+      "params": {
+        "requestId": "Required requestId from brokers.trade",
+        "cancel": "Optional true to dismiss the pending dialog"
+      },
+      "effects": [
+        "none"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.signIn",
+      "description": "Open the broker's own sign-in window so the user can (re)connect: kite (Zerodha), fyers-local (Fyers chart-feed login) or fyers-account (add a Fyers ID or sign in again to an extra account; Fyers ends sessions daily). The user completes the login; poll brokers.list until connected.",
+      "mutates": false,
+      "params": {
+        "account": "Required kite|fyers-local|fyers-account"
+      },
+      "effects": [
+        "ui",
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.manageAccount",
+      "description": "Rename (nickname) or remove an extra Fyers portfolio account from brokers.list. remove asks the user to confirm in the app and deletes the saved session from this computer.",
+      "mutates": true,
+      "params": {
+        "account": "Required account:<id> from brokers.list",
+        "operation": "Required rename|remove",
+        "label": "rename: nickname up to 40 characters ('' clears)"
+      },
+      "effects": [
+        "ui",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "brokers.chartOverlay",
+      "description": "Show or hide broker positions/orders/trades on the chart (Portfolio 'On chart' switch and legend layers). Omit all params to read the current state.",
+      "mutates": false,
+      "params": {
+        "enabled": "Optional boolean master switch",
+        "trades": "Optional boolean trade markers layer",
+        "orders": "Optional boolean working-order lines layer",
+        "positions": "Optional boolean position lines layer"
+      },
+      "effects": [
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
       "type": "research.listCapabilities",
       "description": "Discover saved HTML research limits, rendering and authoring guidance. No market-data fetch.",
       "mutates": false,
@@ -1156,7 +1296,7 @@
     },
     {
       "type": "backtesting.libraryList",
-      "description": "Search/page IndexedDB saved snapshots: max 100 runs / 100 MB per account. No source/candles. Active local workspace stays synchronous and limited to three runs.",
+      "description": "Search/page IndexedDB saved snapshots: max 100 runs / 100 MB per account. May import account cloud copies when available. No source/candles in the listing. Active history has a separate 20-run retention limit, not a concurrency limit.",
       "mutates": false,
       "params": {
         "search": "Optional text, max 100 chars.",
@@ -1170,7 +1310,7 @@
     },
     {
       "type": "backtesting.librarySave",
-      "description": "Save a stopped active run into larger local IndexedDB history. No silent eviction or cloud writes.",
+      "description": "Save a stopped active run into local IndexedDB history and schedule its account cloud copy when signed in. Local success does not confirm cloud storage. No silent eviction.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -1207,7 +1347,7 @@
     },
     {
       "type": "backtesting.libraryDelete",
-      "description": "Explicitly remove a saved snapshot only; active run and cloud layout are untouched.",
+      "description": "Remove a saved snapshot and schedule deletion of its automatic account cloud copy. The active run and native chart layout are untouched; local deletion does not confirm cloud deletion.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -1641,6 +1781,25 @@
       ]
     },
     {
+      "type": "backtesting.restoreChartLayout",
+      "description": "Explicitly replace the active pane with a run's captured native layout and indicator definitions as a new unnamed layout. Does not overwrite the original named layout or rerun the backtest. Requires the original feed, no applied strategy/replay/appearance edits, and confirmation to discard the current pane's unsaved view. Returns loadRequested; verify chart.getState, then show the result separately.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "Owned stopped backtest ID with chartBinding.restoration=snapshot-captured.",
+        "expectedRevision": "Current run revision.",
+        "confirmed": "Must be true after confirming replacement of the current pane."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "code",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
       "type": "backtesting.removeFromChart",
       "description": "Detach this run's chart overlays only. Retains the run, trades, source and saved history; use show to add it again. Does not stop paper execution or alter replay time.",
       "mutates": true,
@@ -1667,7 +1826,7 @@
     },
     {
       "type": "backtesting.delete",
-      "description": "Explicitly delete one local, non-running simulation; cloud layouts and Python sources remain unchanged.",
+      "description": "Delete one non-running active simulation and schedule deletion of its automatic account cloud copy. Saved History, native chart layouts and script libraries remain unchanged; local deletion does not confirm cloud deletion.",
       "mutates": true,
       "permission": "indicators",
       "params": {
@@ -2194,7 +2353,7 @@
       "mutates": true,
       "permission": "indicators",
       "params": {
-        "options": "Partial {visible,scope:all|selected,markers,labels:none|selected|all,tradeLabels,connections,riskLevels,openPosition,replayCutoff,paperClosedTrades,paperActivePosition,textClosedSide|Price|Pnl|Reason,textActiveSide|Price|Pnl (which label lines show),styles,drawing,scriptPlots,scriptDrawings}. tradeLabels is an independent boolean eye for entry/exit boxes (compact marker text in compact mode), preserving labels mode, arrows, exact fills, paths, position badges, protection and orders. scriptPlots maps keys from get.chartProjection.pineVisuals.plots to boolean visibility (512 saved keys maximum; each key at most 512 characters). scriptDrawings toggles Pine drawings, effects and tables; trade labels remain independent. Toggles boolean; replayCutoff defaults false and controls the line and timestamp together. Styles maps profit|loss|selected|stop|target|entry|cutoff to partial {color,width:1-4,style:0(solid)|1(dotted)|2(dashed),visible}. Drawing defaults are in capabilities.chartOptions.drawing: arrowMode compact|adjustable; arrowHeight8-300, arrowMargin0-100, labelGap0-200 (% candle range); arrowWidth/fillMarkWidth1-6px; fontSize/positionFontSize/pathFontSize8-24px; leaderWidth1-4px, leaderStyle0-2, leaderColor/pathTextColor auto or native color, pathBold/pathItalic boolean; fillMarkBars1-10 candles; fillMarkStyle0-2; fillMarks/bold/italic boolean; cutoffTransparency integer0-100 (0 opaque,100 line hidden; timestamp unaffected); buy/sell arrow/text/fill colors, profit/loss text colors, position/quantity backgrounds, quantityTextColor, cutoffLabelTextColor and cutoffLabelBackground accept auto or hex/rgb/rgba. Cutoff line color is styles.cutoff.color; timestamp colors are independent. Nested patches merge; appearance never changes execution or ledger data.",
+        "options": "See canonical backtesting command.",
         "range": "See canonical backtesting command.",
         "action": "See canonical backtesting command.",
         "previewId": "See canonical backtesting command."
@@ -2523,6 +2682,25 @@
         "network",
         "write"
       ]
+    },
+    {
+      "type": "simulation.restoreChartLayout",
+      "description": "Compatibility alias for backtesting.restoreChartLayout. Same validation, behavior, grants, cancellation and retry keys.",
+      "mutates": true,
+      "permission": "indicators",
+      "params": {
+        "runId": "See canonical backtesting command.",
+        "expectedRevision": "See canonical backtesting command.",
+        "confirmed": "See canonical backtesting command."
+      },
+      "effects": [
+        "navigate",
+        "quota",
+        "code",
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "simulation.removeFromChart",
@@ -3255,15 +3433,16 @@
     },
     {
       "type": "providerScreener.run",
-      "description": "Start a paced local TLScript-Pine scan over 1-50 explicit broker symbols. No SQL/provider fallback or invented symbol metadata. Secondary-data requests are unavailable. Newest candle is conservatively excluded; read each row's actual evaluation timestamp. Consumes provider quota.",
+      "description": "Paced local Pine/Python scan over 1-50 provider symbols. Python requires isolated Desktop runtime. No secondary data or provider fallback. Excludes newest candle; inspect timestamps. Consumes provider quota.",
       "mutates": false,
       "params": {
+        "language": "Optional pine (default) or python.",
         "feed": "Explicit registered Desktop history provider.",
         "tickers": "1-50 unique canonical tickers.",
-        "source": "Nonempty Pine indicator source; no fixed character cap. Execution and transport limits still apply.",
-        "inputs": "Optional declared Pine string, finite-number or boolean inputs, bounded to 8000 serialized characters.",
+        "source": "Indicator source; execution and transport limits apply.",
+        "inputs": "Optional string, finite-number or boolean inputs, at most 8000 serialized characters.",
         "interval": "Explicit supported chart resolution.",
-        "plotIndex": "Optional nonnegative safe integer selecting a real numeric plot, default 0. Available plots are discovered from execution, not compilation.",
+        "plotIndex": "Optional nonnegative runtime numeric plot index, default 0.",
         "condition": "{operator:gt|gte|lt|lte|eq,value:finite number}",
         "bars": "Optional 2-1000 history bars, default 500."
       },
@@ -3275,7 +3454,7 @@
     },
     {
       "type": "providerScreener.getResults",
-      "description": "Read an owned local scan's progress, matches, explicit errors and candle provenance. Runs expire after 30 minutes/reload; no raw candle arrays are returned.",
+      "description": "Read local progress or an account-owned saved scan. Detached running snapshots are labelled interrupted and never resume automatically. No source or raw candle arrays are returned.",
       "mutates": false,
       "params": {
         "runId": "Local provider run ID."
@@ -3283,6 +3462,29 @@
       "effects": [
         "none"
       ]
+    },
+    {
+      "type": "providerScreener.listHistory",
+      "description": "List account-owned saved local scans, recovering cloud copies when available. Up to 100 scans; source is retained privately with each snapshot, not returned in this listing.",
+      "mutates": false,
+      "params": {},
+      "effects": [
+        "network"
+      ],
+      "requiresCompactCatalog": true
+    },
+    {
+      "type": "providerScreener.deleteHistory",
+      "description": "Explicitly delete a saved scan and queue its cloud deletion. Cancel a scan in its owning tab first. Requires local write permission and an idempotency key.",
+      "mutates": true,
+      "params": {
+        "runId": "Saved local provider run ID."
+      },
+      "effects": [
+        "network",
+        "write"
+      ],
+      "requiresCompactCatalog": true
     },
     {
       "type": "providerScreener.cancel",
@@ -3891,117 +4093,6 @@
       "effects": [
         "write"
       ]
-    },
-    {
-      "type": "brokers.list",
-      "description": "List broker accounts this Desktop can read (Portfolio panel): Fyers chart-feed login, Fyers Desktop login, Zerodha Kite and extra Fyers accounts, with connected/signed-out state, which can trade (cancel/modify/exit; Kite only) and the chart-overlay switches. Never returns credentials.",
-      "mutates": false,
-      "params": {},
-      "effects": [
-        "network"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.read",
-      "description": "Read live broker data for one account from brokers.list: holdings, positions, orders (status all|open|complete|cancelled|rejected), trades (today's fills) or funds. Rows are normalized like the Portfolio panel with a summary. Uses broker API quota; never places orders.",
-      "mutates": false,
-      "params": {
-        "account": "Required account id from brokers.list (fyers-local, fyers, kite or account:<id>)",
-        "section": "Required holdings|positions|orders|trades|funds",
-        "status": "orders only: all|open|complete|cancelled|rejected (default all)",
-        "symbol": "Optional case-insensitive symbol/name filter, e.g. SBIN",
-        "limit": "Optional 1-500 rows (default 100)"
-      },
-      "effects": [
-        "quota",
-        "network"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.trade",
-      "description": "Open a real Kite order dialog for the user to approve; nothing is sent until they click. cancel_order/modify_order: open orderId. exit_position: market exit of the whole symbol position. position_order: position ticket for intent exit|add|stop|target (edits a working stop/target unless newOrder). place_order: chart Buy/Sell ticket for a new order (side, orderType, product, quantity, price, triggerPrice prefill it). Then poll brokers.tradeStatus with requestId.",
-      "mutates": true,
-      "params": {
-        "account": "Required kite",
-        "action": "Required cancel_order|modify_order|exit_position|position_order|place_order",
-        "orderId": "cancel_order/modify_order: order_id from brokers.read orders",
-        "quantity": "modify_order: optional proposed total quantity; position_order: optional quantity (exit/stop/target at most the open quantity); place_order: optional quantity (MCX in lots, NFO in units)",
-        "price": "modify_order/position_order/place_order: optional limit price (LIMIT, SL)",
-        "triggerPrice": "modify_order/position_order (stop)/place_order (SL, SL-M): optional trigger price",
-        "symbol": "exit_position/position_order: EXCHANGE:TRADINGSYMBOL from brokers.read positions; place_order: Kite instrument, e.g. NSE:SBIN, NFO:NIFTY26NOVFUT, MCX:GOLDM26DECFUT",
-        "product": "exit_position/position_order: CNC|MIS|NRML|MTF when the symbol has several open positions; place_order: MIS|CNC for equity, MIS|NRML for F&O and MCX",
-        "side": "place_order: Required buy|sell",
-        "intent": "position_order: Required exit|add|stop|target",
-        "orderType": "position_order: optional exit/add MARKET|LIMIT, stop SL|SL-M, target LIMIT; place_order: optional MARKET|LIMIT|SL|SL-M (default MARKET)",
-        "newOrder": "position_order stop/target: optional true to place another order instead of editing the existing one",
-        "waitSeconds": "Optional 0-25 seconds to wait for the user's decision (default 20)"
-      },
-      "effects": [
-        "ui",
-        "quota",
-        "network",
-        "write"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.tradeStatus",
-      "description": "Poll a brokers.trade request: pending (dialog still open), dismissed (user declined/closed), ok (broker accepted) or error (broker rejected, with message). cancel=true closes a still-pending dialog without sending anything.",
-      "mutates": false,
-      "params": {
-        "requestId": "Required requestId from brokers.trade",
-        "cancel": "Optional true to dismiss the pending dialog"
-      },
-      "effects": [
-        "none"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.signIn",
-      "description": "Open the broker's own sign-in window so the user can (re)connect: kite (Zerodha), fyers-local (Fyers chart-feed login) or fyers-account (add a Fyers ID or sign in again to an extra account; Fyers ends sessions daily). The user completes the login; poll brokers.list until connected.",
-      "mutates": false,
-      "params": {
-        "account": "Required kite|fyers-local|fyers-account"
-      },
-      "effects": [
-        "ui",
-        "network"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.manageAccount",
-      "description": "Rename (nickname) or remove an extra Fyers portfolio account from brokers.list. remove asks the user to confirm in the app and deletes the saved session from this computer.",
-      "mutates": true,
-      "params": {
-        "account": "Required account:<id> from brokers.list",
-        "operation": "Required rename|remove",
-        "label": "rename: nickname up to 40 characters ('' clears)"
-      },
-      "effects": [
-        "ui",
-        "network",
-        "write"
-      ],
-      "requiresCompactCatalog": true
-    },
-    {
-      "type": "brokers.chartOverlay",
-      "description": "Show or hide broker positions/orders/trades on the chart (Portfolio 'On chart' switch and legend layers). Omit all params to read the current state.",
-      "mutates": false,
-      "params": {
-        "enabled": "Optional boolean master switch",
-        "trades": "Optional boolean trade markers layer",
-        "orders": "Optional boolean working-order lines layer",
-        "positions": "Optional boolean position lines layer"
-      },
-      "effects": [
-        "write"
-      ],
-      "requiresCompactCatalog": true
     }
   ],
   "desktopActions": [

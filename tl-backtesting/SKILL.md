@@ -164,13 +164,49 @@ live contract before use. Comparison exports are local reviewed saved-run
 views, not native chart screenshots. Paper parity executes strategies and
 requires explicit confirmation; preflight alone does not prove parity.
 
-## Three separate local stores
+## Parallel tabs and original chart restoration
+
+The current source isolates applied strategies by account, research tab, pane
+and layout. Refresh restores the recorded result without automatically rerunning
+it. Duplicated live tabs fork their research identity. This is same-device
+session restoration, not cloud workspace or closed-Desktop-tab recovery.
+
+Use different tabs for concurrent backtests: one backtest/optimization is
+admitted per account/tab. Two same-origin execution slots are shared with local
+Pine scans; queued work waits rather than creating unlimited workers. Closing
+the owning renderer interrupts its work. Different origins and external broker
+clients do not share these limits. Installed Desktop behavior is not certified
+by this source-only documentation; rediscover the addressed tab.
+
+New chart-captured runs retain an immutable native layout/drawing snapshot and
+applied indicator definitions. `chartBinding.restoration:"snapshot-captured"`
+distinguishes these from older reference-only results.
+`backtesting.restoreChartLayout` requires the stopped run's `runId`,
+`expectedRevision`, `confirmed:true` and a retry key. Confirm discarding the
+selected pane's unsaved view first. Select the original feed and remove any
+applied strategy, replay or appearance preview before restoring.
+The action creates a new unnamed layout copy without overwriting the original
+named layout or rerunning the backtest. Indicators can recompute and consume
+provider history. `loadRequested` is acceptance, not readiness: poll
+`chart.getState`, then show the saved result separately.
+This command requires protocol 2 with `catalog.aliases`; older shells omit it.
+
+## Separate local stores and cloud copies
 
 | Store | Workflow |
 | --- | --- |
-| Active runs | `list/get/delete`; up to 20 active local runs, including an applied strategy's run, stored per run in IndexedDB (lossless compression, 32 Mi character raw limit; the old localStorage store is migrated). A 21st `run` fails with `SIMULATION_HISTORY_FULL` |
+| Active runs | `list/get/delete`; current source retains up to 20 runs, including applied strategy results. IndexedDB stores independent compressed records, each bounded to 32 Mi characters raw and 32 MiB stored; the old localStorage store is migrated. The legacy localStorage fallback has a shared 3 MiB stored budget. A 21st `run` fails with `SIMULATION_HISTORY_FULL`. Capacity is not execution concurrency; inspect live capabilities on older builds. |
 | Larger saved snapshots | `libraryList/librarySave/libraryRestore/libraryDelete/libraryMigrate/libraryUpdate`; IndexedDB, bounded to 100 runs / 100 MB per account |
 | Reusable complete setups | `presetList/presetGet/presetSave/presetDelete`; source, parameters, mode, config, bars, range and session assumptions |
+
+Active and saved runs enqueue automatic cloud copies. Run info and `cloudSync`
+distinguish durable local intent from a receipt confirming the current
+generation. Keep local data until cloud confirmation; queued, offline, rejected
+and conflict states are not backups. Saved source libraries sync separately;
+unsaved drafts and local scan results are not uploaded by run persistence.
+The current implementation still has a local-save/outbox crash window and
+requires server conditional-create support for safe simultaneous first writes.
+Cross-device recovery has not been authenticated in this change.
 
 Read current revisions before mutations. `librarySave` needs the active
 `expectedRevision` and `expectedLibraryRevision` (0 only for a new saved copy).
